@@ -25,7 +25,7 @@
                 </flux:badge>
             </div>
             <a
-                href="https://ligma.waffle-lord.net/SPTInstaller.exe"
+                href="https://patcher.sp-tushonka.com/SPTInstaller.exe"
                 target="_blank"
                 class="group relative inline-flex transform items-center justify-center rounded-lg border border-emerald-600 bg-gradient-to-r from-emerald-700 to-emerald-600 px-6 py-3 text-base font-semibold text-white shadow-xl backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-500 hover:from-emerald-600 hover:to-emerald-500 hover:shadow-2xl hover:shadow-emerald-500/25 active:scale-95"
             >
