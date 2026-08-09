@@ -123,6 +123,16 @@ final class Mod extends Model implements Commentable, Reportable, Trackable
     }
 
     /**
+     * The ownership claims made against this mod
+     *
+     * @return HasMany<ModClaim, $this>
+     */
+    public function claims(): HasMany
+    {
+        return $this->hasMany(ModClaim::class);
+    }
+
+    /**
      * The relationship between a mod and its source code links.
      * Links are sorted alphabetically by label (or URL if no label).
      *
