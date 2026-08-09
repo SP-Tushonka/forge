@@ -170,6 +170,16 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
     }
 
     /**
+     * The ownership claims this user has made against mods
+     *
+     * @return HasMany<ModClaim, $this>
+     */
+    public function modClaims(): HasMany
+    {
+        return $this->hasMany(ModClaim::class);
+    }
+
+    /**
      * Get all addons owned by the user.
      *
      * @return HasMany<Addon, $this>

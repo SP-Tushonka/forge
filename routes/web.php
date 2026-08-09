@@ -16,6 +16,7 @@ use App\Http\Controllers\SocialiteController;
 use App\Http\Middleware\ForcePublicViewpoint;
 use App\Models\Comment;
 use App\Models\Mod;
+use App\Models\ModClaim;
 use App\Models\ModList;
 use App\Models\Report;
 use Illuminate\Contracts\View\Factory;
@@ -212,6 +213,10 @@ Route::middleware('auth.banned')->group(function (): void {
         Route::livewire('/moderation-actions', 'pages::admin.moderation-actions')
             ->can('viewAny', Report::class)
             ->name('moderation-actions');
+
+        Route::livewire('/mod-claims', 'pages::admin.mod-claims')
+            ->can('viewAny', ModClaim::class)
+            ->name('mod-claims');
 
         Route::livewire('/spam-review', 'pages::admin.spam-review')
             ->can('reviewSpam', Comment::class)

@@ -10,6 +10,7 @@ use App\Jobs\AggregateApiUsageDailyJob;
 use App\Jobs\AggregateApiUsageJob;
 use App\Jobs\CleanupStaleVerificationsJob;
 use App\Jobs\CleanupVerificationArtifactsJob;
+use App\Jobs\ExpireStaleModClaimsJob;
 use App\Jobs\FetchCloudflareApiAnalyticsJob;
 use App\Jobs\FetchCloudflareVisitorStatsJob;
 use App\Jobs\ProcessPinnedModVersionPublishDates;
@@ -24,6 +25,7 @@ Schedule::command('horizon:snapshot')->everyFiveMinutes()->onOneServer();
 Schedule::command(CleanupOldNotificationLogs::class)->daily()->onOneServer();
 Schedule::command(EnsureFavouritesLists::class)->daily()->onOneServer();
 Schedule::job(new UpdateFavouritesJob)->hourly()->onOneServer()->withoutOverlapping();
+Schedule::job(new ExpireStaleModClaimsJob)->hourly()->onOneServer()->withoutOverlapping();
 
 Schedule::command(UpdateGeoLiteDatabase::class)->daily()->at('02:00')->onOneServer()->runInBackground()->environments('production');
 Schedule::job(new SearchSyncJob)->daily()->at('03:00')->onOneServer()->environments('production');

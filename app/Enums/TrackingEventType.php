@@ -34,6 +34,12 @@ enum TrackingEventType: string
 
     case MOD_REPORT = 'mod_report';
 
+    case MOD_CLAIM_INITIATED = 'mod_claim_initiated';
+
+    case MOD_CLAIM_VERIFIED = 'mod_claim_verified';
+
+    case MOD_CLAIM_REJECTED = 'mod_claim_rejected';
+
     /** Mod version events */
     case VERSION_CREATE = 'version_create';
 
@@ -217,6 +223,9 @@ enum TrackingEventType: string
             self::COMMENT_UNLIKE => 'Unliked comment',
             self::COMMENT_REPORT => 'Reported comment',
             self::MOD_REPORT => 'Reported mod',
+            self::MOD_CLAIM_INITIATED => 'Started mod claim',
+            self::MOD_CLAIM_VERIFIED => 'Claimed mod',
+            self::MOD_CLAIM_REJECTED => 'Rejected mod claim',
             self::ACCOUNT_DELETE => 'Deleted account',
             self::USER_BAN => 'Banned user',
             self::USER_UNBAN => 'Unbanned user',
@@ -289,6 +298,9 @@ enum TrackingEventType: string
             self::COMMENT_UNLIKE => 'User unliked a comment',
             self::COMMENT_REPORT => 'User reported a comment',
             self::MOD_REPORT => 'User reported a mod',
+            self::MOD_CLAIM_INITIATED => 'User started a claim on an unowned mod',
+            self::MOD_CLAIM_VERIFIED => 'User proved ownership and was assigned the mod',
+            self::MOD_CLAIM_REJECTED => 'A mod ownership claim was rejected',
             self::ACCOUNT_DELETE => 'User deleted their account',
             self::USER_BAN => 'Moderator banned a user',
             self::USER_UNBAN => 'Moderator unbanned a user',
@@ -320,7 +332,7 @@ enum TrackingEventType: string
     public function getTrackableModel(): ?string
     {
         return match ($this) {
-            self::MOD_CREATE, self::MOD_EDIT, self::MOD_DELETE, self::MOD_REPORT, self::MOD_FEATURE, self::MOD_UNFEATURE, self::MOD_DISABLE, self::MOD_ENABLE, self::MOD_PUBLISH, self::MOD_UNPUBLISH => Mod::class,
+            self::MOD_CREATE, self::MOD_EDIT, self::MOD_DELETE, self::MOD_REPORT, self::MOD_FEATURE, self::MOD_UNFEATURE, self::MOD_DISABLE, self::MOD_ENABLE, self::MOD_PUBLISH, self::MOD_UNPUBLISH, self::MOD_CLAIM_INITIATED, self::MOD_CLAIM_VERIFIED, self::MOD_CLAIM_REJECTED => Mod::class,
             self::MOD_DOWNLOAD, self::VERSION_CREATE, self::VERSION_EDIT, self::VERSION_DELETE, self::VERSION_DISABLE, self::VERSION_ENABLE, self::VERSION_PUBLISH, self::VERSION_UNPUBLISH => ModVersion::class,
             self::ADDON_CREATE, self::ADDON_EDIT, self::ADDON_DELETE, self::ADDON_REPORT, self::ADDON_ATTACH, self::ADDON_DETACH, self::ADDON_DISABLE, self::ADDON_ENABLE, self::ADDON_PUBLISH, self::ADDON_UNPUBLISH => Addon::class,
             self::ADDON_DOWNLOAD, self::ADDON_VERSION_CREATE, self::ADDON_VERSION_EDIT, self::ADDON_VERSION_DELETE, self::ADDON_VERSION_DISABLE, self::ADDON_VERSION_ENABLE, self::ADDON_VERSION_PUBLISH, self::ADDON_VERSION_UNPUBLISH => AddonVersion::class,
@@ -357,6 +369,9 @@ enum TrackingEventType: string
             self::MOD_EDIT => 'pencil-square',
             self::MOD_DELETE => 'trash',
             self::MOD_REPORT => 'flag',
+            self::MOD_CLAIM_INITIATED => 'hand-raised',
+            self::MOD_CLAIM_VERIFIED => 'check-badge',
+            self::MOD_CLAIM_REJECTED => 'x-circle',
             self::VERSION_CREATE => 'tag',
             self::VERSION_EDIT => 'pencil',
             self::VERSION_DELETE => 'x-circle',
@@ -432,6 +447,9 @@ enum TrackingEventType: string
             self::MOD_EDIT => 'indigo',
             self::MOD_DELETE => 'red',
             self::MOD_REPORT => 'orange',
+            self::MOD_CLAIM_INITIATED => 'gray',
+            self::MOD_CLAIM_VERIFIED => 'green',
+            self::MOD_CLAIM_REJECTED => 'red',
 
             // Version events - Teal/Emerald theme
             self::VERSION_CREATE => 'teal',
@@ -555,6 +573,8 @@ enum TrackingEventType: string
             self::MOD_ENABLE,
             self::MOD_PUBLISH,
             self::MOD_UNPUBLISH,
+            self::MOD_CLAIM_VERIFIED,
+            self::MOD_CLAIM_REJECTED,
             self::VERSION_DISABLE,
             self::VERSION_ENABLE,
             self::VERSION_PUBLISH,

@@ -161,6 +161,8 @@
                                         class="underline"
                                     /></a>
                             </p>
+                        @else
+                            <p class="text-gray-400">{{ __('Unclaimed mod') }}</p>
                         @endif
                         <p title="{{ __('Exactly') }} {{ $mod->downloads }}">{{ Number::downloads($mod->downloads) }}
                             {{ __(Str::plural('Download', $mod->downloads)) }}</p>
@@ -476,6 +478,18 @@
                     </div>
                 </div>
             @endif
+
+            @unless ($mod->owner)
+                <div class="rounded-xl bg-gray-950 p-4 shadow-md shadow-gray-950 drop-shadow-2xl sm:p-6">
+                    <h2 class="text-2xl font-bold text-gray-100">{{ __('Unclaimed') }}</h2>
+                    <p class="mt-2 text-sm text-gray-400">
+                        {{ __('This mod was imported without an owner. If the source repository is yours, you can claim it.') }}
+                    </p>
+                    <div class="mt-4">
+                        <livewire:mod-claim :mod-id="$mod->id" />
+                    </div>
+                </div>
+            @endunless
 
             {{-- Additional Mod Details --}}
             <div class="rounded-xl bg-gray-950 p-4 shadow-md shadow-gray-950 drop-shadow-2xl sm:p-6">
