@@ -167,6 +167,11 @@
                                             href="{{ route('moderation-actions') }}"
                                             wire:navigate
                                         >{{ __('Moderation Actions') }}</flux:navmenu.item>
+                                        <flux:navmenu.item
+                                            icon="hand-raised"
+                                            href="{{ route('mod-claims') }}"
+                                            wire:navigate
+                                        >{{ __('Mod Claims') }}</flux:navmenu.item>
 
                                         @if (auth()->user()->isAdmin())
                                             {{-- Staff --}}
@@ -497,6 +502,15 @@
                             <span class="flex items-center gap-2">
                                 <flux:icon.shield-check class="h-5 w-5" />
                                 {{ __('Moderation Actions') }}
+                            </span>
+                        </x-responsive-nav-link>
+                        <x-responsive-nav-link
+                            href="{{ route('mod-claims') }}"
+                            :active="request()->routeIs('mod-claims')"
+                        >
+                            <span class="flex items-center gap-2">
+                                <flux:icon.hand-raised class="h-5 w-5" />
+                                {{ __('Mod Claims') }}
                             </span>
                         </x-responsive-nav-link>
                     </div>
