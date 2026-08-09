@@ -316,7 +316,8 @@ new #[Layout('layouts::base')] class extends Component
 
         // Update mod fields
         $this->mod->name = $this->name;
-        $this->mod->slug = Str::slug($this->name);
+        // Slug from the stored (censored) name so a censored word never leaks into the URL
+        $this->mod->slug = Str::slug($this->mod->name);
         $this->mod->guid = $this->guid;
         $this->mod->teaser = $this->teaser;
         $this->mod->description = $this->description;

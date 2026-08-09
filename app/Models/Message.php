@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Jobs\ProcessChatMessageNotification;
+use App\Support\WordCensor;
 use Carbon\CarbonImmutable;
 use Database\Factories\MessageFactory;
 use GrahamCampbell\Markdown\Facades\Markdown;
@@ -245,6 +246,18 @@ final class Message extends Model
     {
         return $query->select('messages.*')
             ->selectRaw('? as current_user_id', [$user->id]);
+    }
+
+    /**
+     * Censor configured words on write
+     *
+     * @return Attribute<string, string|null>
+     */
+    protected function content(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value): ?string => WordCensor::fromConfig()->censor($value),
+        );
     }
 
     /**

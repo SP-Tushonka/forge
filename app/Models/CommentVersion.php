@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Support\DataTransferObjects\CommentTranslationResult;
+use App\Support\WordCensor;
 use Carbon\CarbonImmutable;
 use Database\Factories\CommentVersionFactory;
 use GrahamCampbell\Markdown\Facades\Markdown;
@@ -84,6 +85,30 @@ final class CommentVersion extends Model
         $this->translated_at = $result->translatedBody !== null ? Date::now() : null;
 
         $this->save();
+    }
+
+    /**
+     * Censor configured words on write
+     *
+     * @return Attribute<string, string|null>
+     */
+    protected function body(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value): ?string => WordCensor::fromConfig()->censor($value),
+        );
+    }
+
+    /**
+     * Censor configured words on write, since translations are produced by an external service
+     *
+     * @return Attribute<string|null, string|null>
+     */
+    protected function translatedBody(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value): ?string => WordCensor::fromConfig()->censor($value),
+        );
     }
 
     /**

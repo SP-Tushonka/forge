@@ -74,7 +74,7 @@
                                 class="text-sm leading-6 text-gray-300 hover:text-white"
                             >API</a></li>
                         <li><a
-                                href="https://wiki.sp-mod.com"
+                                href="https://wiki.sp-tushonka.com/"
                                 target="_blank"
                                 class="text-sm leading-6 text-gray-300 hover:text-white"
                             >SPT Wiki</a></li>
