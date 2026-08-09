@@ -152,5 +152,11 @@ jobs:
           install -m 700 -d ~/.ssh
           echo "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          ssh -o ConnectTimeout=15 "$DEPLOY_USER@$DEPLOY_HOST" "$DEPLOY_SCRIPT" "$RELEASE_TAG"
+
+          # the ssh connection f* up the spaces so we clean them up
+          host="$(printf '%s' "$DEPLOY_HOST" | tr -d '[:space:]')"
+          user="$(printf '%s' "$DEPLOY_USER" | tr -d '[:space:]')"
+          script="$(printf '%s' "$DEPLOY_SCRIPT" | tr -d '[:space:]')"
+
+          ssh-keyscan -H "$host" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -o ConnectTimeout=15 "$user@$host" "$script" "$RELEASE_TAG"
