@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Console\Commands\CensorExistingContentCommand;
 use App\Console\Commands\CleanupOldNotificationLogs;
 use App\Console\Commands\EnsureFavouritesLists;
 use App\Console\Commands\ForgeHeartbeat;
@@ -28,6 +29,7 @@ Schedule::job(new UpdateFavouritesJob)->hourly()->onOneServer()->withoutOverlapp
 Schedule::job(new ExpireStaleModClaimsJob)->hourly()->onOneServer()->withoutOverlapping();
 
 Schedule::command(UpdateGeoLiteDatabase::class)->daily()->at('02:00')->onOneServer()->runInBackground()->environments('production');
+Schedule::command(CensorExistingContentCommand::class, ['--force', '--if-changed'])->daily()->at('02:30')->onOneServer()->withoutOverlapping()->environments('production');
 Schedule::job(new SearchSyncJob)->daily()->at('03:00')->onOneServer()->environments('production');
 Schedule::job(new UpdateDisposableEmailBlocklist)->daily()->at('04:00')->onOneServer()->environments('production');
 

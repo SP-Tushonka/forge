@@ -218,7 +218,6 @@ new #[Layout('layouts::base')] class extends Component
         $mod = new Mod([
             'owner_id' => auth()->user()?->id,
             'name' => $this->name,
-            'slug' => Str::slug($this->name),
             'guid' => $this->guid,
             'teaser' => $this->teaser,
             'description' => $this->description,
@@ -233,6 +232,9 @@ new #[Layout('layouts::base')] class extends Component
             'cheat_notice' => $this->cheatNotice,
             'published_at' => $publishedAt,
         ]);
+
+        // Slug from the stored (censored) name so a censored word never leaks into the URL
+        $mod->slug = Str::slug($mod->name);
 
         // Set the thumbnail if a file was uploaded.
         if ($this->thumbnail instanceof UploadedFile) {
