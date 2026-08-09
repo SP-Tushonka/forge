@@ -27,6 +27,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      actions: write
 
     steps:
       - name: Resolve source ref
@@ -70,7 +71,7 @@ jobs:
           push: false
           tags: ${{ env.CANDIDATE_TAG }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
 
       - name: Check the image and the host agree on the check suite
         run: |

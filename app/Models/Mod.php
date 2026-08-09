@@ -10,6 +10,7 @@ use App\Contracts\Trackable;
 use App\Enums\FikaCompatibility;
 use App\Models\Scopes\PublishedScope;
 use App\Observers\ModObserver;
+use App\Support\WordCensor;
 use App\Traits\HasComments;
 use App\Traits\HasReports;
 use Carbon\CarbonImmutable;
@@ -851,6 +852,42 @@ final class Mod extends Model implements Commentable, Reportable, Trackable
             'updated_at' => 'datetime',
             'published_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Censor configured words on write
+     *
+     * @return Attribute<string, string|null>
+     */
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value): ?string => WordCensor::fromConfig()->censor($value),
+        );
+    }
+
+    /**
+     * Censor configured words on write
+     *
+     * @return Attribute<string, string|null>
+     */
+    protected function teaser(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value): ?string => WordCensor::fromConfig()->censor($value),
+        );
+    }
+
+    /**
+     * Censor configured words on write
+     *
+     * @return Attribute<string, string|null>
+     */
+    protected function description(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value): ?string => WordCensor::fromConfig()->censor($value),
+        );
     }
 
     /**

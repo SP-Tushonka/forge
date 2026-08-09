@@ -82,7 +82,7 @@
                             :active="request()->routeIs('static.developers')"
                         >{{ __('API') }}</x-nav-link>
                         <a
-                            href="https://wiki.sp-mod.com/"
+                            href="https://wiki.sp-tushonka.com/"
                             target="_blank"
                             class="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-gray-200 transition duration-150 ease-in-out hover:bg-gray-700/50 hover:text-white"
                         >
@@ -355,7 +355,7 @@
                 :active="request()->routeIs('static.developers')"
             >{{ __('API') }}</x-responsive-nav-link>
             <a
-                href="https://wiki.sp-mod.com/"
+                href="https://wiki.sp-tushonka.com/"
                 target="_blank"
                 class="block flex items-center gap-2 rounded-md px-3 py-2 text-base font-medium text-gray-400 transition duration-150 ease-in-out hover:bg-gray-700 hover:text-white"
             >
