@@ -14,7 +14,7 @@
         />
     </x-slot>
 
-    <p>We're here to help you get the most out of the Single Player T***** community. Whether you need technical
+    <p>We're here to help you get the most out of the Single Player Tushonka community. Whether you need technical
         support, have questions about our guidelines, or want to report an issue, we have several ways to get in touch.
     </p>
 

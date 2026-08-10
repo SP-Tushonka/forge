@@ -70,7 +70,7 @@
     <h2 id="community-vision">1. Our Community Vision</h2>
 
     <p>The Forge is built on the principles of collaboration, creativity, and mutual respect. We're a community of
-        modders, players, and enthusiasts who share a passion for Single Player T*****. These Community Standards ensure
+        modders, players, and enthusiasts who share a passion for Single Player Tushonka. These Community Standards ensure
         everyone can participate in a welcoming, productive environment.</p>
 
     <h4 id="our-core-values">Our Core Values:</h4>
@@ -263,7 +263,7 @@
 
     <h4 id="cheating-and-exploits">Cheating and Exploits:</h4>
     <ul>
-        <li>No mods designed for use in live Escape From T*****</li>
+        <li>No mods designed for use in live</li>
         <li>No tools that could be used for competitive advantage in multiplayer games</li>
         <li>No hacks, aimbots, ESP, or similar cheating software</li>
         <li>Development and testing tools are allowed if clearly labelled</li>

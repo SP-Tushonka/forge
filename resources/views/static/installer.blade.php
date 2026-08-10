@@ -3,7 +3,7 @@
         {{ __('SPT Installer') }}
     </x-slot>
     <x-slot name="description">
-        {{ __('Simple installer for SPT, fully automated. Get up and running with Single Player T***** in minutes.') }}
+        {{ __('Simple installer for SPT, fully automated. Get up and running with Single Player Tushonka in minutes.') }}
     </x-slot>
 
     <x-slot name="header">
@@ -119,7 +119,7 @@
                                 SPT Installer
                             </h1>
                             <p class="mb-6 text-lg text-gray-300">
-                                Get up and running with Single Player T***** in a few clicks. Our installer handles all
+                                Get up and running with Single Player Tushonka in a few clicks. Our installer handles all
                                 the complex setup for you.
                             </p>
 
@@ -221,7 +221,7 @@
                                         class="mr-3 mt-1 size-4 flex-shrink-0 text-yellow-600"
                                     />
                                     <span class="text-yellow-200">Make sure you have a legitimate
-                                        copy of Escape From T***** installed and up-to-date before running the
+                                        copy of the game installed and up-to-date before running the
                                         installer</span>
                                 </li>
                                 <li class="flex items-start">

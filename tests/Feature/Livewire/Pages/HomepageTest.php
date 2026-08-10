@@ -20,6 +20,25 @@ it('renders the homepage', function (): void {
     $this->get('/')->assertOk();
 });
 
+describe('registration disabled banner', function (): void {
+    it('shows the banner when registration is disabled', function (): void {
+        config()->set('fortify.features', array_values(array_diff(
+            config('fortify.features'),
+            [Laravel\Fortify\Features::registration()],
+        )));
+
+        $this->get('/')->assertOk()
+            ->assertSee('Registration is temporarily disabled');
+    });
+
+    it('hides the banner when registration is enabled', function (): void {
+        $this->get('/')->assertOk()
+            ->assertDontSee('Registration is temporarily disabled');
+        // Runtime-enabling the feature cannot register Fortify's boot-time routes, so this state can only be
+        // tested in an environment where registration is actually on (mirrors CreateNewUserTest).
+    })->skip(fn (): bool => ! Laravel\Fortify\Features::enabled(Laravel\Fortify\Features::registration()), 'Registration support is not enabled.');
+});
+
 describe('homepage featured mods', function (): void {
     it('should only display featured mods in the featured section', function (): void {
         SptVersion::factory()->create(['version' => '1.0.0']);

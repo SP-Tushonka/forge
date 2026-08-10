@@ -326,7 +326,7 @@
                             type="url"
                             wire:model.defer="formLink"
                             id="formLink"
-                            placeholder="https://github.com/clodanSPT/build/releases/tag/..."
+                            placeholder="https://github.com/SP-Tushonka/build/releases/tag/..."
                         />
                         <flux:error name="formLink" />
                     </flux:field>
@@ -450,7 +450,7 @@
                             type="url"
                             wire:model.defer="formLink"
                             id="formLinkEdit"
-                            placeholder="https://github.com/clodanSPT/build/releases/tag/..."
+                            placeholder="https://github.com/SP-Tushonka/build/releases/tag/..."
                         />
                         <flux:error name="formLink" />
                     </flux:field>

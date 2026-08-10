@@ -1,7 +1,7 @@
 {
     "name": "sp-mod/forge",
     "type": "project",
-    "description": "A Laravel-based web application that provides a platform for the Single Player T***** community to share and discover user-generated content, such as mods, guides, and other tools.",
+    "description": "A Laravel-based web application that provides a platform for the Single Player Tushonka community to share and discover user-generated content, such as mods, guides, and other tools.",
     "keywords": [],
     "license": "MPL-2.0",
     "require": {
