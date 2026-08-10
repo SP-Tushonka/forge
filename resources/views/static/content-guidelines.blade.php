@@ -484,7 +484,7 @@ public override SemanticVersioning.Range SptVersion { get; } = new("4.0.0");</co
     <p>The Forge strictly prohibits content that could be used to gain unfair advantages in live multiplayer
         environments.</p>
     <ul>
-        <li>Any mod usable in live Escape From T***** multiplayer is prohibited to prevent cheating migration</li>
+        <li>Any mod usable in live multiplayer is prohibited to prevent cheating migration</li>
         <li>"Sunset" cheats, which are mods originally developed as live game cheats that have been repurposed for SPT
             after detection or obsolescence, are strictly forbidden regardless of their current stated purpose</li>
     </ul>

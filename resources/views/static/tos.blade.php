@@ -78,7 +78,7 @@
 
     <h2 id="about-these-terms">1. About These Terms</h2>
 
-    <p>Welcome to The Forge, the official platform for Single Player T***** (SPT) modifications and community resources.
+    <p>Welcome to The Forge, the official platform for Single Player Tushonka (SPT) modifications and community resources.
         These Terms of Service ("Terms") govern your use of our website, services, and community features.</p>
 
     <p>By using The Forge, you agree to these Terms. If you don't agree, please don't use our services.</p>
@@ -87,7 +87,7 @@
     <ul>
         <li>You must be at least 18 years old to use our services</li>
         <li>You're responsible for your account and content you submit</li>
-        <li>We provide services for SPT, a single-player modification of Escape From T*****</li>
+        <li>We provide services for SPT, a single-player modification</li>
         <li>We reserve the right to modify or discontinue services at any time</li>
     </ul>
 
@@ -142,7 +142,7 @@
     <h4 id="prohibited-activities">Prohibited Activities:</h4>
     <ul>
         <li><strong>Piracy:</strong> Discussing, sharing, or requesting copyrighted game files</li>
-        <li><strong>Cheating:</strong> Creating or sharing mods intended for use in live Escape From T*****</li>
+        <li><strong>Cheating:</strong> Creating or sharing mods intended for use in live</li>
         <li><strong>Harassment:</strong> Targeting other users with abuse, threats, or discrimination</li>
         <li><strong>Spam:</strong> Posting repetitive, irrelevant, or promotional content</li>
         <li><strong>Impersonation:</strong> Pretending to be another person or organization</li>

@@ -3,7 +3,7 @@
         {{ __('The Forge API') }}
     </x-slot>
     <x-slot name="description">
-        {{ __('The Forge API is open, read-only, and free to use. Build mod managers, update checkers, dependency resolvers, and more on top of the Single Player T***** mod catalogue.') }}
+        {{ __('The Forge API is open, read-only, and free to use. Build mod managers, update checkers, dependency resolvers, and more on top of the Single Player Tushonka mod catalogue.') }}
     </x-slot>
 
     <x-slot name="header">
@@ -80,7 +80,7 @@
                                 </h1>
                             </div>
                             <p class="mx-auto mb-6 max-w-3xl text-lg text-gray-300">
-                                Build tools for the Single Player T***** community on top of the same data that powers
+                                Build tools for the Single Player Tushonka community on top of the same data that powers
                                 Forge. Every endpoint is publicly accessible and requires no authentication or API key.
                             </p>
 

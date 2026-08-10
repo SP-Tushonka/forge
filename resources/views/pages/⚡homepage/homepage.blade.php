@@ -1,9 +1,9 @@
 <x-slot:title>
-    The Forge - Home of Single Player T***** Mods
+    The Forge - Home of Single Player Tushonka Mods
 </x-slot>
 
 <x-slot:description>
-    The greatest resource available for Single Player T***** modifications. Where modding legends are made. Discover
+    The greatest resource available for Single Player Tushonka modifications. Where modding legends are made. Discover
     powerful tools, expert-written guides, and exclusive mods. Transform the game.
 </x-slot>
 
@@ -53,7 +53,7 @@
                             class="font-bold"
                         >the</span> <strong class="font-bold text-cyan-400">Forge</strong></h2>
                     <p class="mt-6 text-lg leading-8 text-gray-300 drop-shadow-md">The greatest resource available for
-                        Single Player T***** modifications. Where modding legends are made. Discover powerful tools,
+                        Single Player Tushonka modifications. Where modding legends are made. Discover powerful tools,
                         expert-written guides, and exclusive mods. Craft your vision. Transform the game.</p>
                 </div>
             </div>
@@ -164,7 +164,7 @@
                                         </div>
 
                                         <p class="mb-4 text-gray-300">
-                                            The easiest way to get started with Single Player T*****. Our fully
+                                            The easiest way to get started with Single Player Tushonka. Our fully
                                             automated installer handles everything for you.
                                         </p>
 

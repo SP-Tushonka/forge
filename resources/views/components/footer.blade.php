@@ -53,7 +53,7 @@
             </div>
             <div class="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 xl:col-span-2 xl:mt-0">
                 <div class="sm:order-first">
-                    <h3 class="text-sm font-semibold leading-6 text-white">Single Player T*****</h3>
+                    <h3 class="text-sm font-semibold leading-6 text-white">Single Player Tushonka</h3>
                     <ul
                         role="list"
                         class="mt-6 space-y-4"
@@ -90,13 +90,13 @@
                             >Contact</a></li>
                     </ul>
                 </div>
+                <!--
                 <div class="sm:order-last">
-                    <h3 class="text-sm font-semibold leading-6 text-white">Escape from T*****</h3>
+                    <h3 class="text-sm font-semibold leading-6 text-white">Escape from Tushonka</h3>
                     <ul
                         role="list"
                         class="mt-6 space-y-4"
                     >
-                        <!--
                         <li><a
                                 href="https://www.escapefromtarkov.com/preorder-page"
                                 class="text-sm leading-6 text-gray-300 hover:text-white"
@@ -110,9 +110,9 @@
                                 target="_blank"
                                 class="text-sm leading-6 text-gray-300 hover:text-white"
                             >EFT Changelog</a></li>
-                        -->
                     </ul>
                 </div>
+                -->
                 <div>
                     <h3 class="text-sm font-semibold leading-6 text-white">Legal Stuff</h3>
                     <ul

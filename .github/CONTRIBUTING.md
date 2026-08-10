@@ -2,7 +2,7 @@
 
 ## Development Discussion
 
-Discussion regarding bugs, new features, and implementation of existing features takes place in the `#website-general` channel of the [Single Player T***** Discord server](https://discord.com/invite/Xn9msqQZan). Clodan, the maintainer of Forge, is typically present in the channel on weekdays from 9am-5pm UK Time, and sporadically present in the channel at other times.
+Discussion regarding bugs, new features, and implementation of existing features takes place in the `#website-general` channel of the [Single Player Tushonka Discord server](https://discord.com/invite/Xn9msqQZan). Clodan, the maintainer of Forge, is typically present in the channel on weekdays from 9am-5pm UK Time, and sporadically present in the channel at other times.
 
 Please discuss significant changes before starting work to ensure they align with the project direction. If you propose a new feature, please be willing to implement at least some of the code that would be needed to complete the feature.
 

@@ -1,7 +1,7 @@
 @props([
-    'title' => 'The Forge - Home of Single Player T***** Mods',
+    'title' => 'The Forge - Home of Single Player Tushonka Mods',
     'description' =>
-        'The greatest resource available for Single Player T***** modifications. Where modding legends are made. Discover powerful tools, expert-written guides, and exclusive mods. Transform the game.',
+        'The greatest resource available for Single Player Tushonka modifications. Where modding legends are made. Discover powerful tools, expert-written guides, and exclusive mods. Transform the game.',
     'header' => null,
     'variant' => null,
     'robots' => null,
