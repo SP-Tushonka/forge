@@ -76,7 +76,7 @@
                                         <div
                                             class="flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 p-3">
                                             <img
-                                                src="{{ asset($mod->thumbnail) }}"
+                                                src="{{ $mod->thumbnail_url }}"
                                                 class="size-20 shrink-0 rounded-lg object-cover"
                                                 alt="{{ __('Current thumbnail') }}"
                                             >

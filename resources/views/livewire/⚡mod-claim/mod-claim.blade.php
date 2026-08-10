@@ -141,5 +141,18 @@
                 </div>
             @endif
         </flux:modal>
+    @elseif ($missingMfa)
+        <flux:tooltip content="{{ __('To claim a mod you must have MFA authentication enabled') }}">
+            <flux:button
+                disabled
+                variant="primary"
+                icon="hand-raised"
+                size="sm"
+                class="w-full"
+                data-test="mod-claim-button-mfa-disabled"
+            >
+                {{ __('Claim Mod') }}
+            </flux:button>
+        </flux:tooltip>
     @endif
 </div>
