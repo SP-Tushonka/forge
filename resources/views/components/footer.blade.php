@@ -12,7 +12,7 @@
                 <x-application-mark />
                 <p class="mt-6 flex space-x-4">
                     <a
-                        href="https://github.com/clodanSPT/forge"
+                        href="https://github.com/SP-Tushonka/forge"
                         target="_blank"
                         title="{{ __('View on GitHub') }}"
                     >
@@ -45,7 +45,7 @@
                 </p>
                 <p class="mt-4 text-sm text-gray-400">
                     This site is open source.<br /><a
-                        href="https://github.com/clodanSPT/forge"
+                        href="https://github.com/SP-Tushonka/forge"
                         target="_blank"
                         class="text-white underline hover:text-gray-300"
                     >Help build it!</a>
@@ -79,7 +79,7 @@
                                 class="text-sm leading-6 text-gray-300 hover:text-white"
                             >SPT Wiki</a></li>
                         <li><a
-                                href="https://github.com/clodanSPT/build/releases"
+                                href="https://github.com/SP-Tushonka/build/releases"
                                 target="_blank"
                                 class="text-sm leading-6 text-gray-300 hover:text-white"
                             >SPT Changelog</a></li>
