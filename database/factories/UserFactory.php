@@ -126,7 +126,7 @@ final class UserFactory extends Factory
     private function generateUniqueName(int $maxAttempts = 10): string
     {
         for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
-            $name = fake()->userName();
+            $name = fake()->unique()->userName();
 
             // On first attempt, try the name as-is
             if ($attempt === 0) {
