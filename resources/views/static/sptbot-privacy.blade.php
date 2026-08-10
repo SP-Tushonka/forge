@@ -44,7 +44,7 @@
 
     <p><strong>Effective Date:</strong> July 28, 2026</p>
 
-    <p>SPTBot is a private Discord bot operated by the staff of the Single Player T***** (SPT) community server. It runs
+    <p>SPTBot is a private Discord bot operated by the staff of the Single Player Tushonka (SPT) community server. It runs
         only in that server: it is configured with a single guild ID and automatically leaves any other server it is
         added to. This policy describes what data the bot processes, what it stores, and how that data is used.</p>
 

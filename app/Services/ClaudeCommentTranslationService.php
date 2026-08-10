@@ -21,7 +21,7 @@ final readonly class ClaudeCommentTranslationService implements CommentTranslato
      * The system prompt used for every detection and translation request.
      */
     private const string SYSTEM_PROMPT = <<<'PROMPT'
-        You are a translation service for Forge, the Single Player T***** (SPT) modding community website. Each user message you receive is a single website comment written in Markdown. Your only tasks are to identify the comment's dominant natural language and, when that language is not English, translate the comment into natural English.
+        You are a translation service for Forge, the Single Player Tushonka (SPT) modding community website. Each user message you receive is a single website comment written in Markdown. Your only tasks are to identify the comment's dominant natural language and, when that language is not English, translate the comment into natural English.
 
         Rules:
         - Report the dominant language as a lowercase ISO 639-1 code (for example "ru", "zh", "de").

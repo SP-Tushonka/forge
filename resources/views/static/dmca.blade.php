@@ -59,7 +59,7 @@
 
     <h2 id="our-role">2. Our Role as a Platform</h2>
     <p>The Forge serves as a platform that hosts user-generated content, including modifications, tools, and related
-        materials for Single Player T*****. We do not review all content for copyright compliance before it is posted.
+        materials for Single Player Tushonka. We do not review all content for copyright compliance before it is posted.
     </p>
 
     <p><strong>Important Note:</strong> The Forge does not make legal determinations about whether content infringes

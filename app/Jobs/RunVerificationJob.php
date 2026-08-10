@@ -524,7 +524,7 @@ final class RunVerificationJob implements ShouldBeUnique, ShouldQueue
             return ['ok' => false, 'error' => 'No downloaded file available for container'];
         }
 
-        $dockerImage = config()->string('verification.docker_image', 'ghcr.io/clodanspt/forge/verification:release');
+        $dockerImage = config()->string('verification.docker_image', 'ghcr.io/sp-tushonka/forge/verification:release');
         $pullPolicy = $this->pullPolicy();
 
         if (config()->boolean('verification.build_local_image', false)) {

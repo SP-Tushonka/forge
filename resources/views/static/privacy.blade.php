@@ -82,7 +82,7 @@
 
     <h4 id="who-we-are">Who We Are:</h4>
     <ul>
-        <li><strong>Service:</strong> The Forge (Single Player T***** modding platform)</li>
+        <li><strong>Service:</strong> The Forge (Single Player Tushonka modding platform)</li>
         <li><strong>Website:</strong> https://forge.sp-mod.com</li>
         <li><strong>Contact:</strong> clodan-spt@hotmail.com</li>
     </ul>

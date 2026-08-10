@@ -28,14 +28,16 @@
             >
                 {{ __('Login') }}
             </flux:button>
-            <flux:button
-                variant="ghost"
-                size="sm"
-                class="text-gray-300 hover:bg-gray-800"
-                href="{{ route('register') }}"
-            >
-                {{ __('Register') }}
-            </flux:button>
+            @if (Laravel\Fortify\Features::enabled(Laravel\Fortify\Features::registration()))
+                <flux:button
+                    variant="ghost"
+                    size="sm"
+                    class="text-gray-300 hover:bg-gray-800"
+                    href="{{ route('register') }}"
+                >
+                    {{ __('Register') }}
+                </flux:button>
+            @endif
         </div>
     @endif
 </div>

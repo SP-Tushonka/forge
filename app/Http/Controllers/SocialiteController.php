@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\RegistrationsClosedException;
 use App\Models\User;
 use App\Services\SocialiteService;
 use Exception;
@@ -54,7 +55,12 @@ final class SocialiteController extends Controller
             return to_route('login')->withErrors('Unable to login using '.$provider.'. Please try again.');
         }
 
-        $user = $this->socialiteService->findOrCreateUser($provider, $providerUser);
+        try {
+            $user = $this->socialiteService->findOrCreateUser($provider, $providerUser);
+        } catch (RegistrationsClosedException $registrationsClosedException) {
+            return to_route('login')->withErrors($registrationsClosedException->getMessage());
+        }
+
         if (! $user instanceof User) {
             return to_route('login')
                 ->withErrors('Unable to retrieve email from Discord. Please ensure your Discord account has a verified email address and you have granted email access permission.');
