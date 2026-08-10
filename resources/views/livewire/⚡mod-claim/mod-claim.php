@@ -33,6 +33,12 @@ new class extends Component
     public bool $canClaim = false;
 
     /**
+     * Help variable to either show or hide the message for MFA required
+     */
+    #[Locked]
+    public bool $missingMfa = false;
+
+    /**
      * Controls whether the claim modal is open
      */
     public bool $showModal = false;
@@ -46,6 +52,7 @@ new class extends Component
 
         if ($user && $mod) {
             $this->canClaim = $user->can('initiate', [ModClaim::class, $mod]);
+            $this->missingMfa = ! $this->canClaim && $user->can('initiateBarringMfa', [ModClaim::class, $mod]);
         }
     }
 
