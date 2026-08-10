@@ -63,7 +63,7 @@ describe('avatar crop upload', function (): void {
             ->assertScript('document.querySelector(\'dialog[data-modal="image-crop-photo"]\').open')
             ->assertScript("document.querySelector('cropper-selection').width > 1")
             ->click('@crop-apply-button')
-            ->assertScript('document.querySelector(\'dialog[data-modal="image-crop-photo"]\').open', false)
+            ->waitForFunction('!document.querySelector(\'dialog[data-modal="image-crop-photo"]\').open')
             ->waitForText('The upload failed. Please try again.');
     });
 
@@ -107,7 +107,7 @@ describe('avatar crop upload', function (): void {
         $page->waitForText('Crop Image')
             ->assertScript("document.querySelector('cropper-selection').width > 1")
             ->click('@crop-apply-button')
-            ->assertScript('document.querySelector(\'dialog[data-modal="image-crop-photo"]\').open', false)
+            ->waitForFunction('!document.querySelector(\'dialog[data-modal="image-crop-photo"]\').open')
             ->assertScript('window.Livewire.all().some((c) => c.$wire.photoCropRect && c.$wire.photoCropRect.width >= 128)')
             ->waitForText('The upload failed. Please try again.');
     });
@@ -123,7 +123,7 @@ describe('avatar crop upload', function (): void {
 
         $page->waitForText('Crop Image')
             ->click('@crop-cancel-button')
-            ->assertScript('document.querySelector(\'dialog[data-modal="image-crop-photo"]\').open', false);
+            ->waitForFunction('!document.querySelector(\'dialog[data-modal="image-crop-photo"]\').open');
 
         $page->script(selectCropTestImage('crop-cancel-path.png', 400, 400));
 
