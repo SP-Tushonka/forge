@@ -38,15 +38,19 @@ describe('claim button visibility', function (): void {
 
         Livewire::test('mod-claim', ['modId' => $mod->id])
             ->assertSet('canClaim', false)
+            ->assertSet('missingMfa', false)
             ->assertDontSee('mod-claim-button');
     });
 
-    it('is hidden from users without MFA', function (): void {
+    it('is shown disabled with an MFA prompt to users without MFA', function (): void {
         $mod = unownedMod();
 
         Livewire::actingAs(User::factory()->create())
             ->test('mod-claim', ['modId' => $mod->id])
-            ->assertSet('canClaim', false);
+            ->assertSet('canClaim', false)
+            ->assertSet('missingMfa', true)
+            ->assertSeeHtml('data-test="mod-claim-button-mfa-disabled"')
+            ->assertSee('To claim a mod you must have MFA authentication enabled');
     });
 
     it('is shown to an eligible claimant', function (): void {
@@ -54,7 +58,8 @@ describe('claim button visibility', function (): void {
 
         Livewire::actingAs(claimant())
             ->test('mod-claim', ['modId' => $mod->id])
-            ->assertSet('canClaim', true);
+            ->assertSet('canClaim', true)
+            ->assertSet('missingMfa', false);
     });
 
     it('is hidden once the mod has an owner', function (): void {
@@ -63,7 +68,8 @@ describe('claim button visibility', function (): void {
 
         Livewire::actingAs(claimant())
             ->test('mod-claim', ['modId' => $mod->id])
-            ->assertSet('canClaim', false);
+            ->assertSet('canClaim', false)
+            ->assertSet('missingMfa', false);
     });
 
     it('is hidden for a disabled mod', function (): void {
@@ -72,7 +78,19 @@ describe('claim button visibility', function (): void {
 
         Livewire::actingAs(claimant())
             ->test('mod-claim', ['modId' => $mod->id])
-            ->assertSet('canClaim', false);
+            ->assertSet('canClaim', false)
+            ->assertSet('missingMfa', false);
+    });
+
+    it('does not offer the MFA-disabled button to a mod author without MFA', function (): void {
+        $mod = unownedMod();
+        $author = User::factory()->create();
+        $mod->additionalAuthors()->attach($author);
+
+        Livewire::actingAs($author)
+            ->test('mod-claim', ['modId' => $mod->id])
+            ->assertSet('canClaim', false)
+            ->assertSet('missingMfa', false);
     });
 });
 

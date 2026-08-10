@@ -28,11 +28,15 @@ final class ModClaimPolicy
      */
     public function initiate(User $user, Mod $mod): bool
     {
-        if (! $user->hasVerifiedEmail() || $user->isBanned()) {
-            return false;
-        }
+        return $this->initiateBarringMfa($user, $mod) && $user->hasMfaEnabled();
+    }
 
-        if (! $user->hasMfaEnabled()) {
+    /**
+     * MFA barrier removed for visibility
+     */
+    public function initiateBarringMfa(User $user, Mod $mod): bool
+    {
+        if (! $user->hasVerifiedEmail() || $user->isBanned()) {
             return false;
         }
 
