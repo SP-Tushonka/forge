@@ -4,18 +4,22 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Exceptions\RegistrationsClosedException;
 use App\Jobs\DownloadUserAvatar;
 use App\Models\OAuthConnection;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Laravel\Fortify\Features;
 use Laravel\Socialite\Contracts\User as ProviderUser;
 
 final class SocialiteService
 {
     /**
      * Find an existing user by OAuth connection or create a new one.
+     *
+     * @throws RegistrationsClosedException when the user is unknown and registration is disabled
      */
     public function findOrCreateUser(string $provider, ProviderUser $providerUser): ?User
     {
@@ -40,6 +44,9 @@ final class SocialiteService
         if ($oauthConnection !== null) {
             return $this->updateExistingConnection($oauthConnection, $providerUser, $mfaStatus);
         }
+        
+        // we throw is registration is disabled and the user doesnt exist
+        throw_if(! Features::enabled(Features::registration()) && ! User::whereEmail($providerUser->getEmail())->exists(), RegistrationsClosedException::class);
 
         return $this->createNewConnection($provider, $providerUser, $mfaStatus);
     }

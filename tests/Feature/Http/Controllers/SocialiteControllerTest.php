@@ -6,6 +6,7 @@ use App\Jobs\DownloadUserAvatar;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Queue;
+use Laravel\Fortify\Features;
 use Laravel\Socialite\Contracts\User as SocialiteUser;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -49,7 +50,7 @@ describe('OAuth callback authentication', function (): void {
 
         // Assert redirect to dashboard.
         $response->assertRedirect(route('dashboard'));
-    });
+    })->skip(fn (): bool => ! Features::enabled(Features::registration()), 'Registration support is not enabled.');
 
     it('does not queue an avatar download when the provider has no avatar', function (): void {
         Queue::fake([DownloadUserAvatar::class]);
@@ -71,7 +72,7 @@ describe('OAuth callback authentication', function (): void {
         $this->get('/login/discord/callback');
 
         Queue::assertNotPushed(DownloadUserAvatar::class);
-    });
+    })->skip(fn (): bool => ! Features::enabled(Features::registration()), 'Registration support is not enabled.');
 
     it('attaches a new OAuth provider to an existing user when logging in via OAuth', function (): void {
         Queue::fake([DownloadUserAvatar::class]);
@@ -152,5 +153,71 @@ describe('OAuth callback authentication', function (): void {
         $this->get('/login/discord/callback');
 
         Queue::assertNotPushed(DownloadUserAvatar::class);
+    });
+});
+
+describe('OAuth callback with registration disabled', function (): void {
+    beforeEach(function (): void {
+        config()->set('fortify.features', array_values(array_diff(
+            config('fortify.features'),
+            [Features::registration()],
+        )));
+    });
+
+    function mockDiscordUser(string $email, string $providerId = 'provider-user-id'): void
+    {
+        $mock = Mockery::mock(SocialiteUser::class);
+        $mock->shouldReceive('getId')->andReturn($providerId);
+        $mock->shouldReceive('getEmail')->andReturn($email);
+        $mock->shouldReceive('getName')->andReturn('Some User');
+        $mock->shouldReceive('getNickname')->andReturn(null);
+        $mock->shouldReceive('getAvatar')->andReturn(null);
+        $mock->token = 'access-token';
+        $mock->refreshToken = 'refresh-token';
+        $mock->user = ['mfa_enabled' => false];
+
+        Socialite::shouldReceive('driver->user')->andReturn($mock);
+    }
+
+    it('blocks a brand-new discord user from creating an account', function (): void {
+        mockDiscordUser('stranger@example.com');
+
+        $response = $this->get('/login/discord/callback');
+
+        $response->assertRedirect(route('login'));
+        $response->assertSessionHasErrors();
+        expect(User::query()->where('email', 'stranger@example.com')->exists())->toBeFalse();
+        $this->assertGuest();
+    });
+
+    it('still logs in an existing user linking discord for the first time', function (): void {
+        $user = User::factory()->create(['email' => 'member@example.com']);
+        mockDiscordUser('member@example.com');
+
+        $response = $this->get('/login/discord/callback');
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect(route('dashboard'));
+        expect($user->oAuthConnections()->whereProvider('discord')->exists())->toBeTrue();
+    });
+
+    it('still logs in a user with an existing discord connection', function (): void {
+        $user = User::factory()->create(['email' => 'returning@example.com']);
+        $user->oAuthConnections()->create([
+            'provider' => 'discord',
+            'provider_id' => 'returning-provider-id',
+            'token' => 'old-token',
+            'refresh_token' => 'old-refresh-token',
+            'nickname' => '',
+            'name' => 'Returning User',
+            'email' => 'returning@example.com',
+            'avatar' => '',
+        ]);
+        mockDiscordUser('returning@example.com', 'returning-provider-id');
+
+        $response = $this->get('/login/discord/callback');
+
+        $this->assertAuthenticatedAs($user);
+        $response->assertRedirect(route('dashboard'));
     });
 });

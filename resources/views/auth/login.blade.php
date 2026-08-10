@@ -76,12 +76,14 @@
                     </label>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <a
-                        class="focus:outline-hidden rounded-md text-sm text-gray-500 underline hover:text-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                        href="{{ route('register') }}"
-                    >
-                        {{ __('Register') }}
-                    </a>
+                    @if (Laravel\Fortify\Features::enabled(Laravel\Fortify\Features::registration()))
+                        <a
+                            class="focus:outline-hidden rounded-md text-sm text-gray-500 underline hover:text-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                            href="{{ route('register') }}"
+                        >
+                            {{ __('Register') }}
+                        </a>
+                    @endif
                     <a
                         class="focus:outline-hidden rounded-md text-sm text-gray-500 underline hover:text-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                         href="{{ route('password.request') }}"

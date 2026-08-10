@@ -11,6 +11,17 @@
 
 <div>
     <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+        @if (! Laravel\Fortify\Features::enabled(Laravel\Fortify\Features::registration()))
+            <flux:callout
+                icon="exclamation-triangle"
+                color="yellow"
+                class="mb-6"
+            >
+                <flux:callout.text>
+                    {{ __('Registration is temporarily disabled while we work on restoring the user-mod link for accounts') }}
+                </flux:callout.text>
+            </flux:callout>
+        @endif
         <div class="overflow-hidden rounded-none bg-gray-900 shadow-xl shadow-gray-900 sm:rounded-lg">
             <div
                 class="relative isolate overflow-hidden rounded-none bg-gray-800 px-6 py-24 sm:rounded-md sm:py-32 lg:px-8">

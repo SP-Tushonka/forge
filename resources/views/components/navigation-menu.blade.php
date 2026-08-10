@@ -603,10 +603,12 @@
                     href="{{ route('login') }}"
                     :active="request()->routeIs('login')"
                 >{{ __('Log in') }}</x-responsive-nav-link>
-                <x-responsive-nav-link
-                    href="{{ route('register') }}"
-                    :active="request()->routeIs('register')"
-                >{{ __('Register') }}</x-responsive-nav-link>
+                @if (Laravel\Fortify\Features::enabled(Laravel\Fortify\Features::registration()))
+                    <x-responsive-nav-link
+                        href="{{ route('register') }}"
+                        :active="request()->routeIs('register')"
+                    >{{ __('Register') }}</x-responsive-nav-link>
+                @endif
             </div>
         @endguest
     </div>
