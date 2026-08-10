@@ -3,9 +3,26 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use Pest\Browser\Api\AwaitableWebpage;
+use Pest\Browser\Api\Webpage;
 use Tests\Concerns\MakesAnimatedTestImages;
 
 pest()->use(MakesAnimatedTestImages::class);
+
+function waitForCropDialogClosed(Webpage|AwaitableWebpage $page, int $timeoutSeconds = 5): void
+{
+    $deadline = microtime(true) + $timeoutSeconds;
+
+    while (microtime(true) < $deadline) {
+        if (! $page->script('document.querySelector(\'dialog[data-modal="image-crop-photo"]\').open')) {
+            return;
+        }
+
+        usleep(100_000);
+    }
+
+    $page->assertScript('document.querySelector(\'dialog[data-modal="image-crop-photo"]\').open', false);
+}
 
 function selectCropTestImage(string $name, int $width, int $height): string
 {
@@ -62,9 +79,11 @@ describe('avatar crop upload', function (): void {
         $page->waitForText('Crop Image')
             ->assertScript('document.querySelector(\'dialog[data-modal="image-crop-photo"]\').open')
             ->assertScript("document.querySelector('cropper-selection').width > 1")
-            ->click('@crop-apply-button')
-            ->waitForFunction('!document.querySelector(\'dialog[data-modal="image-crop-photo"]\').open')
-            ->waitForText('The upload failed. Please try again.');
+            ->click('@crop-apply-button');
+
+        waitForCropDialogClosed($page);
+
+        $page->waitForText('The upload failed. Please try again.');
     });
 
     it('uploads the original file with a crop rect for animated images', function (): void {
@@ -106,9 +125,11 @@ describe('avatar crop upload', function (): void {
 
         $page->waitForText('Crop Image')
             ->assertScript("document.querySelector('cropper-selection').width > 1")
-            ->click('@crop-apply-button')
-            ->waitForFunction('!document.querySelector(\'dialog[data-modal="image-crop-photo"]\').open')
-            ->assertScript('window.Livewire.all().some((c) => c.$wire.photoCropRect && c.$wire.photoCropRect.width >= 128)')
+            ->click('@crop-apply-button');
+
+        waitForCropDialogClosed($page);
+
+        $page->assertScript('window.Livewire.all().some((c) => c.$wire.photoCropRect && c.$wire.photoCropRect.width >= 128)')
             ->waitForText('The upload failed. Please try again.');
     });
 
@@ -122,8 +143,9 @@ describe('avatar crop upload', function (): void {
         $page->script(selectCropTestImage('crop-cancel-path.png', 400, 400));
 
         $page->waitForText('Crop Image')
-            ->click('@crop-cancel-button')
-            ->waitForFunction('!document.querySelector(\'dialog[data-modal="image-crop-photo"]\').open');
+            ->click('@crop-cancel-button');
+
+        waitForCropDialogClosed($page);
 
         $page->script(selectCropTestImage('crop-cancel-path.png', 400, 400));
 
