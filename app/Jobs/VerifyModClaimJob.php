@@ -128,7 +128,7 @@ final class VerifyModClaimJob implements ShouldBeUnique, ShouldQueue
 
             $links++;
 
-            foreach (ClaimRepositoryUrl::candidates($link->url, $claim->token) as $url) {
+            foreach (ClaimRepositoryUrl::candidates($link->url) as $url) {
                 $candidates[] = [$method, $url];
             }
         }

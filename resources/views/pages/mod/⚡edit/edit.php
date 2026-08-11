@@ -12,6 +12,7 @@ use App\Models\ModCategory;
 use App\Models\SourceCodeLink;
 use App\Models\SptVersion;
 use App\Rules\NoBlockRelationship;
+use App\Services\License\CustomLicenseVerificationService;
 use App\Services\ThumbnailService;
 use App\Support\VersionMatcher;
 use Flux\Flux;
@@ -275,6 +276,15 @@ new #[Layout('layouts::base')] class extends Component
     }
 
     /**
+     * Whether the selected license requires the modder to ship their own licence text
+     */
+    #[Computed]
+    public function customLicenseSelected(): bool
+    {
+        return License::query()->find((int) $this->license)?->isCustom() ?? false;
+    }
+
+    /**
      * Check if GUID is required based on existing mod versions with SPT >= 4.0.0.
      */
     #[Computed]
@@ -293,7 +303,7 @@ new #[Layout('layouts::base')] class extends Component
     /**
      * Save the mod.
      */
-    public function save(): void
+    public function save(CustomLicenseVerificationService $customLicense): void
     {
         $this->authorize('update', $this->mod);
 
@@ -312,6 +322,16 @@ new #[Layout('layouts::base')] class extends Component
             $userTimezone = auth()->user()->timezone ?? 'UTC';
             $dateTimeString = $this->publishedAtDate.' '.($this->publishedAtTime ?? '00:00');
             $publishedAtCarbon = Date::parse($dateTimeString, $userTimezone)->setTimezone('UTC')->second(0);
+        }
+
+        if ($this->requiresLicenseReverification($publishedAtCarbon)) {
+            $currentUser = auth()->user();
+
+            if ($currentUser === null || ! $customLicense->passes($this->sourceCodeUrls(), $currentUser)) {
+                $this->addError('license', 'There was an error verifying your LICENSE.md file');
+
+                return;
+            }
         }
 
         // Update mod fields
@@ -516,6 +536,39 @@ new #[Layout('layouts::base')] class extends Component
             'sourceCodeLinks.*.label.max' => 'The label must not exceed 50 characters.',
             'customAiDisclosure.required_if' => 'Please describe how AI was used when your mod contains AI content.',
         ];
+    }
+
+    /**
+     * The non empty source code links entered on the form.
+     *
+     * @return list<string>
+     */
+    private function sourceCodeUrls(): array
+    {
+        $urls = array_map(static fn (array $link): string => $link['url'], $this->sourceCodeLinks);
+
+        return array_values(array_filter($urls, static fn (string $url): bool => mb_trim($url) !== ''));
+    }
+
+    /**
+     * Whether the licence has to be proven again on this save
+     */
+    private function requiresLicenseReverification(mixed $publishedAt): bool
+    {
+        if ($publishedAt === null || ! $this->customLicenseSelected) {
+            return false;
+        }
+
+        if ($this->mod->published_at === null || $this->mod->license_id !== (int) $this->license) {
+            return true;
+        }
+
+        $stored = $this->mod->sourceCodeLinks()->pluck('url')->all();
+        $submitted = $this->sourceCodeUrls();
+        sort($stored);
+        sort($submitted);
+
+        return $stored !== $submitted;
     }
 
     /**

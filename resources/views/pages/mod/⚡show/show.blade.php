@@ -560,14 +560,19 @@
                         <li class="px-4 py-4 last:pb-0 sm:px-0">
                             <h3 class="font-bold">{{ __('License') }}</h3>
                             <p class="truncate">
-                                <a
-                                    href="{{ $mod->license->link }}"
-                                    title="{{ $mod->license->name }}"
-                                    target="_blank"
-                                    class="text-gray-200 underline hover:text-white"
-                                >
-                                    {{ $mod->license->name }}
-                                </a>
+                                @if ($mod->license->link !== '')
+                                    <a
+                                        href="{{ $mod->license->link }}"
+                                        title="{{ $mod->license->name }}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="text-gray-200 underline hover:text-white"
+                                    >
+                                        {{ $mod->license->name }}
+                                    </a>
+                                @else
+                                    <span class="text-gray-200">{{ $mod->license->name }}</span>
+                                @endif
                             </p>
                         </li>
                     @endif

@@ -16,7 +16,7 @@ final class LicenseFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            'name' => fake()->unique()->name(),
             'link' => fake()->url(),
             'created_at' => Date::now(),
             'updated_at' => Date::now(),

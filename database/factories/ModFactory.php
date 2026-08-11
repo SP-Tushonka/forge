@@ -33,7 +33,7 @@ final class ModFactory extends Factory
             'guid' => 'com.'.explode('.', $domain)[0].'.'.$modSlug.'.'.Str::lower(Str::random(6)),
             'teaser' => fake()->sentence(),
             'description' => fake()->paragraphs(random_int(4, 20), true),
-            'license_id' => License::query()->inRandomOrder()->first()->id ?? License::factory(),
+            'license_id' => License::query()->where('name', '!=', License::CUSTOM_NAME)->inRandomOrder()->value('id') ?? License::factory(),
             'category_id' => ModCategory::query()->inRandomOrder()->first()->id ?? ModCategory::factory(),
             'featured' => fake()->boolean(),
             'contains_ai_content' => $containsAiContent,

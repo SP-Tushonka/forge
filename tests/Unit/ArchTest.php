@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Contracts\Presentable;
 use App\Exceptions\Api\V0\Handler;
 use App\Http\Controllers\Controller;
+use App\Notifications\AccountRecoveryNotification;
 use App\Notifications\ResetPassword;
 use App\Notifications\VerifyEmail;
 use App\Traits\ThrottlesOutboundEmail;
@@ -88,6 +89,7 @@ arch('database notifications implement Presentable')
     ->expect('App\Notifications')
     ->toImplement(Presentable::class)
     ->ignoring([
+        AccountRecoveryNotification::class, // Mail-only; the recipient has no account to read it in yet.
         ResetPassword::class, // Mail-only; mirrors Laravel parent.
         VerifyEmail::class,   // Mail-only; mirrors Laravel parent.
         'App\Notifications\Messages', // Mail message value types, not notifications.

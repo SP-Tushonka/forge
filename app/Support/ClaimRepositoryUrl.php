@@ -9,17 +9,17 @@ use App\Enums\ClaimVerificationMethod;
 /**
  * Resolves a stored source code link into the raw URL of its claim file. Basically, looking at the repo
  * and checking if the file is there
- *
  */
 final class ClaimRepositoryUrl
 {
     /**
-     * Build the raw claim-file URLs to try for a source code link, in branch order. Returns an empty list when the
-     * link is not a repository on an allowlisted host, which routes the claim to manual review.
+     * Build the raw URLs to try for a file at the root of a source code link, in branch order. Returns an empty list
+     * when the link is not a repository on an allowlisted host, which routes the claim to manual review.
      *
+     * @param  string|null  $fileName  Defaults to the claim file.
      * @return list<string>
      */
-    public static function candidates(string $url, string $token): array
+    public static function candidates(string $url, ?string $fileName = null): array
     {
         $repository = self::parse($url);
 
@@ -29,7 +29,12 @@ final class ClaimRepositoryUrl
 
         [$method, $owner, $repo] = $repository;
 
-        $file = mb_trim((string) config('claim.file_name', 'claim.txt'), '/');
+        $file = mb_trim($fileName ?? config()->string('claim.file_name', 'claim.txt'), '/');
+
+        // Interpolated into the URL path just like the owner and repo, so it gets the same treatment.
+        if (! self::isSafeSegment($file)) {
+            return [];
+        }
 
         /** @var list<string> $branches */
         $branches = config('claim.branches', ['main', 'master']);

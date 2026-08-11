@@ -23,6 +23,7 @@
     <php>
         <ini name="memory_limit" value="1G"/>
         <env name="APP_ENV" value="testing"/>
+        <env name="APP_KEY_TOMBSTONE" value="base64:YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE="/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="AUTO_VERIFICATION_ENABLED" value="false"/>
         <env name="BCRYPT_ROUNDS" value="4"/>

@@ -105,6 +105,15 @@
                     {{ __('Log in') }}
                 </flux:button>
             </div>
+
+            <div class="mt-4 text-center">
+                <a
+                    class="focus:outline-hidden rounded-md text-sm text-gray-500 underline hover:text-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                    href="{{ route('account.recovery.request') }}"
+                >
+                    {{ __('Had an account on the old Forge?') }}
+                </a>
+            </div>
         </form>
 
         {{-- Discord Login Option --}}

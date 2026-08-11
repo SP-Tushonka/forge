@@ -146,13 +146,21 @@
                     {{ __('Register') }}
                 </flux:button>
 
-                <div class="text-center">
+                <div class="space-y-2 text-center">
                     <a
-                        class="focus:outline-hidden rounded-md text-sm text-gray-500 underline hover:text-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                        class="focus:outline-hidden block rounded-md text-sm text-gray-500 underline hover:text-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                         href="{{ route('login') }}"
                         wire:navigate
                     >
                         {{ __('Already registered?') }}
+                    </a>
+
+                    <a
+                        class="focus:outline-hidden block rounded-md text-sm text-gray-500 underline hover:text-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                        href="{{ route('account.recovery.request') }}"
+                        wire:navigate
+                    >
+                        {{ __('Had an account on the old Forge?') }}
                     </a>
                 </div>
             </div>

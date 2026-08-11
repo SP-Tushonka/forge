@@ -44,6 +44,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Scout\Searchable;
 use Mchev\Banhammer\Traits\Bannable;
 use Override;
+use RuntimeException;
 use SensitiveParameter;
 use Shetabit\Visitor\Traits\Visitor;
 use Stevebauman\Purify\Facades\Purify;
@@ -54,6 +55,7 @@ use Stevebauman\Purify\Facades\Purify;
  * @property int|null $discord_id
  * @property string $name
  * @property string $email
+ * @property string|null $email_tombstone
  * @property CarbonImmutable|null $email_verified_at
  * @property string|null $password
  * @property string $about
@@ -100,6 +102,7 @@ use Stevebauman\Purify\Facades\Purify;
     'cover_photo_url',
 ])]
 #[Hidden([
+    'email_tombstone',
     'password',
     'remember_token',
     'two_factor_recovery_codes',
@@ -128,6 +131,16 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
     use Visitor;
 
     /**
+     * The bcrypt work factor applied to email tombstones.
+     */
+    private const string EMAIL_TOMBSTONE_COST = '12';
+
+    /**
+     * The domain-separation string mixed into the derived email tombstone salt.
+     */
+    private const string EMAIL_TOMBSTONE_SALT_CONTEXT = 'forge-email-tombstone-v1';
+
+    /**
      * Get the storage path for profile photos.
      */
     public static function profilePhotoStoragePath(): string
@@ -141,6 +154,26 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
     public static function banStateCacheKey(int $userId): string
     {
         return sprintf('user:%d:ban-state', $userId);
+    }
+
+    /**
+     * Build the deterministic tombstone hash for an email address.
+     *
+     * Normalizes the address, peppers it with the retired Forge's application key, then bcrypt-hashes it under a
+     * key-derived salt. The same address always produces the same 60-character digest.
+     */
+    public static function emailTombstoneFor(#[SensitiveParameter] string $email): string
+    {
+        $key = self::tombstonePepper();
+
+        $peppered = hash_hmac('sha256', mb_strtolower(mb_trim($email)), $key);
+        $salt = mb_substr(strtr(base64_encode(hash_hmac('sha256', self::EMAIL_TOMBSTONE_SALT_CONTEXT, $key, true)), '+', '.'), 0, 22);
+
+        $tombstone = crypt($peppered, '$2y$'.self::EMAIL_TOMBSTONE_COST.'$'.$salt);
+
+        throw_if(mb_strlen($tombstone) !== 60, RuntimeException::class, 'Email tombstone hashing failed.');
+
+        return $tombstone;
     }
 
     /**
@@ -625,10 +658,17 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
 
     /**
      * Overwritten to instead use the queued version of the ResetPassword notification.
+     *
+     * If we still havent recovered the account, dont sent any emails as the email address
+     * is a dummy.
      */
     #[Override]
     public function sendPasswordResetNotification(#[SensitiveParameter] $token): void // @pest-ignore-type
     {
+        if ($this->email_tombstone !== null) {
+            return;
+        }
+
         $this->notify(new ResetPassword($token));
     }
 
@@ -1066,6 +1106,28 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
             ->orderByRaw('CASE WHEN LOWER(name) = LOWER(?) THEN 0 WHEN LOWER(name) LIKE LOWER(?) THEN 1 ELSE 2 END', [$search, $search.'%'])
             ->orderBy('name')
             ->limit(10);
+    }
+
+    /**
+     * Decode the retired Forge's application key, used to pepper email tombstones.
+     *
+     * This is deliberately not app.key: the tombstones predate the handover and only the original key reproduces them.
+     */
+    private static function tombstonePepper(): string
+    {
+        $configured = config()->string('recovery.tombstone_key');
+
+        throw_if($configured === '', RuntimeException::class, 'APP_KEY_TOMBSTONE must be set to hash email tombstones.');
+
+        if (! str_starts_with($configured, 'base64:')) {
+            return $configured;
+        }
+
+        $decoded = base64_decode(Str::after($configured, 'base64:'), true);
+
+        throw_if($decoded === false, RuntimeException::class, 'APP_KEY_TOMBSTONE is not valid base64.');
+
+        return $decoded;
     }
 
     /**
