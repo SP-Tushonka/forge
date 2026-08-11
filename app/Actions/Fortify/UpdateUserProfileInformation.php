@@ -7,15 +7,23 @@ namespace App\Actions\Fortify;
 use App\Models\User;
 use App\Rules\NotDisposableEmail;
 use App\Rules\ProcessableAnimation;
+use App\Services\AccountRecoveryService;
 use App\Support\DataTransferObjects\ImageCropRect;
 use DateTimeZone;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Laravel\Fortify\Contracts\UpdatesUserProfileInformation;
 
 final class UpdateUserProfileInformation implements UpdatesUserProfileInformation
 {
+    use GuardsArchivedAccounts;
+
+    public function __construct(
+        private readonly AccountRecoveryService $accountRecovery = new AccountRecoveryService,
+    ) {}
+
     /**
      * Validate and update the given user's profile information.
      *
@@ -37,6 +45,14 @@ final class UpdateUserProfileInformation implements UpdatesUserProfileInformatio
             'about' => ['nullable', 'string', 'max:500'],
         ])->validateWithBag('updateProfileInformation');
 
+        $email = Arr::string($input, 'email');
+        $emailChanged = $email !== $user->email;
+
+        // Ahead of the photo writes below so a refused address leaves nothing half applied.
+        if ($emailChanged) {
+            $this->guardArchivedAccount($email, 'updateProfileInformation');
+        }
+
         if (isset($input['photo']) && $input['photo'] instanceof UploadedFile) {
             $cropRect = isset($input['photoCropRect']) && is_array($input['photoCropRect'])
                 ? ImageCropRect::fromArray($input['photoCropRect'])
@@ -49,7 +65,7 @@ final class UpdateUserProfileInformation implements UpdatesUserProfileInformatio
             $user->updateCoverPhoto($input['cover']);
         }
 
-        if ($input['email'] !== $user->email) {
+        if ($emailChanged) {
             $this->updateVerifiedUser($user, $input);
         } else {
             $user->forceFill([

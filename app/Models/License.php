@@ -28,16 +28,33 @@ final class License extends Model
     use HasFactory;
 
     /**
-     * Get all licenses ordered by name, cached for 1 hour.
+     * One and only Custom License to identify when querying
+     */
+    public const string CUSTOM_NAME = 'Custom License';
+
+    /**
+     * Get all licenses ordered by name, cached for 1 hour. The custom license always sorts last.
      *
      * @return Collection<int, self>
      */
     public static function cachedOrdered(): Collection
     {
         /** @var array<int, array<string, mixed>> $items */
-        $items = Cache::flexible('licenses:ordered', [3600, 7200], fn (): array => self::query()->orderBy('name')->get()->toArray());
+        $items = Cache::flexible('licenses:ordered', [3600, 7200], fn (): array => self::query()
+            ->orderByRaw('CASE WHEN name = ? THEN 1 ELSE 0 END', [self::CUSTOM_NAME])
+            ->orderBy('name')
+            ->get()
+            ->toArray());
 
         return self::query()->hydrate($items);
+    }
+
+    /**
+     * Whether this is the custom license
+     */
+    public function isCustom(): bool
+    {
+        return $this->name === self::CUSTOM_NAME;
     }
 
     /**

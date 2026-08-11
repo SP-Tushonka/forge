@@ -185,6 +185,11 @@
                                                 wire:navigate
                                             >{{ __('SPT Versions') }}</flux:navmenu.item>
                                             <flux:navmenu.item
+                                                icon="clipboard-document-check"
+                                                href="{{ route('admin.licenses') }}"
+                                                wire:navigate
+                                            >{{ __('Licenses') }}</flux:navmenu.item>
+                                            <flux:navmenu.item
                                                 icon="queue-list"
                                                 href="/horizon"
                                                 wire:navigate
@@ -531,6 +536,15 @@
                             <span class="flex items-center gap-2">
                                 <flux:icon.cube class="h-5 w-5" />
                                 {{ __('SPT Versions') }}
+                            </span>
+                        </x-responsive-nav-link>
+                        <x-responsive-nav-link
+                            href="{{ route('admin.licenses') }}"
+                            :active="request()->routeIs('admin.licenses')"
+                        >
+                            <span class="flex items-center gap-2">
+                                <flux:icon.clipboard-document-check class="h-5 w-5" />
+                                {{ __('Licenses') }}
                             </span>
                         </x-responsive-nav-link>
                         <x-responsive-nav-link href="/horizon">

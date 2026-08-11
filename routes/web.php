@@ -129,6 +129,15 @@ Route::middleware('auth.banned')->group(function (): void {
         ->middleware('signed')
         ->name('announcement.unsubscribe');
 
+    Route::livewire('/account/recover', 'pages::account.recover')
+        ->middleware('throttle:6,1')
+        ->name('account.recovery.request');
+
+    Route::livewire('/account/recover/{token}', 'pages::account.redeem')
+        ->middleware('throttle:6,1')
+        ->where('token', '[A-Za-z0-9]{64}')
+        ->name('account.recovery.redeem');
+
     // Authenticated routes
     Route::middleware(['auth', AuthenticateSession::class, 'verified'])->group(function (): void {
 
@@ -229,6 +238,7 @@ Route::middleware('auth.banned')->group(function (): void {
             Route::livewire('/admin/user-management', 'pages::admin.user-management')->name('admin.user-management');
             Route::livewire('/admin/role-management', 'pages::admin.role-management')->name('admin.role-management');
             Route::livewire('/admin/spt-versions', 'pages::admin.spt-version-management')->name('admin.spt-versions');
+            Route::livewire('/admin/licenses', 'pages::admin.license-management')->name('admin.licenses');
             Route::livewire('/admin/file-verification', 'pages::admin.file-verification')->name('admin.file-verification');
             Route::livewire('/admin/alt-detection/{user?}', 'pages::admin.alt-detection')
                 ->whereNumber('user')

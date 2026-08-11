@@ -1530,9 +1530,16 @@ describe('AI Content Lock', function (): void {
     });
 
     describe('Mod Edit AI Content Lock', function (): void {
+        // Migrations seed only the custom license, which the edit form re-proves over the network on every save that
+        // leaves the mod published. These tests are about the AI flag, so they pin a plain license instead.
+        beforeEach(function (): void {
+            $this->license = License::factory()->create();
+        });
+
         it('allows staff to lock the contains_ai_content flag and forces it true', function (): void {
             $admin = User::factory()->admin()->create();
             $mod = Mod::factory()->create([
+                'license_id' => $this->license->id,
                 'contains_ai_content' => false,
                 'contains_ai_content_locked' => false,
             ]);
@@ -1552,6 +1559,7 @@ describe('AI Content Lock', function (): void {
         it('prevents non-staff from changing contains_ai_content when locked', function (): void {
             $owner = User::factory()->withMfa()->create();
             $mod = Mod::factory()->recycle($owner)->create([
+                'license_id' => $this->license->id,
                 'contains_ai_content' => true,
                 'contains_ai_content_locked' => true,
             ]);
@@ -1572,6 +1580,7 @@ describe('AI Content Lock', function (): void {
         it('allows staff to unlock the contains_ai_content flag', function (): void {
             $admin = User::factory()->admin()->create();
             $mod = Mod::factory()->create([
+                'license_id' => $this->license->id,
                 'contains_ai_content' => true,
                 'contains_ai_content_locked' => true,
             ]);
@@ -1592,6 +1601,7 @@ describe('AI Content Lock', function (): void {
         it('allows non-staff to update contains_ai_content when not locked', function (): void {
             $owner = User::factory()->withMfa()->create();
             $mod = Mod::factory()->recycle($owner)->create([
+                'license_id' => $this->license->id,
                 'contains_ai_content' => false,
                 'contains_ai_content_locked' => false,
             ]);
@@ -1612,6 +1622,7 @@ describe('AI Content Lock', function (): void {
         it('does not let non-staff lock the flag via the edit form', function (): void {
             $owner = User::factory()->withMfa()->create();
             $mod = Mod::factory()->recycle($owner)->create([
+                'license_id' => $this->license->id,
                 'contains_ai_content' => false,
                 'contains_ai_content_locked' => false,
             ]);

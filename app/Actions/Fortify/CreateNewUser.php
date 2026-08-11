@@ -6,6 +6,7 @@ namespace App\Actions\Fortify;
 
 use App\Models\User;
 use App\Rules\NotDisposableEmail;
+use App\Services\AccountRecoveryService;
 use DateTimeZone;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +17,12 @@ use Laravel\Fortify\Contracts\CreatesNewUsers;
 
 final class CreateNewUser implements CreatesNewUsers
 {
+    use GuardsArchivedAccounts;
     use PasswordValidationRules;
+
+    public function __construct(
+        private readonly AccountRecoveryService $accountRecovery = new AccountRecoveryService,
+    ) {}
 
     /**
      * Validate and create a newly registered user.
@@ -32,6 +38,8 @@ final class CreateNewUser implements CreatesNewUsers
             'timezone' => ['required', 'string', 'in:'.implode(',', DateTimeZone::listIdentifiers())],
             'terms' => ['accepted', 'required'],
         ])->validate();
+
+        $this->guardArchivedAccount($input['email']);
 
         try {
             // The transaction scopes the insert to a savepoint when a surrounding transaction exists, so a failed

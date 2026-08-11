@@ -8,7 +8,7 @@ use App\Support\ClaimRepositoryUrl;
 describe('ClaimRepositoryUrl', function (): void {
     describe('allowlisted hosts', function (): void {
         it('builds raw candidates for each configured branch', function (): void {
-            expect(ClaimRepositoryUrl::candidates('https://github.com/clodanSPT/test', 'tok'))
+            expect(ClaimRepositoryUrl::candidates('https://github.com/clodanSPT/test'))
                 ->toBe([
                     'https://raw.githubusercontent.com/clodanSPT/test/main/claim.txt',
                     'https://raw.githubusercontent.com/clodanSPT/test/master/claim.txt',
@@ -16,11 +16,16 @@ describe('ClaimRepositoryUrl', function (): void {
         });
 
         it('uses the host-specific raw path', function (string $url, string $expected): void {
-            expect(ClaimRepositoryUrl::candidates($url, 'tok')[0])->toBe($expected);
+            expect(ClaimRepositoryUrl::candidates($url)[0])->toBe($expected);
         })->with([
             ['https://gitlab.com/owner/repo', 'https://gitlab.com/owner/repo/-/raw/main/claim.txt'],
             ['https://codeberg.org/owner/repo', 'https://codeberg.org/owner/repo/raw/branch/main/claim.txt'],
         ]);
+
+        it('builds candidates for an alternative root file', function (): void {
+            expect(ClaimRepositoryUrl::candidates('https://github.com/owner/repo', 'LICENSE.md')[0])
+                ->toBe('https://raw.githubusercontent.com/owner/repo/main/LICENSE.md');
+        });
 
         it('identifies the verification method', function (string $url, ClaimVerificationMethod $method): void {
             expect(ClaimRepositoryUrl::methodFor($url))->toBe($method);
@@ -31,7 +36,7 @@ describe('ClaimRepositoryUrl', function (): void {
         ]);
 
         it('tolerates surface variation that does not change the host', function (string $url): void {
-            expect(ClaimRepositoryUrl::candidates($url, 'tok'))->not->toBeEmpty();
+            expect(ClaimRepositoryUrl::candidates($url))->not->toBeEmpty();
         })->with([
             'uppercase host' => ['https://GitHub.com/owner/repo'],
             'trailing dot' => ['https://github.com./owner/repo'],
@@ -44,7 +49,7 @@ describe('ClaimRepositoryUrl', function (): void {
 
     describe('rejected input', function (): void {
         it('returns no candidates, routing the claim to manual review', function (string $url): void {
-            expect(ClaimRepositoryUrl::candidates($url, 'tok'))->toBe([])
+            expect(ClaimRepositoryUrl::candidates($url))->toBe([])
                 ->and(ClaimRepositoryUrl::methodFor($url))->toBeNull();
         })->with([
             // The host reads as allowlisted but resolves elsewhere.

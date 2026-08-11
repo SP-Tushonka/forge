@@ -200,8 +200,8 @@ describe('Mod Create Form', function (): void {
             $this->user = User::factory()->withMfa()->create();
             $this->actingAs($this->user);
 
-            License::factory()->create(['id' => 1, 'name' => 'MIT']);
-            ModCategory::factory()->create(['id' => 1, 'title' => 'Tools']);
+            $this->license = License::factory()->create(['name' => 'MIT']);
+            $this->category = ModCategory::factory()->create(['title' => 'Tools']);
         });
 
         it('subscribes user to comment notifications when checkbox is checked', function (): void {
@@ -213,8 +213,8 @@ describe('Mod Create Form', function (): void {
                 ->set('guid', 'com.test.mod')
                 ->set('teaser', 'A test mod')
                 ->set('description', 'This is a test mod')
-                ->set('license', 1)
-                ->set('category', 1)
+                ->set('license', (string) $this->license->id)
+                ->set('category', (string) $this->category->id)
                 ->set('sourceCodeLinks.0.url', 'https://github.com/test/test')
                 ->set('sourceCodeLinks.0.label', '')
                 ->set('subscribeToComments', true)
@@ -236,8 +236,8 @@ describe('Mod Create Form', function (): void {
                 ->set('guid', 'com.test.mod2')
                 ->set('teaser', 'A test mod')
                 ->set('description', 'This is a test mod')
-                ->set('license', 1)
-                ->set('category', 1)
+                ->set('license', (string) $this->license->id)
+                ->set('category', (string) $this->category->id)
                 ->set('sourceCodeLinks.0.url', 'https://github.com/test/test')
                 ->set('sourceCodeLinks.0.label', '')
                 ->set('subscribeToComments', false)
