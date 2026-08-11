@@ -175,7 +175,7 @@
                                 <flux:select
                                     variant="listbox"
                                     searchable
-                                    wire:model="license"
+                                    wire:model.live="license"
                                     placeholder="Choose license..."
                                 >
                                     @foreach ($this->licenses as $license)
@@ -183,6 +183,18 @@
                                         </flux:select.option>
                                     @endforeach
                                 </flux:select>
+                                @if ($this->customLicenseSelected)
+                                    <flux:callout
+                                        icon="exclamation-triangle"
+                                        color="yellow"
+                                        inline="inline"
+                                        class="my-2"
+                                    >
+                                        <flux:callout.text>
+                                            {{ __('This option only works for mods hosted on GitHub or GitLab. Your repository must contain a LICENSE.md file at the project root holding the full text of your license. Every source code link you provide is checked when the mod is created.') }}
+                                        </flux:callout.text>
+                                    </flux:callout>
+                                @endif
                                 <flux:error name="license" />
                             </flux:field>
 

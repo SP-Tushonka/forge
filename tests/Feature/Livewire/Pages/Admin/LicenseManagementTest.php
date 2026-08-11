@@ -13,6 +13,16 @@ function licenseAdmin(): User
     return User::factory()->admin()->create();
 }
 
+/**
+ * Licenses other than the one the migrations seed, which every test starts with.
+ *
+ * @return Illuminate\Database\Eloquent\Builder<License>
+ */
+function addedLicenses(): Illuminate\Database\Eloquent\Builder
+{
+    return License::query()->whereNot('name', License::CUSTOM_NAME);
+}
+
 describe('LicenseManagement authorization', function (): void {
     it('denies access to guests', function (): void {
         $this->get(route('admin.licenses'))
@@ -110,7 +120,7 @@ describe('LicenseManagement creation', function (): void {
     it('exposes a new license through the ordered cache', function (): void {
         License::factory()->create(['name' => 'Apache 2.0']);
 
-        expect(License::cachedOrdered()->pluck('name')->all())->toBe(['Apache 2.0']);
+        expect(License::cachedOrdered()->pluck('name')->all())->toBe(['Apache 2.0', License::CUSTOM_NAME]);
         expect(Cache::has('licenses:ordered'))->toBeTrue();
 
         Livewire::actingAs(licenseAdmin())
@@ -120,7 +130,7 @@ describe('LicenseManagement creation', function (): void {
             ->call('createLicense')
             ->assertHasNoErrors();
 
-        expect(License::cachedOrdered()->pluck('name')->all())->toBe(['Apache 2.0', 'BSD 3-Clause']);
+        expect(License::cachedOrdered()->pluck('name')->all())->toBe(['Apache 2.0', 'BSD 3-Clause', License::CUSTOM_NAME]);
     });
 
     it('rejects a duplicate name', function (): void {
@@ -146,7 +156,7 @@ describe('LicenseManagement creation', function (): void {
             ->call('createLicense')
             ->assertHasErrors('formName');
 
-        expect(License::query()->count())->toBe(1);
+        expect(addedLicenses()->count())->toBe(1);
     });
 
     it('squishes surrounding and repeated whitespace out of the name', function (): void {
@@ -157,7 +167,7 @@ describe('LicenseManagement creation', function (): void {
             ->call('createLicense')
             ->assertHasNoErrors();
 
-        $license = License::query()->sole();
+        $license = addedLicenses()->sole();
 
         expect($license->name)->toBe('MIT License')
             ->and($license->link)->toBe('https://opensource.org/license/mit');
@@ -173,7 +183,7 @@ describe('LicenseManagement creation', function (): void {
             ->call('createLicense')
             ->assertHasErrors('formName');
 
-        expect(License::query()->count())->toBe(1);
+        expect(addedLicenses()->count())->toBe(1);
     });
 
     it('escapes the license name and hardens the outbound link', function (): void {

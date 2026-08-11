@@ -10,6 +10,7 @@ use App\Models\License;
 use App\Models\Mod;
 use App\Models\ModCategory;
 use App\Rules\NoBlockRelationship;
+use App\Services\License\CustomLicenseVerificationService;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
@@ -191,9 +192,18 @@ new #[Layout('layouts::base')] class extends Component
     }
 
     /**
+     * Whether the selected license requires the modder to ship their own licence text
+     */
+    #[Computed]
+    public function customLicenseSelected(): bool
+    {
+        return License::query()->find((int) $this->license)?->isCustom() ?? false;
+    }
+
+    /**
      * Save the mod.
      */
-    public function save(): void
+    public function save(CustomLicenseVerificationService $customLicense): void
     {
         $this->authorize('create', Mod::class);
 
@@ -203,6 +213,14 @@ new #[Layout('layouts::base')] class extends Component
         // Validate the form.
         $validated = $this->validate();
         if (! $validated) {
+            return;
+        }
+
+        $currentUser = auth()->user();
+
+        if ($this->customLicenseSelected && ($currentUser === null || ! $customLicense->passes($this->sourceCodeUrls(), $currentUser))) {
+            $this->addError('license', 'There was an error verifying your LICENSE.md file');
+
             return;
         }
 
@@ -276,7 +294,6 @@ new #[Layout('layouts::base')] class extends Component
         }
 
         // Subscribe the owner to comment notifications if requested.
-        $currentUser = auth()->user();
         if ($this->subscribeToComments && $currentUser !== null) {
             $mod->subscribeUser($currentUser);
         }
@@ -367,5 +384,17 @@ new #[Layout('layouts::base')] class extends Component
             'sourceCodeLinks.*.label.max' => 'The label must not exceed 50 characters.',
             'customAiDisclosure.required_if' => 'Please describe how AI was used when your mod contains AI content.',
         ];
+    }
+
+    /**
+     * The non-empty source code links entered on the form.
+     *
+     * @return list<string>
+     */
+    private function sourceCodeUrls(): array
+    {
+        $urls = array_map(static fn (array $link): string => $link['url'], $this->sourceCodeLinks);
+
+        return array_values(array_filter($urls, static fn (string $url): bool => mb_trim($url) !== ''));
     }
 };

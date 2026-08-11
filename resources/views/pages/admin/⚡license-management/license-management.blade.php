@@ -61,15 +61,19 @@
                                         {{ $license->name }}
                                     </td>
                                     <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-300">
-                                        <a
-                                            href="{{ $license->link }}"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            class="inline-flex items-center gap-1 text-blue-400 hover:underline"
-                                        >
-                                            {{ $license->link }}
-                                            <flux:icon.arrow-top-right-on-square variant="micro" />
-                                        </a>
+                                        @if ($license->link !== '')
+                                            <a
+                                                href="{{ $license->link }}"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="inline-flex items-center gap-1 text-blue-400 hover:underline"
+                                            >
+                                                {{ $license->link }}
+                                                <flux:icon.arrow-top-right-on-square variant="micro" />
+                                            </a>
+                                        @else
+                                            <span class="text-gray-500">{{ __('No link') }}</span>
+                                        @endif
                                     </td>
                                     <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-300">
                                         {{ number_format($license->mods_count) }}

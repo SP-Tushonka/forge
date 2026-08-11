@@ -9,6 +9,7 @@ use App\Console\Commands\ForgeHeartbeat;
 use App\Console\Commands\UpdateGeoLiteDatabase;
 use App\Jobs\AggregateApiUsageDailyJob;
 use App\Jobs\AggregateApiUsageJob;
+use App\Jobs\AuditCustomLicensedModsJob;
 use App\Jobs\CleanupStaleVerificationsJob;
 use App\Jobs\CleanupVerificationArtifactsJob;
 use App\Jobs\ExpireStaleModClaimsJob;
@@ -27,6 +28,7 @@ Schedule::command(CleanupOldNotificationLogs::class)->daily()->onOneServer();
 Schedule::command(EnsureFavouritesLists::class)->daily()->onOneServer();
 Schedule::job(new UpdateFavouritesJob)->hourly()->onOneServer()->withoutOverlapping();
 Schedule::job(new ExpireStaleModClaimsJob)->hourly()->onOneServer()->withoutOverlapping();
+Schedule::job(new AuditCustomLicensedModsJob)->daily()->at('01:00')->onOneServer()->withoutOverlapping();
 
 Schedule::command(UpdateGeoLiteDatabase::class)->daily()->at('02:00')->onOneServer()->runInBackground()->environments('production');
 Schedule::command(CensorExistingContentCommand::class, ['--force', '--if-changed'])->daily()->at('02:30')->onOneServer()->withoutOverlapping()->environments('production');
