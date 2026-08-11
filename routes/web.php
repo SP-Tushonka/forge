@@ -129,6 +129,15 @@ Route::middleware('auth.banned')->group(function (): void {
         ->middleware('signed')
         ->name('announcement.unsubscribe');
 
+    Route::livewire('/account/recover', 'pages::account.recover')
+        ->middleware('throttle:6,1')
+        ->name('account.recovery.request');
+
+    Route::livewire('/account/recover/{token}', 'pages::account.redeem')
+        ->middleware('throttle:6,1')
+        ->where('token', '[A-Za-z0-9]{64}')
+        ->name('account.recovery.redeem');
+
     // Authenticated routes
     Route::middleware(['auth', AuthenticateSession::class, 'verified'])->group(function (): void {
 

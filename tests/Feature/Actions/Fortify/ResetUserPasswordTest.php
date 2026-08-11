@@ -88,6 +88,24 @@ describe('password reset', function (): void {
         });
     })->skip(fn (): bool => ! Features::enabled(Features::resetPasswords()), 'Password updates are not enabled.');
 
+    it('mails no reset link to an archived account', function (): void {
+        Notification::fake();
+
+        // An archived account still carries its anonymised placeholder address, so a reset link mailed there proves
+        // nothing about ownership. The broker still reports success, which keeps the response from enumerating.
+        $user = User::factory()->create([
+            'email_tombstone' => User::emailTombstoneFor('owner@example.com'),
+        ]);
+
+        $response = $this->post('/forgot-password', [
+            'email' => $user->email,
+        ]);
+
+        $response->assertSessionHasNoErrors();
+
+        Notification::assertNothingSentTo($user);
+    })->skip(fn (): bool => ! Features::enabled(Features::resetPasswords()), 'Password updates are not enabled.');
+
     it('shows same message for valid and invalid email addresses', function (): void {
         Notification::fake();
 
