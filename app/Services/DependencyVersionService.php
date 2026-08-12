@@ -8,6 +8,7 @@ use App\Contracts\DependencyResolver;
 use App\Models\AddonVersion;
 use App\Models\ModVersion;
 use App\Support\VersionMatcher;
+use Illuminate\Database\Query\Builder;
 
 final class DependencyVersionService implements DependencyResolver
 {
@@ -19,8 +20,62 @@ final class DependencyVersionService implements DependencyResolver
         // Refresh the dependencies relationship to get the latest state
         $dependable->load('dependencies');
 
-        $dependencies = $this->satisfyConstraint($dependable);
-        $dependable->dependenciesResolved()->sync($dependencies);
+        $this->reconcilePivots($dependable, $this->satisfyConstraint($dependable));
+    }
+
+    /**
+     * Reconcile the depndencies pivot with the desired state, writing only the difference. sync() cannot be
+     * used here: it re UPDATEs every already attached row whenever pivot attributes are passed, which on a full sweep
+     * its thousands of writes setting dependency_id to the value it already holds for no reason.
+     *
+     * @param  array<int, array<string, int>>  $dependencies  dependency_id keyed by resolved mod version ID.
+     */
+    private function reconcilePivots(ModVersion|AddonVersion $dependable, array $dependencies): void
+    {
+        $type = $dependable::class;
+
+        $pivot = fn (): Builder => $dependable->dependenciesResolved()
+            ->newPivotStatement()
+            ->where('dependable_id', $dependable->getKey())
+            ->where('dependable_type', $type);
+
+        $storedByResolved = [];
+        foreach ($pivot()->get(['resolved_mod_version_id', 'dependency_id']) as $row) {
+            /** @var object{resolved_mod_version_id: int, dependency_id: int} $row */
+            $storedByResolved[$row->resolved_mod_version_id][] = $row->dependency_id;
+        }
+
+        $stale = [];
+        foreach ($storedByResolved as $resolvedId => $dependencyIds) {
+            if (count($dependencyIds) !== 1 || ($dependencies[$resolvedId]['dependency_id'] ?? null) !== $dependencyIds[0]) {
+                $stale[] = $resolvedId;
+            }
+        }
+
+        $now = now();
+        $inserts = [];
+        foreach ($dependencies as $resolvedId => $attributes) {
+            if (isset($storedByResolved[$resolvedId]) && ! in_array($resolvedId, $stale, true)) {
+                continue;
+            }
+
+            $inserts[] = [
+                'dependable_id' => $dependable->getKey(),
+                'dependable_type' => $type,
+                'dependency_id' => $attributes['dependency_id'],
+                'resolved_mod_version_id' => $resolvedId,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+
+        if ($stale !== []) {
+            $pivot()->whereIn('resolved_mod_version_id', $stale)->delete();
+        }
+
+        foreach (array_chunk($inserts, 500) as $chunk) {
+            $dependable->dependenciesResolved()->newPivotStatement()->insertOrIgnore($chunk);
+        }
     }
 
     /**

@@ -50,4 +50,3 @@ Homestead.json
 Homestead.yaml
 docker/verification/src/.idea
 docker/verification/src/Folder.DotSettings.user
-app/Console/Commands/ImportLegacyData.php
