@@ -38,7 +38,9 @@ describe('License selection', function (): void {
             ->waitForText('MIT License')
             ->click('MIT License')
             ->click('Update Mod')
-            ->waitForText($mod->name);
+            // The edit page already renders the mod name, so waiting on it would not wait for the save round-trip.
+            // The redirect only happens once save() has committed.
+            ->assertPathIs(route('mod.show', [$mod->id, $mod->slug], absolute: false));
 
         $mod->refresh();
         expect($mod->license_id)->toBe($newLicense->id);
