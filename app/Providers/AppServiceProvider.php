@@ -28,6 +28,7 @@ use App\Support\ApiUsage\ArrayApiUsageStore;
 use App\Support\ApiUsage\RedisApiUsageStore;
 use App\Support\Dns\AmpDnsResolver;
 use App\Support\Dns\ArrayDnsResolver;
+use App\Support\UndeliverableAddress;
 use App\View\Composers\PaginationComposer;
 use Illuminate\Auth\Access\Response;
 use Illuminate\Auth\Events\Login;
@@ -37,11 +38,13 @@ use Illuminate\Broadcasting\BroadcastController;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Http\Request;
+use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
@@ -53,6 +56,7 @@ use Mchev\Banhammer\Middleware\AuthBanned;
 use Nitotm\Eld\LanguageDetector;
 use SocialiteProviders\Discord\Provider;
 use SocialiteProviders\Manager\SocialiteWasCalled;
+use Symfony\Component\Mime\Address;
 
 use function Amp\Dns\dnsResolver;
 
@@ -189,6 +193,30 @@ final class AppServiceProvider extends ServiceProvider
             Track::event(TrackingEventType::REGISTER, $user);
         });
 
+        // Double check the email doesnt belong to an undeliverable address
+        Event::listen(MessageSending::class, function (MessageSending $event): bool {
+            $recipients = array_merge(
+                $event->message->getTo(),
+                $event->message->getCc(),
+                $event->message->getBcc(),
+            );
+
+            $blocked = array_values(array_filter(
+                array_map(static fn (Address $address): string => $address->getAddress(), $recipients),
+                UndeliverableAddress::check(...),
+            ));
+
+            if ($blocked === []) {
+                return true;
+            }
+
+            Log::info('Suppressed mail to undeliverable address', [
+                'recipients' => $blocked,
+                'subject' => $event->message->getSubject(),
+            ]);
+
+            return false;
+        });
     }
 
     /**

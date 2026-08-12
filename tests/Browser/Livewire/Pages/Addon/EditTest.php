@@ -69,7 +69,9 @@ describe('license selection', function (): void {
             ->waitForText('MIT License')
             ->click('MIT License')
             ->click('Save Changes')
-            ->waitForText($addon->name);
+            // The edit page already renders the addon name, so waiting on it would not wait for the save round-trip.
+            // The redirect only happens once save() has committed.
+            ->assertPathIs(route('addon.show', [$addon->id, $addon->slug], absolute: false));
 
         $addon->refresh();
         expect($addon->license_id)->toBe($newLicense->id);
