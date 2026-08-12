@@ -557,24 +557,10 @@
                         </li>
                     @endif
                     @if ($mod->license)
-                        <li class="px-4 py-4 last:pb-0 sm:px-0">
-                            <h3 class="font-bold">{{ __('License') }}</h3>
-                            <p class="truncate">
-                                @if ($mod->license->link !== '')
-                                    <a
-                                        href="{{ $mod->license->link }}"
-                                        title="{{ $mod->license->name }}"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        class="text-gray-200 underline hover:text-white"
-                                    >
-                                        {{ $mod->license->name }}
-                                    </a>
-                                @else
-                                    <span class="text-gray-200">{{ $mod->license->name }}</span>
-                                @endif
-                            </p>
-                        </li>
+                        <x-license-detail
+                            :license="$mod->license"
+                            :source-code-links="$mod->sourceCodeLinks"
+                        />
                     @endif
                     @if ($mod->sourceCodeLinks->isNotEmpty())
                         <li class="px-4 py-4 last:pb-0 sm:px-0">

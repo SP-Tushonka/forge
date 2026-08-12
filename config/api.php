@@ -108,6 +108,7 @@ return [
         'default_max_age' => (int) env('API_CACHE_CONTROL_MAX_AGE', 300),
 
         'overrides' => [
+            'api.v0.mods' => (int) env('API_CACHE_CONTROL_MAX_AGE_MODS', 900),
             'api.v0.mod-categories' => (int) env('API_CACHE_CONTROL_MAX_AGE_CATEGORIES', 3600),
             'api.v0.spt.versions' => (int) env('API_CACHE_CONTROL_MAX_AGE_SPT', 3600),
             'api.v0.ping' => 0,

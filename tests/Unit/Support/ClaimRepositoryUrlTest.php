@@ -27,6 +27,19 @@ describe('ClaimRepositoryUrl', function (): void {
                 ->toBe('https://raw.githubusercontent.com/owner/repo/main/LICENSE.md');
         });
 
+        it('builds a readable file URL on the default branch', function (string $url, ?string $expected): void {
+            expect(ClaimRepositoryUrl::defaultBranchFileUrl($url, 'LICENSE.md'))->toBe($expected);
+        })->with([
+            ['https://github.com/owner/repo', 'https://github.com/owner/repo/blob/HEAD/LICENSE.md'],
+            ['https://gitlab.com/owner/repo', 'https://gitlab.com/owner/repo/-/blob/HEAD/LICENSE.md'],
+            // Its file browser takes a branch name, which we do not record.
+            'gitea' => ['https://codeberg.org/owner/repo', null],
+        ]);
+
+        it('names the repository', function (): void {
+            expect(ClaimRepositoryUrl::repository('https://github.com/owner/repo.git/'))->toBe('owner/repo');
+        });
+
         it('identifies the verification method', function (string $url, ClaimVerificationMethod $method): void {
             expect(ClaimRepositoryUrl::methodFor($url))->toBe($method);
         })->with([
@@ -50,7 +63,9 @@ describe('ClaimRepositoryUrl', function (): void {
     describe('rejected input', function (): void {
         it('returns no candidates, routing the claim to manual review', function (string $url): void {
             expect(ClaimRepositoryUrl::candidates($url))->toBe([])
-                ->and(ClaimRepositoryUrl::methodFor($url))->toBeNull();
+                ->and(ClaimRepositoryUrl::methodFor($url))->toBeNull()
+                ->and(ClaimRepositoryUrl::defaultBranchFileUrl($url, 'LICENSE.md'))->toBeNull()
+                ->and(ClaimRepositoryUrl::repository($url))->toBeNull();
         })->with([
             // The host reads as allowlisted but resolves elsewhere.
             'credentials in authority' => ['https://github.com@evil.test/owner/repo'],

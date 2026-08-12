@@ -54,6 +54,41 @@ final class ClaimRepositoryUrl
     }
 
     /**
+     * Grab the github or gitlab license *grabby hands*
+     * 
+     * @param  string|null  $fileName  Defaults to the claim file.
+     */
+    public static function defaultBranchFileUrl(string $url, ?string $fileName = null): ?string
+    {
+        $repository = self::parse($url);
+
+        if ($repository === null) {
+            return null;
+        }
+
+        [$method, $owner, $repo] = $repository;
+
+        $file = mb_trim($fileName ?? config()->string('claim.file_name', 'claim.txt'), '/');
+
+        if (! self::isSafeSegment($file)) {
+            return null;
+        }
+
+        return match ($method) {
+            ClaimVerificationMethod::GitHub => sprintf('https://github.com/%s/%s/blob/HEAD/%s', $owner, $repo, $file),
+            ClaimVerificationMethod::GitLab => sprintf('https://gitlab.com/%s/%s/-/blob/HEAD/%s', $owner, $repo, $file),
+            default => null,
+        };
+    }
+
+    public static function repository(string $url): ?string
+    {
+        $repository = self::parse($url);
+
+        return $repository === null ? null : $repository[1].'/'.$repository[2];
+    }
+
+    /**
      * Split an allowlisted repository URL into its method, owner, and repository name.
      *
      * @return array{0: ClaimVerificationMethod, 1: string, 2: string}|null
