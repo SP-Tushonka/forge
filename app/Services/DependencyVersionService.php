@@ -30,12 +30,6 @@ final class DependencyVersionService implements DependencyResolver
      */
     private function satisfyConstraint(ModVersion|AddonVersion $dependable): array
     {
-        // Eager-load the dependencies and their mod versions if not already loaded.
-        if (! $dependable->relationLoaded('dependencies')) {
-            $dependable->load('dependencies.dependentMod.versions');
-        }
-
-        // Iterate over each dependency.
         $dependencies = [];
         foreach ($dependable->dependencies as $dependency) {
             // Skip if the dependency is being deleted or doesn't exist
@@ -47,10 +41,12 @@ final class DependencyVersionService implements DependencyResolver
                 continue;
             }
 
-            // Get all dependent mod versions (use loaded relation if available).
-            $dependentModVersions = $dependency->dependentMod->relationLoaded('versions')
-                ? $dependency->dependentMod->versions
-                : $dependency->dependentMod->versions()->get();
+            $dependentModVersions = ModVersion::withoutGlobalScopes()
+                ->where('mod_id', $dependency->dependent_mod_id)
+                ->whereNotNull('published_at')
+                ->where('published_at', '<=', now())
+                ->select(['id', 'version'])
+                ->get();
 
             // Filter the dependent mod versions to find the ones that satisfy the dependency constraint.
             $matchedVersions = $dependentModVersions->filter(fn (ModVersion $version): bool => VersionMatcher::satisfies($version->version, $dependency->constraint));

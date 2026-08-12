@@ -10,6 +10,7 @@ use App\Contracts\Trackable;
 use App\Notifications\ResetPassword;
 use App\Notifications\VerifyEmail;
 use App\Observers\UserObserver;
+use App\Support\UndeliverableAddress;
 use App\Traits\HasComments;
 use App\Traits\HasCoverPhoto;
 use App\Traits\HasProfilePhoto;
@@ -645,6 +646,14 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
     public function isAdmin(): bool
     {
         return $this->roleName() === 'staff';
+    }
+
+    /**
+     * Where mail notifications for this user are delivered
+     */
+    public function routeNotificationForMail(): ?string
+    {
+        return UndeliverableAddress::check($this->email) ? null : $this->email;
     }
 
     /**

@@ -16,7 +16,7 @@ use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-#[Timeout(60)]
+#[Timeout(120)]
 #[Backoff([1, 5, 10])]
 #[Tries(3)]
 final class ResolveDependenciesJob implements ShouldBeUnique, ShouldQueue
@@ -24,19 +24,21 @@ final class ResolveDependenciesJob implements ShouldBeUnique, ShouldQueue
     use Queueable;
 
     /**
-     * Resolve the SPT versions for each of the mod versions.
+     * Bounded so a worker killed mid run cannot hold the uniqueness lock forever and block every
+     * later dispatch. Must exceed the timeout above.
+     */
+    public int $uniqueFor = 180;
+
+    /**
+     * Rebuild the resolved dependency pivot for every mod version that needs one.
      */
     public function handle(DependencyVersionService $dependencyVersionService): void
     {
         ModVersion::query()
-            ->with('dependencies')
-            ->chunk(100, function (Collection $modVersions) use ($dependencyVersionService): void {
-                // Eager-load dependent mod versions only for those that have dependencies
-                $modVersionsWithDeps = $modVersions->filter(fn (ModVersion $mv): bool => $mv->dependencies->isNotEmpty());
-                if ($modVersionsWithDeps->isNotEmpty()) {
-                    $modVersionsWithDeps->load(['dependencies.dependentMod.versions']);
-                }
-
+            // bring in only mods with dependencies, no need to check absolutely everything
+            ->whereHas('dependencies')
+            // chink the results rather than mass collecting
+            ->chunkById(100, function (Collection $modVersions) use ($dependencyVersionService): void {
                 foreach ($modVersions as $modVersion) {
                     $dependencyVersionService->resolve($modVersion);
                 }
