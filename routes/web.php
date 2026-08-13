@@ -235,6 +235,7 @@ Route::middleware('auth.banned')->group(function (): void {
         Route::middleware('can:admin')->group(function (): void {
             Route::livewire('/admin/visitor-analytics', 'pages::admin.visitor-analytics')->name('admin.visitor-analytics');
             Route::livewire('/admin/api-analytics', 'pages::admin.api-analytics')->name('admin.api-analytics');
+            Route::livewire('/admin/vps-health', 'pages::admin.vps-health')->name('admin.vps-health');
             Route::livewire('/admin/user-management', 'pages::admin.user-management')->name('admin.user-management');
             Route::livewire('/admin/role-management', 'pages::admin.role-management')->name('admin.role-management');
             Route::livewire('/admin/spt-versions', 'pages::admin.spt-version-management')->name('admin.spt-versions');
