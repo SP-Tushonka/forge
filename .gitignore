@@ -42,6 +42,7 @@ Homestead.yaml
 !/storage/app/public/profile-photos/.gitkeep
 /storage/app/geoip/*
 !/storage/app/geoip/.gitkeep
+/storage/app/vps-fixture
 /storage/pail
 /tests/Browser/Screenshots
 /tmp

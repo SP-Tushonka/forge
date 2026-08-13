@@ -205,6 +205,11 @@
                                                 wire:navigate
                                             >{{ __('API Analytics') }}</flux:navmenu.item>
                                             <flux:navmenu.item
+                                                icon="server"
+                                                href="{{ route('admin.vps-health') }}"
+                                                wire:navigate
+                                            >{{ __('VPS Health') }}</flux:navmenu.item>
+                                            <flux:navmenu.item
                                                 icon="users"
                                                 href="{{ route('admin.user-management') }}"
                                                 wire:navigate
@@ -569,6 +574,15 @@
                             <span class="flex items-center gap-2">
                                 <flux:icon.presentation-chart-line class="h-5 w-5" />
                                 {{ __('API Analytics') }}
+                            </span>
+                        </x-responsive-nav-link>
+                        <x-responsive-nav-link
+                            href="{{ route('admin.vps-health') }}"
+                            :active="request()->routeIs('admin.vps-health')"
+                        >
+                            <span class="flex items-center gap-2">
+                                <flux:icon.server class="h-5 w-5" />
+                                {{ __('VPS Health') }}
                             </span>
                         </x-responsive-nav-link>
                         <x-responsive-nav-link
