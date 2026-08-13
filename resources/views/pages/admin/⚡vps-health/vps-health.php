@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\VpsHealthStatus;
-use App\Services\Vps\VpsHealthAnalyzer;
+use App\Services\Vps\VpsHealthAnalysisService;
 use App\Services\Vps\VpsHealthService;
 use App\Support\DataTransferObjects\VpsHealthFinding;
 use Illuminate\Support\Facades\Cache;
@@ -108,9 +108,9 @@ new #[Layout('layouts::base')] #[Title('VPS Health - The Forge')] class extends 
     }
 
     #[Computed]
-    public function analyzer(): VpsHealthAnalyzer
+    public function analyzer(): VpsHealthAnalysisService
     {
-        return new VpsHealthAnalyzer($this->health);
+        return new VpsHealthAnalysisService($this->health);
     }
 
     #[Computed]

@@ -161,7 +161,7 @@ final class VpsHealthService
         $this->cpuPct = null;
 
         Cache::forget(self::CPU_SAMPLE_CACHE_KEY);
-        Cache::forget(self::SERVICE_CACHE_KEY.':'.md5(implode(',', $this->monitoredUnits())));
+        Cache::forget($this->serviceCacheKey());
     }
 
     /**
@@ -567,7 +567,7 @@ final class VpsHealthService
         }
 
         $states = Cache::remember(
-            self::SERVICE_CACHE_KEY.':'.md5(implode(',', $units)),
+            $this->serviceCacheKey(),
             now()->addSeconds(config()->integer('vps.service_cache_seconds')),
             fn (): array => $this->probeUnits($units),
         );
@@ -641,6 +641,15 @@ final class VpsHealthService
             'activating', 'deactivating', 'reloading', 'refreshing', 'maintenance' => VpsHealthStatus::Warning,
             default => VpsHealthStatus::Critical,
         };
+    }
+
+    /**
+     * Keyed by the unit list so that changing which units are watched cannot serve states for the old set.
+     * xxh128 rather than a cryptographic digest: this identifies a cache entry, it does not protect anything.
+     */
+    private function serviceCacheKey(): string
+    {
+        return self::SERVICE_CACHE_KEY.':'.hash('xxh128', implode(',', $this->monitoredUnits()));
     }
 
     /**

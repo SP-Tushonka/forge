@@ -176,7 +176,6 @@ return [
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
             'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel'), '_').'_database_'),
-            'persistent' => env('REDIS_PERSISTENT', false),
         ],
 
         'default' => [
@@ -192,6 +191,12 @@ return [
                 ],
             ],
             'database' => env('REDIS_DB', '0'),
+
+            // Reusing the socket between requests removes a connect and teardown per call. phpredis pools by host,
+            // port, timeout and id alone, so each connection needs its own id or they share one socket and overwrite
+            // each other's SELECT, landing reads in the wrong database.
+            'persistent' => env('REDIS_PERSISTENT', false),
+            'persistent_id' => 'forge-default',
         ],
 
         'cache' => [
@@ -207,6 +212,9 @@ return [
                 ],
             ],
             'database' => env('REDIS_CACHE_DB', '1'),
+
+            'persistent' => env('REDIS_PERSISTENT', false),
+            'persistent_id' => 'forge-cache',
         ],
 
         'queue' => [
@@ -222,6 +230,11 @@ return [
                 ],
             ],
             'database' => env('REDIS_QUEUE_DB', '2'),
+
+            // Never pooled. Workers block on BLPOP for seconds at a time, and Horizon clones this connection
+            // verbatim (config/horizon.php 'use'), so a shared socket would let Horizon's traffic interleave with a
+            // worker mid-blocking-read. Workers are long-lived anyway, so they open a socket once and cost nothing.
+            'persistent' => false,
         ],
 
         // Dedicated connection for in-flight API usage counters. Kept on its own database so cache flushes and queue
@@ -239,6 +252,9 @@ return [
                 ],
             ],
             'database' => env('REDIS_API_USAGE_DB', '3'),
+
+            'persistent' => env('REDIS_PERSISTENT', false),
+            'persistent_id' => 'forge-api-usage',
         ],
 
     ],

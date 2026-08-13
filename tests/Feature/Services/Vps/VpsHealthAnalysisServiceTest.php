@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\VpsHealthStatus;
-use App\Services\Vps\VpsHealthAnalyzer;
+use App\Services\Vps\VpsHealthAnalysisService;
 use App\Services\Vps\VpsHealthService;
 use App\Support\DataTransferObjects\VpsHealthFinding;
 use Illuminate\Support\Facades\File;
@@ -48,9 +48,9 @@ function publishVpsSnapshot(string $root, array $overrides = []): void
     ], $overrides)));
 }
 
-function analyzeVpsHealth(): VpsHealthAnalyzer
+function analyzeVpsHealth(): VpsHealthAnalysisService
 {
-    return new VpsHealthAnalyzer(resolve(VpsHealthService::class));
+    return new VpsHealthAnalysisService(resolve(VpsHealthService::class));
 }
 
 /**
@@ -62,7 +62,7 @@ function vpsFindingTitles(array $findings): array
     return array_map(static fn (VpsHealthFinding $finding): string => $finding->title, $findings);
 }
 
-function vpsFinding(VpsHealthAnalyzer $analyzer, string $title): VpsHealthFinding
+function vpsFinding(VpsHealthAnalysisService $analyzer, string $title): VpsHealthFinding
 {
     return collect($analyzer->findings())
         ->firstOrFail(static fn (VpsHealthFinding $finding): bool => $finding->title === $title);

@@ -11,7 +11,7 @@ use Illuminate\Support\Number;
 /**
  * Turns the readings into findings: what is wrong, the measurement that says so, and what to do about it.
  */
-final class VpsHealthAnalyzer
+final class VpsHealthAnalysisService
 {
     /**
      * @var list<VpsHealthFinding>|null
