@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Exception\ProcessTimedOutException as SymfonyTimedOutException;
+use Symfony\Component\Process\Exception\RuntimeException as SymfonyProcessException;
 use Symfony\Component\Process\Process as SymfonyProcess;
 
 /**
@@ -175,6 +176,10 @@ describe('service probes', function (): void {
     });
 
     it('reports a unit as unknown rather than healthy when the probe cannot run', function (): void {
+        Process::fake([
+            '*is-active*' => fn (): never => throw new SymfonyProcessException('Unable to launch a new process.'),
+        ]);
+
         expect(resolve(VpsHealthService::class)->services())->toBe([
             ['unit' => 'nginx', 'state' => null, 'status' => VpsHealthStatus::Unknown],
         ]);
