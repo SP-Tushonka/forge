@@ -154,16 +154,6 @@
         @endverified
     @endif
 
-    @if ($permissions->can($comment->id, 'showOwnerPinAction'))
-        <button
-            type="button"
-            wire:click="{{ $comment->isPinned() ? 'unpinComment' : 'pinComment' }}({{ $comment->id }})"
-            class="cursor-pointer text-xs text-cyan-500 hover:underline"
-        >
-            {{ $comment->isPinned() ? __('Unpin') : __('Pin') }}
-        </button>
-    @endif
-
     @if ($showRepliesToggle && $manager->getDescendantCount($comment->id) > 0)
         <button
             type="button"

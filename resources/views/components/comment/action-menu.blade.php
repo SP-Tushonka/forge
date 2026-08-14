@@ -34,8 +34,30 @@
             size="sm"
         />
         <flux:menu class="action-comments">
-            @if ($permissions->can($comment->id, 'modOwnerSoftDelete') || $permissions->can($comment->id, 'modOwnerRestore'))
+            @if ($permissions->can($comment->id, 'modOwnerSoftDelete') || $permissions->can($comment->id, 'modOwnerRestore') || $permissions->can($comment->id, 'showOwnerPinAction'))
                 <flux:menu.group heading="Author Actions">
+                    @if ($permissions->can($comment->id, 'showOwnerPinAction'))
+                        @if ($comment->isPinned())
+                            @if ($permissions->can($comment->id, 'unpin'))
+                                <flux:menu.item
+                                    wire:click="confirmUnpinComment({{ $comment->id }})"
+                                    icon:trailing="bookmark-slash"
+                                    class="action-unpin"
+                                >
+                                    Unpin Comment
+                                </flux:menu.item>
+                            @endif
+                        @elseif(!$comment->isDeleted())
+                            <flux:menu.item
+                                wire:click="confirmPinComment({{ $comment->id }})"
+                                icon:trailing="bookmark"
+                                class="action-pin"
+                            >
+                                Pin Comment
+                            </flux:menu.item>
+                        @endif
+                    @endif
+
                     @if ($comment->isDeleted())
                         @if ($permissions->can($comment->id, 'modOwnerRestore'))
                             <flux:menu.item
@@ -58,17 +80,19 @@
                 </flux:menu.group>
             @endif
 
-            @if ($permissions->can($comment->id, 'viewActions'))
+            @if ($permissions->can($comment->id, 'viewStaffActions'))
                 <flux:menu.group heading="Staff Actions">
                     @if ($permissions->can($comment->id, 'pin'))
                         @if ($comment->isPinned())
-                            <flux:menu.item
-                                wire:click="confirmUnpinComment({{ $comment->id }})"
-                                icon:trailing="bookmark-slash"
-                                class="action-unpin"
-                            >
-                                Unpin Comment
-                            </flux:menu.item>
+                            @if ($permissions->can($comment->id, 'unpin'))
+                                <flux:menu.item
+                                    wire:click="confirmUnpinComment({{ $comment->id }})"
+                                    icon:trailing="bookmark-slash"
+                                    class="action-unpin"
+                                >
+                                    Unpin Comment
+                                </flux:menu.item>
+                            @endif
                         @elseif(!$comment->isDeleted())
                             <flux:menu.item
                                 wire:click="confirmPinComment({{ $comment->id }})"

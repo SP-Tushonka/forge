@@ -2722,6 +2722,255 @@ describe('Deletion', function (): void {
         });
     });
 
+    describe('pin actor recording', function (): void {
+        it('records the mod owner when they pin a comment', function (): void {
+            $modOwner = User::factory()->create();
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+            $mod->owner_id = $modOwner->id;
+            $mod->save();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+            ]);
+
+            $this->actingAs($modOwner);
+
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmPinComment', $comment->id)
+                ->call('pinComment')
+                ->assertSuccessful();
+
+            $comment->refresh();
+            expect($comment->pinned_at)->not->toBeNull()
+                ->and($comment->pinned_by)->toBe($modOwner->id);
+        });
+
+        it('prevents a mod owner from undoing a moderator pin', function (): void {
+            $moderator = User::factory()->moderator()->create();
+            $modOwner = User::factory()->create();
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+            $mod->owner_id = $modOwner->id;
+            $mod->save();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+                'pinned_at' => now()->subMinute(),
+                'pinned_by' => $moderator->id,
+            ]);
+
+            $this->actingAs($modOwner);
+
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmUnpinComment', $comment->id)
+                ->assertForbidden();
+
+            $comment->refresh();
+            expect($comment->isPinned())->toBeTrue();
+        });
+
+        it('allows a moderator to undo a mod owner pin', function (): void {
+            $moderator = User::factory()->moderator()->create();
+            $modOwner = User::factory()->create();
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+            $mod->owner_id = $modOwner->id;
+            $mod->save();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+                'pinned_at' => now()->subMinute(),
+                'pinned_by' => $modOwner->id,
+            ]);
+
+            $this->actingAs($moderator);
+
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmUnpinComment', $comment->id)
+                ->call('unpinComment')
+                ->assertSuccessful();
+
+            $comment->refresh();
+            expect($comment->pinned_at)->toBeNull()
+                ->and($comment->pinned_by)->toBeNull();
+        });
+
+        it('prevents a mod owner from soft deleting a moderator comment', function (): void {
+            $moderator = User::factory()->moderator()->create();
+            $modOwner = User::factory()->create();
+            $mod = createPublishedMod();
+            $mod->owner_id = $modOwner->id;
+            $mod->save();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $moderator->id,
+            ]);
+
+            $this->actingAs($modOwner);
+
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmModOwnerSoftDeleteComment', $comment->id)
+                ->assertForbidden();
+
+            $comment->refresh();
+            expect($comment->isDeleted())->toBeFalse();
+        });
+    });
+
+    describe('staff ruling lock end to end', function (): void {
+        it('stops a mod owner re-deleting a comment a moderator restored', function (): void {
+            $moderator = User::factory()->moderator()->create();
+            $modOwner = User::factory()->create();
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+            $mod->owner_id = $modOwner->id;
+            $mod->save();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+                'deleted_at' => now()->subMinute(),
+                'deleted_by' => $modOwner->id,
+            ]);
+
+            $this->actingAs($moderator);
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmRestoreComment', $comment->id)
+                ->call('restoreComment')
+                ->assertSuccessful();
+
+            $comment->refresh();
+            expect($comment->isDeleted())->toBeFalse()
+                ->and($comment->isStaffModerated())->toBeTrue();
+
+            $this->actingAs($modOwner);
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmModOwnerSoftDeleteComment', $comment->id)
+                ->assertSuccessful()
+                ->assertSet('showStaffModeratedModal', true)
+                ->assertSet('showModOwnerSoftDeleteModal', false);
+
+            $comment->refresh();
+            expect($comment->isDeleted())->toBeFalse();
+        });
+
+        it('stops a mod owner re-pinning a comment a moderator unpinned', function (): void {
+            $moderator = User::factory()->moderator()->create();
+            $modOwner = User::factory()->create();
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+            $mod->owner_id = $modOwner->id;
+            $mod->save();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+                'pinned_at' => now()->subMinute(),
+                'pinned_by' => $modOwner->id,
+            ]);
+
+            $this->actingAs($moderator);
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmUnpinComment', $comment->id)
+                ->call('unpinComment')
+                ->assertSuccessful();
+
+            $this->actingAs($modOwner);
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmPinComment', $comment->id)
+                ->assertSuccessful()
+                ->assertSet('showStaffModeratedModal', true)
+                ->assertSet('showPinModal', false);
+
+            $comment->refresh();
+            expect($comment->isPinned())->toBeFalse();
+        });
+
+        it('still refuses the action itself, not just the confirmation step', function (): void {
+            $moderator = User::factory()->moderator()->create();
+            $modOwner = User::factory()->create();
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+            $mod->owner_id = $modOwner->id;
+            $mod->save();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+                'staff_moderated_at' => now(),
+            ]);
+
+            $this->actingAs($modOwner);
+
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('modOwnerSoftDeleteComment', $comment->id)
+                ->assertSuccessful()
+                ->assertSet('showStaffModeratedModal', true);
+
+            $comment->refresh();
+            expect($comment->isDeleted())->toBeFalse();
+
+            expect($moderator->isModOrAdmin())->toBeTrue();
+        });
+
+        it('does not show the modal to staff, who may still act', function (): void {
+            $moderator = User::factory()->moderator()->create();
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+                'staff_moderated_at' => now(),
+            ]);
+
+            $this->actingAs($moderator);
+
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmSoftDeleteComment', $comment->id)
+                ->assertSuccessful()
+                ->assertSet('showStaffModeratedModal', false)
+                ->assertSet('showSoftDeleteModal', true);
+        });
+
+        it('does not stamp a ruling when the mod owner acts', function (): void {
+            $modOwner = User::factory()->create();
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+            $mod->owner_id = $modOwner->id;
+            $mod->save();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+            ]);
+
+            $this->actingAs($modOwner);
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmPinComment', $comment->id)
+                ->call('pinComment')
+                ->assertSuccessful();
+
+            $comment->refresh();
+            expect($comment->isPinned())->toBeTrue()
+                ->and($comment->isStaffModerated())->toBeFalse();
+        });
+    });
+
     describe('restore auditing', function (): void {
         it('records a tracking event when a mod owner restores their own soft delete', function (): void {
             $this->withoutDefer();

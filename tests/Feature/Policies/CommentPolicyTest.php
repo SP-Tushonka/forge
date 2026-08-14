@@ -175,6 +175,37 @@ describe('modOwnerSoftDelete Policy Method', function (): void {
         expect($this->policy->modOwnerSoftDelete($modOwner, $comment))->toBeFalse();
     });
 
+    it('returns false for mod owners deleting a comment written by a moderator', function (): void {
+        $modOwner = User::factory()->create();
+        $mod = Mod::factory()->create(['owner_id' => $modOwner->id]);
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'user_id' => $this->moderator->id,
+        ]);
+
+        expect($this->policy->modOwnerSoftDelete($modOwner, $comment))->toBeFalse();
+    });
+
+    it('returns false for mod owners deleting a comment written by an administrator', function (): void {
+        $modOwner = User::factory()->create();
+        $mod = Mod::factory()->create(['owner_id' => $modOwner->id]);
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'user_id' => $this->admin->id,
+        ]);
+
+        expect($this->policy->modOwnerSoftDelete($modOwner, $comment))->toBeFalse();
+    });
+
+    it('returns false for mod authors deleting a comment written by a moderator', function (): void {
+        $modAuthor = User::factory()->create();
+        $mod = Mod::factory()->create();
+        $mod->additionalAuthors()->attach($modAuthor);
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'user_id' => $this->moderator->id,
+        ]);
+
+        expect($this->policy->modOwnerSoftDelete($modAuthor, $comment))->toBeFalse();
+    });
+
     it('returns true for administrators who are also mod owners', function (): void {
         $mod = Mod::factory()->create(['owner_id' => $this->admin->id]);
         $comment = Comment::factory()->for($mod, 'commentable')->create();
@@ -438,6 +469,247 @@ describe('modOwnerRestore Policy Method', function (): void {
         ]);
 
         expect($this->policy->modOwnerRestore($profileOwner, $comment))->toBeFalse();
+    });
+});
+
+describe('editing moderated comments', function (): void {
+    it('stops an author editing their own comment once it is deleted', function (): void {
+        $comment = Comment::factory()->for($this->mod, 'commentable')->create([
+            'user_id' => $this->user->id,
+            'deleted_at' => now(),
+            'deleted_by' => $this->moderator->id,
+        ]);
+
+        expect($this->policy->update($this->user, $comment))->toBeFalse();
+    });
+
+    it('stops an author editing their own comment when it is flagged as spam', function (): void {
+        $comment = Comment::factory()->for($this->mod, 'commentable')->create([
+            'user_id' => $this->user->id,
+            'spam_status' => SpamStatus::SPAM,
+        ]);
+
+        expect($this->policy->update($this->user, $comment))->toBeFalse();
+    });
+
+    it('still allows an author to edit a live comment staff have ruled on', function (): void {
+        $comment = Comment::factory()->for($this->mod, 'commentable')->create([
+            'user_id' => $this->user->id,
+            'staff_moderated_at' => now(),
+        ]);
+
+        expect($this->policy->update($this->user, $comment))->toBeTrue();
+    });
+});
+
+describe('staff ruling lock', function (): void {
+    it('stops a mod owner soft deleting a comment staff have ruled on', function (): void {
+        $modOwner = User::factory()->create();
+        $mod = Mod::factory()->create(['owner_id' => $modOwner->id]);
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'staff_moderated_at' => now(),
+        ]);
+
+        expect($this->policy->modOwnerSoftDelete($modOwner, $comment))->toBeFalse();
+    });
+
+    it('stops a mod owner restoring a comment staff have ruled on, even one they deleted', function (): void {
+        $modOwner = User::factory()->create();
+        $mod = Mod::factory()->create(['owner_id' => $modOwner->id]);
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'deleted_at' => now(),
+            'deleted_by' => $modOwner->id,
+            'staff_moderated_at' => now(),
+        ]);
+
+        expect($this->policy->modOwnerRestore($modOwner, $comment))->toBeFalse();
+    });
+
+    it('stops a mod owner re-pinning a comment staff have ruled on', function (): void {
+        $modOwner = User::factory()->create();
+        $mod = Mod::factory()->create(['owner_id' => $modOwner->id]);
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'staff_moderated_at' => now(),
+        ]);
+
+        expect($this->policy->pin($modOwner, $comment))->toBeFalse();
+    });
+
+    it('stops a mod owner unpinning their own pin once staff have ruled', function (): void {
+        $modOwner = User::factory()->create();
+        $mod = Mod::factory()->create(['owner_id' => $modOwner->id]);
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'pinned_at' => now(),
+            'pinned_by' => $modOwner->id,
+            'staff_moderated_at' => now(),
+        ]);
+
+        expect($this->policy->unpin($modOwner, $comment))->toBeFalse();
+    });
+
+    it('stops a mod author, not just the owner', function (): void {
+        $modAuthor = User::factory()->create();
+        $mod = Mod::factory()->create();
+        $mod->additionalAuthors()->attach($modAuthor);
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'staff_moderated_at' => now(),
+        ]);
+
+        expect($this->policy->modOwnerSoftDelete($modAuthor, $comment))->toBeFalse()
+            ->and($this->policy->pin($modAuthor, $comment))->toBeFalse();
+    });
+
+    it('does not restrict moderators or administrators', function (): void {
+        $mod = Mod::factory()->create();
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'pinned_at' => now(),
+            'pinned_by' => User::factory()->create()->id,
+            'staff_moderated_at' => now(),
+        ]);
+
+        expect($this->policy->pin($this->moderator, $comment))->toBeTrue()
+            ->and($this->policy->unpin($this->moderator, $comment))->toBeTrue()
+            ->and($this->policy->pin($this->admin, $comment))->toBeTrue()
+            ->and($this->policy->unpin($this->admin, $comment))->toBeTrue();
+    });
+
+    it('leaves untouched comments fully available to the content owner', function (): void {
+        $modOwner = User::factory()->create();
+        $mod = Mod::factory()->create(['owner_id' => $modOwner->id]);
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'staff_moderated_at' => null,
+        ]);
+
+        expect($this->policy->modOwnerSoftDelete($modOwner, $comment))->toBeTrue()
+            ->and($this->policy->pin($modOwner, $comment))->toBeTrue();
+    });
+});
+
+describe('unpin Policy Method', function (): void {
+    it('returns false when the comment is not pinned', function (): void {
+        $modOwner = User::factory()->create();
+        $mod = Mod::factory()->create(['owner_id' => $modOwner->id]);
+        $comment = Comment::factory()->for($mod, 'commentable')->create();
+
+        expect($this->policy->unpin($modOwner, $comment))->toBeFalse();
+    });
+
+    it('returns true for a mod owner undoing their own pin', function (): void {
+        $modOwner = User::factory()->create();
+        $mod = Mod::factory()->create(['owner_id' => $modOwner->id]);
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'pinned_at' => now(),
+            'pinned_by' => $modOwner->id,
+        ]);
+
+        expect($this->policy->unpin($modOwner, $comment))->toBeTrue();
+    });
+
+    it('returns false for a mod owner undoing a moderator pin', function (): void {
+        $modOwner = User::factory()->create();
+        $mod = Mod::factory()->create(['owner_id' => $modOwner->id]);
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'pinned_at' => now(),
+            'pinned_by' => $this->moderator->id,
+        ]);
+
+        expect($this->policy->pin($modOwner, $comment))->toBeTrue()
+            ->and($this->policy->unpin($modOwner, $comment))->toBeFalse();
+    });
+
+    it('returns false for a mod author undoing a moderator pin', function (): void {
+        $modAuthor = User::factory()->create();
+        $mod = Mod::factory()->create();
+        $mod->additionalAuthors()->attach($modAuthor);
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'pinned_at' => now(),
+            'pinned_by' => $this->moderator->id,
+        ]);
+
+        expect($this->policy->unpin($modAuthor, $comment))->toBeFalse();
+    });
+
+    it('returns false for a mod owner when the pin predates pinned_by', function (): void {
+        $modOwner = User::factory()->create();
+        $mod = Mod::factory()->create(['owner_id' => $modOwner->id]);
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'pinned_at' => now(),
+            'pinned_by' => null,
+        ]);
+
+        expect($this->policy->unpin($modOwner, $comment))->toBeFalse();
+    });
+
+    it('returns true for moderators undoing any pin', function (): void {
+        $modOwner = User::factory()->create();
+        $mod = Mod::factory()->create(['owner_id' => $modOwner->id]);
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'pinned_at' => now(),
+            'pinned_by' => $modOwner->id,
+        ]);
+
+        expect($this->policy->unpin($this->moderator, $comment))->toBeTrue()
+            ->and($this->policy->unpin($this->admin, $comment))->toBeTrue();
+    });
+
+    it('returns false for users with no pin rights on the content', function (): void {
+        $comment = Comment::factory()->for($this->mod, 'commentable')->create([
+            'pinned_at' => now(),
+            'pinned_by' => $this->user->id,
+        ]);
+
+        expect($this->policy->unpin($this->user, $comment))->toBeFalse();
+    });
+});
+
+describe('viewStaffActions Policy Method', function (): void {
+    it('returns false for guests', function (): void {
+        $comment = Comment::factory()->for($this->mod, 'commentable')->create();
+
+        expect($this->policy->viewStaffActions(null, $comment))->toBeFalse();
+    });
+
+    it('returns false for regular users', function (): void {
+        $comment = Comment::factory()->for($this->mod, 'commentable')->create();
+
+        expect($this->policy->viewStaffActions($this->user, $comment))->toBeFalse();
+    });
+
+    it('returns false for mod owners who are not staff', function (): void {
+        $modOwner = User::factory()->create();
+        $mod = Mod::factory()->create(['owner_id' => $modOwner->id]);
+        $comment = Comment::factory()->for($mod, 'commentable')->create();
+
+        expect($this->policy->viewActions($modOwner, $comment))->toBeTrue()
+            ->and($this->policy->viewStaffActions($modOwner, $comment))->toBeFalse();
+    });
+
+    it('returns false for mod authors who are not staff', function (): void {
+        $modAuthor = User::factory()->create();
+        $mod = Mod::factory()->create();
+        $mod->additionalAuthors()->attach($modAuthor);
+        $comment = Comment::factory()->for($mod, 'commentable')->create();
+
+        expect($this->policy->viewStaffActions($modAuthor, $comment))->toBeFalse();
+    });
+
+    it('returns true for moderators', function (): void {
+        $comment = Comment::factory()->for($this->mod, 'commentable')->create();
+
+        expect($this->policy->viewStaffActions($this->moderator, $comment))->toBeTrue();
+    });
+
+    it('returns true for administrators', function (): void {
+        $comment = Comment::factory()->for($this->mod, 'commentable')->create();
+
+        expect($this->policy->viewStaffActions($this->admin, $comment))->toBeTrue();
+    });
+
+    it('returns true for a mod owner who is also staff', function (): void {
+        $mod = Mod::factory()->create(['owner_id' => $this->moderator->id]);
+        $comment = Comment::factory()->for($mod, 'commentable')->create();
+
+        expect($this->policy->viewStaffActions($this->moderator, $comment))->toBeTrue();
     });
 });
 

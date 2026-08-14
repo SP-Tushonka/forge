@@ -53,6 +53,8 @@ use Stevebauman\Purify\Facades\Purify;
  * @property CarbonImmutable|null $deleted_at
  * @property int|null $deleted_by
  * @property CarbonImmutable|null $pinned_at
+ * @property int|null $pinned_by
+ * @property CarbonImmutable|null $staff_moderated_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property string $body
@@ -221,6 +223,22 @@ final class Comment extends Model implements Reportable, Trackable
     public function isPinned(): bool
     {
         return $this->pinned_at !== null;
+    }
+
+    /**
+     * Check whether staff have already ruled on this comment
+     */
+    public function isStaffModerated(): bool
+    {
+        return $this->staff_moderated_at !== null;
+    }
+
+    /**
+     * Record that staff have ruled on this comment
+     */
+    public function recordStaffRuling(): void
+    {
+        $this->update(['staff_moderated_at' => now()]);
     }
 
     /**
@@ -585,7 +603,10 @@ final class Comment extends Model implements Reportable, Trackable
             'spam_reviewed_at' => 'datetime',
             'edited_at' => 'datetime',
             'deleted_at' => 'datetime',
+            'deleted_by' => 'integer',
+            'pinned_by' => 'integer',
             'pinned_at' => 'datetime',
+            'staff_moderated_at' => 'datetime',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];

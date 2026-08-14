@@ -24,6 +24,7 @@ final class CommentPolicy
         'react',
         'restore',
         'viewActions',
+        'viewStaffActions',
         'softDelete',
         'hardDelete',
         'markAsSpam',
@@ -187,9 +188,11 @@ final class CommentPolicy
      */
     public function update(User $user, Comment $comment): bool
     {
-        // Spam-flagged comments cannot be edited; the author cannot revise content into clean text to escape the
-        // review queue
         if ($comment->isSpam()) {
+            return false;
+        }
+
+        if ($comment->isDeleted()) {
             return false;
         }
 
@@ -222,6 +225,10 @@ final class CommentPolicy
     {
         // Comment must not yet be deleted
         if ($comment->isDeleted()) {
+            return false;
+        }
+
+        if ($comment->isStaffModerated() || $comment->isSpam()) {
             return false;
         }
 
@@ -292,6 +299,14 @@ final class CommentPolicy
 
         // Show pending ribbons to mods/admins who are not the comment author
         return $comment->user_id !== $user->id;
+    }
+
+    /**
+     * Determine whether the user can view the staff-only section of the action menu
+     */
+    public function viewStaffActions(?User $user, Comment $comment): bool
+    {
+        return $user instanceof User && $user->isModOrAdmin();
     }
 
     /**
@@ -394,6 +409,11 @@ final class CommentPolicy
             return false;
         }
 
+        // Staff have already ruled on this comment; re-deleting it would negate their decision
+        if ($this->blockedByStaffRuling($user, $comment)) {
+            return false;
+        }
+
         // For mod comments, check if the user is an author or the owner
         if ($comment->commentable_type === Mod::class) {
             /** @var Mod $mod */
@@ -466,6 +486,11 @@ final class CommentPolicy
 
         // Cannot restore comments made by administrators or moderators
         if ($comment->user->isModOrAdmin()) {
+            return false;
+        }
+
+        // Staff have already ruled on this comment; reversing it is theirs to do
+        if ($this->blockedByStaffRuling($user, $comment)) {
             return false;
         }
 
@@ -610,6 +635,34 @@ final class CommentPolicy
     }
 
     /**
+     * Determine whether the user can unpin the comment
+     */
+    public function unpin(User $user, Comment $comment): bool
+    {
+        // Comment must be pinned to be unpinned
+        if (! $comment->isPinned()) {
+            return false;
+        }
+
+        // Must be able to act on pinning at all
+        if (! $this->pin($user, $comment)) {
+            return false;
+        }
+
+        // Moderators and above can undo any pin
+        if ($user->isModOrAdmin()) {
+            return true;
+        }
+
+        // Staff have already ruled on this comment; unpinning would negate their decision
+        if ($this->blockedByStaffRuling($user, $comment)) {
+            return false;
+        }
+
+        return $comment->pinned_by === $user->id;
+    }
+
+    /**
      * Determine whether the user can pin or unpin the comment.
      */
     public function pin(User $user, Comment $comment): bool
@@ -622,6 +675,11 @@ final class CommentPolicy
         // Moderators and admins can always pin/unpin
         if ($user->isModOrAdmin()) {
             return true;
+        }
+
+        // Staff have already ruled on this comment; re-pinning would negate their decision
+        if ($this->blockedByStaffRuling($user, $comment)) {
+            return false;
         }
 
         // For mod comments, check if the user is an author or the owner
@@ -719,5 +777,13 @@ final class CommentPolicy
 
         // User cannot report the same item more than once.
         return ! $reportable->hasBeenReportedBy($user->id);
+    }
+
+    /**
+     * Determine whether a staff ruling on this comment blocks the user from acting on it
+     */
+    private function blockedByStaffRuling(User $user, Comment $comment): bool
+    {
+        return ! $user->isModOrAdmin() && $comment->isStaffModerated();
     }
 }
