@@ -51,6 +51,7 @@ use Stevebauman\Purify\Facades\Purify;
  * @property int|null $spam_reviewed_by
  * @property CarbonImmutable|null $edited_at
  * @property CarbonImmutable|null $deleted_at
+ * @property int|null $deleted_by
  * @property CarbonImmutable|null $pinned_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at

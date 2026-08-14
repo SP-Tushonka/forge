@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\SpamStatus;
+use App\Enums\TrackingEventType;
 use App\Jobs\CheckCommentForSpam;
 use App\Jobs\TranslateComment;
 use App\Models\Comment;
@@ -12,6 +13,7 @@ use App\Models\Mod;
 use App\Models\ModCategory;
 use App\Models\ModVersion;
 use App\Models\SptVersion;
+use App\Models\TrackingEvent;
 use App\Models\User;
 use App\Models\UserRole;
 use App\Services\CommentSpamService;
@@ -2247,6 +2249,7 @@ describe('Deletion', function (): void {
                 'user_id' => $commenter->id,
                 'body' => 'This is a deleted comment',
                 'deleted_at' => now()->subMinute(),
+                'deleted_by' => $modOwner->id,
             ]);
 
             $this->actingAs($modOwner);
@@ -2276,6 +2279,7 @@ describe('Deletion', function (): void {
                 'user_id' => $commenter->id,
                 'body' => 'This is a deleted comment',
                 'deleted_at' => now()->subMinute(),
+                'deleted_by' => $modAuthor->id,
             ]);
 
             $this->actingAs($modAuthor);
@@ -2299,6 +2303,7 @@ describe('Deletion', function (): void {
                 'user_id' => $commenter->id,
                 'body' => 'This is a deleted profile comment',
                 'deleted_at' => now()->subMinute(),
+                'deleted_by' => $profileOwner->id,
             ]);
 
             $this->actingAs($profileOwner);
@@ -2311,6 +2316,86 @@ describe('Deletion', function (): void {
 
             $comment->refresh();
             expect($comment->isDeleted())->toBeFalse();
+        });
+
+        it('prevents mod owners from undoing a moderator soft delete', function (): void {
+            $moderator = User::factory()->moderator()->create();
+            $modOwner = User::factory()->create();
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+            $mod->owner_id = $modOwner->id;
+            $mod->save();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+                'body' => 'Removed by staff',
+                'deleted_at' => now()->subMinute(),
+                'deleted_by' => $moderator->id,
+            ]);
+
+            $this->actingAs($modOwner);
+
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmModOwnerRestoreComment', $comment->id)
+                ->assertForbidden();
+
+            $comment->refresh();
+            expect($comment->isDeleted())->toBeTrue();
+        });
+
+        it('prevents mod owners from undoing an author deleting their own comment', function (): void {
+            $modOwner = User::factory()->create();
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+            $mod->owner_id = $modOwner->id;
+            $mod->save();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+                'body' => 'Withdrawn by its author',
+                'deleted_at' => now()->subMinute(),
+                'deleted_by' => $commenter->id,
+            ]);
+
+            $this->actingAs($modOwner);
+
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmModOwnerRestoreComment', $comment->id)
+                ->assertForbidden();
+
+            $comment->refresh();
+            expect($comment->isDeleted())->toBeTrue();
+        });
+
+        it('clears the delete actor when a mod owner restores their own soft delete', function (): void {
+            $modOwner = User::factory()->create();
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+            $mod->owner_id = $modOwner->id;
+            $mod->save();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+                'deleted_at' => now()->subMinute(),
+                'deleted_by' => $modOwner->id,
+            ]);
+
+            $this->actingAs($modOwner);
+
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmModOwnerRestoreComment', $comment->id)
+                ->call('modOwnerRestoreComment')
+                ->assertSuccessful();
+
+            $comment->refresh();
+            expect($comment->deleted_at)->toBeNull()
+                ->and($comment->deleted_by)->toBeNull();
         });
 
         it('prevents regular users from restoring comments they do not own', function (): void {
@@ -2371,6 +2456,7 @@ describe('Deletion', function (): void {
                 'user_id' => $commenter->id,
                 'body' => 'Deleted comment on admin profile',
                 'deleted_at' => now()->subMinute(),
+                'deleted_by' => $adminProfileOwner->id,
             ]);
 
             $this->actingAs($adminProfileOwner);
@@ -2478,6 +2564,221 @@ describe('Deletion', function (): void {
 
             $comment->refresh();
             expect($comment->isDeleted())->toBeTrue();
+        });
+    });
+
+    describe('staff restore', function (): void {
+        it('allows moderators to restore a soft delete made by a mod owner', function (): void {
+            $moderator = User::factory()->moderator()->create();
+            $modOwner = User::factory()->create();
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+            $mod->owner_id = $modOwner->id;
+            $mod->save();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+                'deleted_at' => now()->subMinute(),
+                'deleted_by' => $modOwner->id,
+            ]);
+
+            $this->actingAs($moderator);
+
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmRestoreComment', $comment->id)
+                ->call('restoreComment')
+                ->assertSuccessful();
+
+            $comment->refresh();
+            expect($comment->deleted_at)->toBeNull()
+                ->and($comment->deleted_by)->toBeNull();
+        });
+
+        it('allows moderators to restore a deletion that predates deleted_by', function (): void {
+            $moderator = User::factory()->moderator()->create();
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+                'deleted_at' => now()->subMinute(),
+                'deleted_by' => null,
+            ]);
+
+            $this->actingAs($moderator);
+
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmRestoreComment', $comment->id)
+                ->call('restoreComment')
+                ->assertSuccessful();
+
+            $comment->refresh();
+            expect($comment->deleted_at)->toBeNull();
+        });
+    });
+
+    describe('delete actor recording', function (): void {
+        it('records the comment author when they delete their own comment', function (): void {
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+                'created_at' => now()->subHour(),
+            ]);
+
+            $this->actingAs($commenter);
+
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmDeleteComment', $comment->id)
+                ->call('deleteComment')
+                ->assertSuccessful();
+
+            $comment->refresh();
+            expect($comment->deleted_at)->not->toBeNull()
+                ->and($comment->deleted_by)->toBe($commenter->id);
+        });
+
+        it('records the moderator when staff soft delete a comment', function (): void {
+            $moderator = User::factory()->moderator()->create();
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+            ]);
+
+            $this->actingAs($moderator);
+
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmSoftDeleteComment', $comment->id)
+                ->call('softDeleteComment')
+                ->assertSuccessful();
+
+            $comment->refresh();
+            expect($comment->deleted_at)->not->toBeNull()
+                ->and($comment->deleted_by)->toBe($moderator->id);
+        });
+
+        it('records the mod owner when they soft delete a comment on their mod', function (): void {
+            $modOwner = User::factory()->create();
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+            $mod->owner_id = $modOwner->id;
+            $mod->save();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+            ]);
+
+            $this->actingAs($modOwner);
+
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmModOwnerSoftDeleteComment', $comment->id)
+                ->call('modOwnerSoftDeleteComment')
+                ->assertSuccessful();
+
+            $comment->refresh();
+            expect($comment->deleted_at)->not->toBeNull()
+                ->and($comment->deleted_by)->toBe($modOwner->id);
+        });
+
+        it('leaves an author-deleted comment unrestorable by the mod owner end to end', function (): void {
+            $modOwner = User::factory()->create();
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+            $mod->owner_id = $modOwner->id;
+            $mod->save();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+                'created_at' => now()->subHour(),
+            ]);
+
+            $this->actingAs($commenter);
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmDeleteComment', $comment->id)
+                ->call('deleteComment');
+
+            $this->actingAs($modOwner);
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmModOwnerRestoreComment', $comment->id)
+                ->assertForbidden();
+
+            $comment->refresh();
+            expect($comment->isDeleted())->toBeTrue();
+        });
+    });
+
+    describe('restore auditing', function (): void {
+        it('records a tracking event when a mod owner restores their own soft delete', function (): void {
+            $this->withoutDefer();
+
+            $modOwner = User::factory()->create();
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+            $mod->owner_id = $modOwner->id;
+            $mod->save();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+                'deleted_at' => now()->subMinute(),
+                'deleted_by' => $modOwner->id,
+            ]);
+
+            $this->actingAs($modOwner);
+
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmModOwnerRestoreComment', $comment->id)
+                ->call('modOwnerRestoreComment')
+                ->assertSuccessful();
+
+            expect(TrackingEvent::query()
+                ->where('event_name', TrackingEventType::COMMENT_RESTORE->value)
+                ->where('visitable_id', $comment->id)
+                ->exists())->toBeTrue();
+        });
+
+        it('records a tracking event when staff restore a comment', function (): void {
+            $this->withoutDefer();
+
+            $moderator = User::factory()->moderator()->create();
+            $commenter = User::factory()->create();
+            $mod = createPublishedMod();
+
+            $comment = Comment::factory()->create([
+                'commentable_type' => Mod::class,
+                'commentable_id' => $mod->id,
+                'user_id' => $commenter->id,
+                'deleted_at' => now()->subMinute(),
+                'deleted_by' => $commenter->id,
+            ]);
+
+            $this->actingAs($moderator);
+
+            Livewire::test('comment-component', ['commentable' => $mod])
+                ->call('confirmRestoreComment', $comment->id)
+                ->call('restoreComment')
+                ->assertSuccessful();
+
+            expect(TrackingEvent::query()
+                ->where('event_name', TrackingEventType::COMMENT_RESTORE->value)
+                ->where('visitable_id', $comment->id)
+                ->exists())->toBeTrue();
         });
     });
 });
