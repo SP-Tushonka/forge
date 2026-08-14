@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Logging\DeduplicateDeprecations;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -120,12 +121,16 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Deduplicated, because a single deprecated call in a hot path is otherwise logged once per
+        // occurrence. Keep the retention short: this channel is a signal that libraries need
+        // attention, not an audit trail worth days of disk.
         'deprecations' => [
             'driver' => 'daily',
             'path' => storage_path('logs/deprecations.log'),
             'level' => 'warning',
-            'days' => 7,
+            'days' => (int) env('LOG_DEPRECATIONS_DAYS', 2),
             'replace_placeholders' => true,
+            'tap' => [DeduplicateDeprecations::class.':'.(int) env('LOG_DEPRECATIONS_WINDOW', 3600)],
         ],
 
         'null' => [
