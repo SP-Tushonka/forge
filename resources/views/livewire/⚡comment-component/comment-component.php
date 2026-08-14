@@ -461,7 +461,7 @@ new class extends Component
 
             $comment->delete();
         } else {
-            $comment->update(['deleted_at' => now()]);
+            $comment->update(['deleted_at' => now(), 'deleted_by' => Auth::id()]);
         }
 
         Track::event(TrackingEventType::COMMENT_SOFT_DELETE, $comment);
@@ -620,7 +620,7 @@ new class extends Component
         $this->validateCommentBelongsToCommentable($comment);
         $this->authorize('softDelete', $comment);
 
-        $comment->update(['deleted_at' => now()]);
+        $comment->update(['deleted_at' => now(), 'deleted_by' => Auth::id()]);
 
         Track::eventSync(
             TrackingEventType::COMMENT_SOFT_DELETE,
@@ -668,7 +668,7 @@ new class extends Component
         $this->validateCommentBelongsToCommentable($comment);
         $this->authorize('modOwnerSoftDelete', $comment);
 
-        $comment->update(['deleted_at' => now()]);
+        $comment->update(['deleted_at' => now(), 'deleted_by' => Auth::id()]);
 
         Track::event(TrackingEventType::COMMENT_SOFT_DELETE, $comment);
 
@@ -710,7 +710,9 @@ new class extends Component
         $this->validateCommentBelongsToCommentable($comment);
         $this->authorize('modOwnerRestore', $comment);
 
-        $comment->update(['deleted_at' => null]);
+        $comment->update(['deleted_at' => null, 'deleted_by' => null]);
+
+        Track::event(TrackingEventType::COMMENT_RESTORE, $comment);
 
         $this->updateCachedDescendant($comment);
 
@@ -750,7 +752,7 @@ new class extends Component
         $this->validateCommentBelongsToCommentable($comment);
         $this->authorize('restore', $comment);
 
-        $comment->update(['deleted_at' => null]);
+        $comment->update(['deleted_at' => null, 'deleted_by' => null]);
 
         Track::eventSync(
             TrackingEventType::COMMENT_RESTORE,

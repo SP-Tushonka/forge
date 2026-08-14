@@ -460,6 +460,10 @@ final class CommentPolicy
             return false;
         }
 
+        if (! $user->isModOrAdmin() && $comment->deleted_by !== $user->id) {
+            return false;
+        }
+
         // Cannot restore comments made by administrators or moderators
         if ($comment->user->isModOrAdmin()) {
             return false;

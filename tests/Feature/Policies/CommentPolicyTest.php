@@ -277,34 +277,37 @@ describe('modOwnerRestore Policy Method', function (): void {
         expect($this->policy->modOwnerRestore($this->user, $comment))->toBeFalse();
     });
 
-    it('returns true for mod owners on deleted mod comments', function (): void {
+    it('returns true for mod owners on mod comments they deleted themselves', function (): void {
         $modOwner = User::factory()->create();
         $mod = Mod::factory()->create(['owner_id' => $modOwner->id]);
         $comment = Comment::factory()->for($mod, 'commentable')->create([
             'deleted_at' => now(),
+            'deleted_by' => $modOwner->id,
         ]);
 
         expect($this->policy->modOwnerRestore($modOwner, $comment))->toBeTrue();
     });
 
-    it('returns true for mod authors on deleted mod comments', function (): void {
+    it('returns true for mod authors on mod comments they deleted themselves', function (): void {
         $modAuthor = User::factory()->create();
         $mod = Mod::factory()->create();
         $mod->additionalAuthors()->attach($modAuthor);
         $comment = Comment::factory()->for($mod, 'commentable')->create([
             'deleted_at' => now(),
+            'deleted_by' => $modAuthor->id,
         ]);
 
         expect($this->policy->modOwnerRestore($modAuthor, $comment))->toBeTrue();
     });
 
-    it('returns true for profile owners on deleted profile comments', function (): void {
+    it('returns true for profile owners on profile comments they deleted themselves', function (): void {
         $profileOwner = User::factory()->create();
         $comment = Comment::factory()->create([
             'commentable_type' => User::class,
             'commentable_id' => $profileOwner->id,
             'user_id' => $this->user->id,
             'deleted_at' => now(),
+            'deleted_by' => $profileOwner->id,
         ]);
 
         expect($this->policy->modOwnerRestore($profileOwner, $comment))->toBeTrue();
@@ -317,6 +320,7 @@ describe('modOwnerRestore Policy Method', function (): void {
             'commentable_id' => $profileOwner->id,
             'user_id' => $this->user->id,
             'deleted_at' => now(),
+            'deleted_by' => $this->user->id,
         ]);
 
         expect($this->policy->modOwnerRestore($this->user, $comment))->toBeFalse();
@@ -328,19 +332,66 @@ describe('modOwnerRestore Policy Method', function (): void {
             'commentable_id' => $this->admin->id,
             'user_id' => $this->user->id,
             'deleted_at' => now(),
+            'deleted_by' => $this->user->id,
         ]);
 
         expect($this->policy->modOwnerRestore($this->admin, $comment))->toBeTrue();
     });
 
-    it('returns true for moderators who are mod authors on deleted mod comments', function (): void {
+    it('returns true for moderators who are mod authors regardless of who deleted the comment', function (): void {
         $mod = Mod::factory()->create();
         $mod->additionalAuthors()->attach($this->moderator);
         $comment = Comment::factory()->for($mod, 'commentable')->create([
             'deleted_at' => now(),
+            'deleted_by' => $this->user->id,
         ]);
 
         expect($this->policy->modOwnerRestore($this->moderator, $comment))->toBeTrue();
+    });
+
+    it('returns true for moderators who are mod authors when the deletion predates deleted_by', function (): void {
+        $mod = Mod::factory()->create();
+        $mod->additionalAuthors()->attach($this->moderator);
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'deleted_at' => now(),
+            'deleted_by' => null,
+        ]);
+
+        expect($this->policy->modOwnerRestore($this->moderator, $comment))->toBeTrue();
+    });
+
+    it('returns false for mod owners trying to undo a moderator deletion', function (): void {
+        $modOwner = User::factory()->create();
+        $mod = Mod::factory()->create(['owner_id' => $modOwner->id]);
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'deleted_at' => now(),
+            'deleted_by' => $this->moderator->id,
+        ]);
+
+        expect($this->policy->modOwnerRestore($modOwner, $comment))->toBeFalse();
+    });
+
+    it('returns false for mod owners trying to undo the comment author deleting their own comment', function (): void {
+        $modOwner = User::factory()->create();
+        $mod = Mod::factory()->create(['owner_id' => $modOwner->id]);
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'user_id' => $this->user->id,
+            'deleted_at' => now(),
+            'deleted_by' => $this->user->id,
+        ]);
+
+        expect($this->policy->modOwnerRestore($modOwner, $comment))->toBeFalse();
+    });
+
+    it('returns false when the deletion predates deleted_by', function (): void {
+        $modOwner = User::factory()->create();
+        $mod = Mod::factory()->create(['owner_id' => $modOwner->id]);
+        $comment = Comment::factory()->for($mod, 'commentable')->create([
+            'deleted_at' => now(),
+            'deleted_by' => null,
+        ]);
+
+        expect($this->policy->modOwnerRestore($modOwner, $comment))->toBeFalse();
     });
 
     it('returns false for mod owners trying to restore deleted comments made by administrators', function (): void {
@@ -586,22 +637,24 @@ describe('modOwnerSoftDelete Policy Method for Addons', function (): void {
 });
 
 describe('modOwnerRestore Policy Method for Addons', function (): void {
-    it('returns true for addon owners on deleted addon comments', function (): void {
+    it('returns true for addon owners on addon comments they deleted themselves', function (): void {
         $addonOwner = User::factory()->create();
         $addon = Addon::factory()->create(['owner_id' => $addonOwner->id]);
         $comment = Comment::factory()->for($addon, 'commentable')->create([
             'deleted_at' => now(),
+            'deleted_by' => $addonOwner->id,
         ]);
 
         expect($this->policy->modOwnerRestore($addonOwner, $comment))->toBeTrue();
     });
 
-    it('returns true for addon authors on deleted addon comments', function (): void {
+    it('returns true for addon authors on addon comments they deleted themselves', function (): void {
         $addonAuthor = User::factory()->create();
         $addon = Addon::factory()->create();
         $addon->additionalAuthors()->attach($addonAuthor);
         $comment = Comment::factory()->for($addon, 'commentable')->create([
             'deleted_at' => now(),
+            'deleted_by' => $addonAuthor->id,
         ]);
 
         expect($this->policy->modOwnerRestore($addonAuthor, $comment))->toBeTrue();
