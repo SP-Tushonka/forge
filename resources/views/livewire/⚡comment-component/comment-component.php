@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Spatie\Honeypot\Http\Livewire\Concerns\HoneypotData;
@@ -49,9 +50,11 @@ new class extends Component
         'update',
         'delete',
         'viewActions',
+        'viewStaffActions',
         'modOwnerSoftDelete',
         'modOwnerRestore',
         'pin',
+        'unpin',
         'softDelete',
         'hardDelete',
         'restore',
@@ -171,6 +174,8 @@ new class extends Component
 
     public ?int $spamActionCommentId = null;
 
+    public bool $showStaffModeratedModal = false;
+
     // Restore modal properties
     public bool $showRestoreModal = false;
 
@@ -186,6 +191,7 @@ new class extends Component
      *
      * @var array<int, array{inProgress: bool, startedAt: string|null}>
      */
+    #[Locked]
     public array $spamCheckStates = [];
 
     // Version history modal properties
@@ -415,6 +421,11 @@ new class extends Component
     {
         $comment = Comment::query()->findOrFail($commentId);
         $this->validateCommentBelongsToCommentable($comment);
+
+        if ($this->refusedByStaffRuling($comment)) {
+            return;
+        }
+
         $this->authorize('delete', $comment);
 
         $this->deletingCommentId = $commentId;
@@ -442,6 +453,11 @@ new class extends Component
         }
 
         $this->validateCommentBelongsToCommentable($comment);
+
+        if ($this->refusedByStaffRuling($comment)) {
+            return;
+        }
+
         $this->authorize('delete', $comment);
 
         $editTimeLimit = config('comments.editing.edit_time_limit_minutes', 5);
@@ -516,6 +532,11 @@ new class extends Component
     {
         $comment = Comment::query()->findOrFail($commentId);
         $this->validateCommentBelongsToCommentable($comment);
+
+        if ($this->refusedByStaffRuling($comment)) {
+            return;
+        }
+
         $this->authorize('pin', $comment);
 
         $this->pinningCommentId = $commentId;
@@ -529,7 +550,12 @@ new class extends Component
     {
         $comment = Comment::query()->findOrFail($commentId);
         $this->validateCommentBelongsToCommentable($comment);
-        $this->authorize('pin', $comment);
+
+        if ($this->refusedByStaffRuling($comment)) {
+            return;
+        }
+
+        $this->authorize('unpin', $comment);
 
         $this->pinningCommentId = $commentId;
         $this->showUnpinModal = true;
@@ -547,14 +573,22 @@ new class extends Component
 
         $comment = Comment::query()->findOrFail($commentId);
         $this->validateCommentBelongsToCommentable($comment);
+
+        if ($this->refusedByStaffRuling($comment)) {
+            return;
+        }
+
         $this->authorize('pin', $comment);
 
-        $comment->update(['pinned_at' => now()]);
+        abort_if($comment->isDeleted(), 403);
+
+        $comment->update(['pinned_at' => now(), 'pinned_by' => Auth::id()]);
+        $this->stampStaffModeration($comment);
 
         Track::eventSync(
             TrackingEventType::COMMENT_PIN,
             $comment,
-            isModerationAction: true,
+            isModerationAction: Auth::user()?->isModOrAdmin() ?? false,
             reason: $this->moderationReason ?: null
         );
 
@@ -576,14 +610,20 @@ new class extends Component
 
         $comment = Comment::query()->findOrFail($commentId);
         $this->validateCommentBelongsToCommentable($comment);
-        $this->authorize('pin', $comment);
 
-        $comment->update(['pinned_at' => null]);
+        if ($this->refusedByStaffRuling($comment)) {
+            return;
+        }
+
+        $this->authorize('unpin', $comment);
+
+        $comment->update(['pinned_at' => null, 'pinned_by' => null]);
+        $this->stampStaffModeration($comment);
 
         Track::eventSync(
             TrackingEventType::COMMENT_UNPIN,
             $comment,
-            isModerationAction: true,
+            isModerationAction: Auth::user()?->isModOrAdmin() ?? false,
             reason: $this->moderationReason ?: null
         );
 
@@ -620,7 +660,7 @@ new class extends Component
         $this->validateCommentBelongsToCommentable($comment);
         $this->authorize('softDelete', $comment);
 
-        $comment->update(['deleted_at' => now(), 'deleted_by' => Auth::id()]);
+        $comment->update(['deleted_at' => now(), 'deleted_by' => Auth::id(), 'staff_moderated_at' => now()]);
 
         Track::eventSync(
             TrackingEventType::COMMENT_SOFT_DELETE,
@@ -648,6 +688,11 @@ new class extends Component
     {
         $comment = Comment::query()->findOrFail($commentId);
         $this->validateCommentBelongsToCommentable($comment);
+
+        if ($this->refusedByStaffRuling($comment)) {
+            return;
+        }
+
         $this->authorize('modOwnerSoftDelete', $comment);
 
         $this->modOwnerSoftDeletingCommentId = $commentId;
@@ -666,6 +711,11 @@ new class extends Component
 
         $comment = Comment::query()->findOrFail($commentId);
         $this->validateCommentBelongsToCommentable($comment);
+
+        if ($this->refusedByStaffRuling($comment)) {
+            return;
+        }
+
         $this->authorize('modOwnerSoftDelete', $comment);
 
         $comment->update(['deleted_at' => now(), 'deleted_by' => Auth::id()]);
@@ -690,6 +740,11 @@ new class extends Component
     {
         $comment = Comment::query()->findOrFail($commentId);
         $this->validateCommentBelongsToCommentable($comment);
+
+        if ($this->refusedByStaffRuling($comment)) {
+            return;
+        }
+
         $this->authorize('modOwnerRestore', $comment);
 
         $this->modOwnerRestoringCommentId = $commentId;
@@ -708,6 +763,11 @@ new class extends Component
 
         $comment = Comment::query()->findOrFail($commentId);
         $this->validateCommentBelongsToCommentable($comment);
+
+        if ($this->refusedByStaffRuling($comment)) {
+            return;
+        }
+
         $this->authorize('modOwnerRestore', $comment);
 
         $comment->update(['deleted_at' => null, 'deleted_by' => null]);
@@ -752,7 +812,7 @@ new class extends Component
         $this->validateCommentBelongsToCommentable($comment);
         $this->authorize('restore', $comment);
 
-        $comment->update(['deleted_at' => null, 'deleted_by' => null]);
+        $comment->update(['deleted_at' => null, 'deleted_by' => null, 'staff_moderated_at' => now()]);
 
         Track::eventSync(
             TrackingEventType::COMMENT_RESTORE,
@@ -814,6 +874,7 @@ new class extends Component
         $this->authorize('markAsSpam', $comment);
 
         $comment->markAsSpamByModerator((int) auth()->id());
+        $this->stampStaffModeration($comment);
 
         Track::eventSync(
             TrackingEventType::COMMENT_MARK_SPAM,
@@ -848,6 +909,7 @@ new class extends Component
         $this->authorize('markAsHam', $comment);
 
         $comment->markAsHam();
+        $this->stampStaffModeration($comment);
 
         Track::eventSync(
             TrackingEventType::COMMENT_MARK_CLEAN,
@@ -924,6 +986,9 @@ new class extends Component
         if (! $comment) {
             return;
         }
+
+        $this->validateCommentBelongsToCommentable($comment);
+        $this->authorize('checkForSpam', $comment);
 
         // Check if the spam check has completed (timestamp changed)
         $newSpamCheckedAt = $comment->spam_checked_at?->toISOString();
@@ -1077,6 +1142,9 @@ new class extends Component
      */
     public function toggleEditForm(Comment $comment): void
     {
+        $this->validateCommentBelongsToCommentable($comment);
+        $this->authorize('update', $comment);
+
         $this->toggleForm('edit', $comment->id, $comment->body);
     }
 
@@ -1422,6 +1490,49 @@ new class extends Component
         abort_unless($parentComment !== null, 404, 'Parent comment not found');
 
         return $parentComment;
+    }
+
+    /**
+     * Refuse a non-staff action on a comment staff have already ruled on.
+     */
+    protected function refusedByStaffRuling(Comment $comment): bool
+    {
+        if (Auth::user()?->isModOrAdmin() || ! $comment->isStaffModerated()) {
+            return false;
+        }
+
+        $this->closeModerationModals();
+        $this->showStaffModeratedModal = true;
+
+        return true;
+    }
+
+    /**
+     * Close the confirmation modals and clear their pending target.
+     */
+    protected function closeModerationModals(): void
+    {
+        $this->showDeleteModal = false;
+        $this->showModOwnerSoftDeleteModal = false;
+        $this->showModOwnerRestoreModal = false;
+        $this->showPinModal = false;
+        $this->showUnpinModal = false;
+
+        $this->deletingCommentId = null;
+        $this->modOwnerSoftDeletingCommentId = null;
+        $this->modOwnerRestoringCommentId = null;
+        $this->pinningCommentId = null;
+        $this->moderationReason = '';
+    }
+
+    /**
+     * Record that staff have ruled on this comment, for actions content owners can also perform
+     */
+    protected function stampStaffModeration(Comment $comment): void
+    {
+        if (Auth::user()?->isModOrAdmin()) {
+            $comment->update(['staff_moderated_at' => now()]);
+        }
     }
 
     /**

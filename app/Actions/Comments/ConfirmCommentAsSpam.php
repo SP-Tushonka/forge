@@ -20,6 +20,7 @@ final readonly class ConfirmCommentAsSpam
         $this->spamChecker->markAsSpam($comment);
 
         $comment->confirmSpamByModerator($moderatorId);
+        $comment->recordStaffRuling();
 
         Track::eventSync(
             TrackingEventType::COMMENT_MARK_SPAM,

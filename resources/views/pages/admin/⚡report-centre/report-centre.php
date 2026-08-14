@@ -559,7 +559,7 @@ new #[Layout('layouts::base')] class extends Component
 
         $service = resolve(ReportActionService::class);
 
-        $service->takeAction(report: $report, eventType: TrackingEventType::COMMENT_SOFT_DELETE, trackable: $comment, actionCallback: fn () => $comment->update(['deleted_at' => now(), 'deleted_by' => auth()->id()]), resolveReport: $this->resolveAfterAction, reason: $this->actionNote ?: null);
+        $service->takeAction(report: $report, eventType: TrackingEventType::COMMENT_SOFT_DELETE, trackable: $comment, actionCallback: fn () => $comment->update(['deleted_at' => now(), 'deleted_by' => auth()->id(), 'staff_moderated_at' => now()]), resolveReport: $this->resolveAfterAction, reason: $this->actionNote ?: null);
     }
 
     /**
@@ -577,7 +577,7 @@ new #[Layout('layouts::base')] class extends Component
 
         $service = resolve(ReportActionService::class);
 
-        $service->takeAction(report: $report, eventType: TrackingEventType::COMMENT_RESTORE, trackable: $comment, actionCallback: fn () => $comment->update(['deleted_at' => null, 'deleted_by' => null]), resolveReport: $this->resolveAfterAction, reason: $this->actionNote ?: null);
+        $service->takeAction(report: $report, eventType: TrackingEventType::COMMENT_RESTORE, trackable: $comment, actionCallback: fn () => $comment->update(['deleted_at' => null, 'deleted_by' => null, 'staff_moderated_at' => now()]), resolveReport: $this->resolveAfterAction, reason: $this->actionNote ?: null);
     }
 
     /**

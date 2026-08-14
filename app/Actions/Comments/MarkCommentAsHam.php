@@ -20,6 +20,7 @@ final readonly class MarkCommentAsHam
         $this->spamChecker->markAsHam($comment);
 
         $comment->markAsHam();
+        $comment->recordStaffRuling();
 
         Track::eventSync(
             TrackingEventType::COMMENT_MARK_CLEAN,

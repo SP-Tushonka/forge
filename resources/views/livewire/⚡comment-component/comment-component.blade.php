@@ -669,6 +669,60 @@
         </flux:modal>
     @endif
 
+    {{-- Staff Already Acted Modal --}}
+    @if ($showStaffModeratedModal)
+        <flux:modal
+            wire:model.self="showStaffModeratedModal"
+            class="md:w-[500px] lg:w-[600px]"
+        >
+            <div class="space-y-0">
+                {{-- Header Section --}}
+                <div class="mb-6 border-b border-gray-700 pb-6">
+                    <div class="flex items-center gap-3">
+                        <flux:icon
+                            name="shield-exclamation"
+                            class="h-8 w-8 text-amber-600"
+                        />
+                        <div>
+                            <flux:heading
+                                size="xl"
+                                class="text-gray-100"
+                            >
+                                {{ __('Action Not Available') }}
+                            </flux:heading>
+                            <flux:text class="mt-1 text-sm text-gray-400">
+                                {{ __('This comment is under moderator control') }}
+                            </flux:text>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Content Section --}}
+                <div class="space-y-4">
+                    <flux:text class="text-sm text-gray-300">
+                        {{ __('Cannot perform action as a moderator has already acted on this comment. Reversing or repeating a moderator decision is not something authors can do.') }}
+                    </flux:text>
+
+                    <flux:text class="text-sm text-gray-400">
+                        {{ __('If you believe this is a mistake, please report the comment so a moderator can take another look.') }}
+                    </flux:text>
+                </div>
+
+                {{-- Footer Actions --}}
+                <div class="mt-6 flex items-center justify-end gap-3 border-t border-gray-700 pt-6">
+                    <flux:button
+                        x-on:click="$wire.showStaffModeratedModal = false"
+                        data-test="dismiss-staff-moderated"
+                        variant="primary"
+                        size="sm"
+                    >
+                        {{ __('Understood') }}
+                    </flux:button>
+                </div>
+            </div>
+        </flux:modal>
+    @endif
+
     {{-- Mark as Spam Modal --}}
     @if ($showMarkAsSpamModal)
         <flux:modal

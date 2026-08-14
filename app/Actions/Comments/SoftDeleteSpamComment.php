@@ -13,7 +13,11 @@ final class SoftDeleteSpamComment
 {
     public function execute(Comment $comment, ?string $reason = null): void
     {
-        $comment->update(['deleted_at' => now(), 'deleted_by' => Auth::id()]);
+        $comment->update([
+            'deleted_at' => now(),
+            'deleted_by' => Auth::id(),
+            'staff_moderated_at' => now(),
+        ]);
 
         Track::eventSync(
             TrackingEventType::COMMENT_SOFT_DELETE,
