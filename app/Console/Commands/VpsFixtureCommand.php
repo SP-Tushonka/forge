@@ -11,10 +11,10 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
 #[Description('Generate local fixtures so the VPS Health dashboard can be exercised without a real host')]
-#[Signature('vps:fixture {--scenario=healthy : healthy|warning|critical|unknown|stale|missing} {--watch : Advance the CPU counters and service refresh requests} {--minutes=60 : How long --watch runs before exiting on its own}')]
+#[Signature('vps:fixture {--scenario=healthy : healthy|warning|critical|unknown|collecting|stale|missing} {--watch : Advance the CPU counters and service refresh requests} {--minutes=60 : How long --watch runs before exiting on its own}')]
 final class VpsFixtureCommand extends Command
 {
-    private const array SCENARIOS = ['healthy', 'warning', 'critical', 'unknown', 'stale', 'missing'];
+    private const array SCENARIOS = ['healthy', 'warning', 'critical', 'unknown', 'collecting', 'stale', 'missing'];
 
     public function handle(): int
     {
@@ -186,6 +186,7 @@ final class VpsFixtureCommand extends Command
         $generatedAt = $scenario === 'stale' ? time() - 10_800 : time();
 
         $null = $scenario === 'unknown';
+        $collecting = $scenario === 'collecting';
 
         $snapshot = [
             'generated_at' => $generatedAt,
@@ -207,27 +208,39 @@ final class VpsFixtureCommand extends Command
             'trends' => [
                 'window_days' => 30,
                 'min_span_days' => 7,
+                'min_samples' => 3,
                 'disk' => [
-                    'slope_kb_per_day' => $null ? null : 1_048_576,
+                    'slope_kb_per_day' => $null || $collecting ? null : 1_048_576,
                     'days_to_target' => match ($scenario) {
                         'warning', 'critical' => 12,
-                        'unknown' => null,
+                        'unknown', 'collecting' => null,
                         default => 640,
                     },
                     'state' => match ($scenario) {
                         'warning', 'critical' => 'breached',
                         'unknown' => 'unknown',
+                        'collecting' => 'collecting',
                         default => 'ok',
                     },
-                    'samples' => $null ? null : 96,
-                    'span_days' => $null ? null : 24.0,
+                    'samples' => $null ? null : ($collecting ? 19 : 96),
+                    'span_days' => $null ? null : ($collecting ? 2.3 : 24.0),
                 ],
                 'memory' => [
-                    'slope_pct_per_day' => $null ? null : 0.02,
-                    'days_to_target' => $null ? null : 900,
-                    'state' => $null ? 'unknown' : 'ok',
+                    'slope_pct_per_day' => $null || $collecting ? null : 0.02,
+                    'days_to_target' => $null || $collecting ? null : 900,
+                    'state' => match (true) {
+                        $null => 'unknown',
+                        $collecting => 'collecting',
+                        default => 'ok',
+                    },
+                    'samples' => $null ? null : ($collecting ? 19 : 96),
+                    'span_days' => $null ? null : ($collecting ? 2.3 : 24.0),
                 ],
-                'database' => ['slope_bytes_per_day' => $null ? null : 9_961_472],
+                'database' => [
+                    'slope_bytes_per_day' => $null || $collecting ? null : 9_961_472,
+                    'samples' => $null ? null : ($collecting ? 19 : 96),
+                    'span_days' => $null ? null : ($collecting ? 2.3 : 24.0),
+                ],
             ],
             'sizes' => [
                 'database_bytes' => $null ? null : 569_851_904,

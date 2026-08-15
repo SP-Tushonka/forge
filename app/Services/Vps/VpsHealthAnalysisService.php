@@ -454,7 +454,7 @@ final class VpsHealthAnalysisService
         return [VpsHealthFinding::warning(
             'The last health check did not collect everything',
             'It ran, but produced no reading for these, so they are reported as unknown rather than healthy: '.implode(', ', $missing).'.',
-            'Check what the health check logged on its last run. A growth trend stays unknown until the samples span the minimum number of days; the rest point at a collection that failed.',
+            'Check what the health check logged on its last run. Each of these points at a collection that failed rather than one still gathering history.',
         )];
     }
 

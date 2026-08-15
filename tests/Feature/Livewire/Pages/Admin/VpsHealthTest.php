@@ -214,9 +214,44 @@ describe('VpsHealth Display', function (): void {
         Livewire::actingAs(User::factory()->admin()->create())
             ->test('pages::admin.vps-health')
             ->assertSeeText('Still collecting')
-            ->assertSeeText('a trend needs 9 days of it')
+            ->assertSeeText('a trend needs 3 samples over 9 days')
             ->assertDontSeeText('0 samples')
             ->assertDontSeeText('0.0 days');
+    });
+
+    it('does not report a trend still gathering history as a failed collection', function (): void {
+        writeVpsHealthSnapshot($this->root, [
+            'trends' => [
+                'window_days' => 30,
+                'min_span_days' => 7,
+                'min_samples' => 3,
+                'disk' => ['slope_kb_per_day' => null, 'days_to_target' => null, 'state' => 'collecting', 'samples' => 19, 'span_days' => 2.3],
+                'memory' => ['slope_pct_per_day' => null, 'days_to_target' => null, 'state' => 'collecting', 'samples' => 19, 'span_days' => 2.3],
+                'database' => ['slope_bytes_per_day' => null, 'samples' => 19, 'span_days' => 2.3],
+            ],
+        ]);
+
+        Livewire::actingAs(User::factory()->admin()->create())
+            ->test('pages::admin.vps-health')
+            ->assertDontSeeText('The last health check did not collect everything')
+            ->assertSeeText('Still collecting')
+            ->assertSeeText('19 samples over 2.3 days');
+    });
+
+    it('still reports a trend the host could not measure as a failed collection', function (): void {
+        writeVpsHealthSnapshot($this->root, [
+            'trends' => [
+                'window_days' => 30,
+                'disk' => ['slope_kb_per_day' => null, 'state' => 'unknown'],
+                'memory' => ['slope_pct_per_day' => null, 'state' => 'unknown'],
+            ],
+        ]);
+
+        Livewire::actingAs(User::factory()->admin()->create())
+            ->test('pages::admin.vps-health')
+            ->assertSeeText('The last health check did not collect everything')
+            ->assertSeeText('disk growth trend')
+            ->assertSeeText('memory growth trend');
     });
 
     it('reports a failed unit list it never received as unknown rather than none', function (): void {

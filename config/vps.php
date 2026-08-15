@@ -78,6 +78,15 @@ return [
     'cpu_sample_max_age_seconds' => (int) env('VPS_CPU_SAMPLE_MAX_AGE_SECONDS', 300),
 
     /*
+    | With no cached sample to compare against there is nothing to report, and the first view of the
+    | page after an idle spell would read as a failed measurement. Rather than show that, the delta
+    | is closed inside the request by sampling twice this far apart. Only ever paid once per cache
+    | window, so the polling view never waits on it.
+    */
+
+    'cpu_priming_delay_ms' => (int) env('VPS_CPU_PRIMING_DELAY_MS', 200),
+
+    /*
     |--------------------------------------------------------------------------
     | Monitored Units
     |--------------------------------------------------------------------------
@@ -124,6 +133,7 @@ return [
 
     'trends' => [
         'min_span_days' => (int) env('VPS_TREND_MIN_SPAN_DAYS', 7),
+        'min_samples' => (int) env('VPS_TREND_MIN_SAMPLES', 3),
     ],
 
     /*
