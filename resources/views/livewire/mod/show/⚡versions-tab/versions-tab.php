@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Mod;
 use App\Models\ModVersion;
+use App\Traits\Livewire\AuthorizesModTab;
 use App\Traits\Livewire\ModeratesModVersion;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -14,13 +15,9 @@ use Livewire\WithPagination;
 
 new #[Lazy] class extends Component
 {
+    use AuthorizesModTab;
     use ModeratesModVersion;
     use WithPagination;
-
-    /**
-     * The mod ID.
-     */
-    public int $modId;
 
     /**
      * Mount the component.
@@ -28,6 +25,7 @@ new #[Lazy] class extends Component
     public function mount(int $modId): void
     {
         $this->modId = $modId;
+        $this->authorizeModTab();
     }
 
     /**

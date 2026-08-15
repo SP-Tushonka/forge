@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Models\Addon;
-use App\Models\Mod;
 use App\Models\ModVersion;
+use App\Traits\Livewire\AuthorizesModTab;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -17,12 +17,8 @@ use Livewire\WithPagination;
 
 new #[Lazy] class extends Component
 {
+    use AuthorizesModTab;
     use WithPagination;
-
-    /**
-     * The mod ID.
-     */
-    public int $modId;
 
     /**
      * The selected mod version filter for addons.
@@ -36,6 +32,7 @@ new #[Lazy] class extends Component
     public function mount(int $modId, ?int $selectedModVersionId = null): void
     {
         $this->modId = $modId;
+        $this->authorizeModTab();
 
         // If URL parameter is set, use it (via #[Url] attribute)
         // Otherwise check for initial value passed from parent
@@ -50,15 +47,6 @@ new #[Lazy] class extends Component
     public function updatedSelectedModVersionId(): void
     {
         $this->resetPage('addonPage');
-    }
-
-    /**
-     * Get the mod.
-     */
-    #[Computed]
-    public function mod(): Mod
-    {
-        return Mod::query()->findOrFail($this->modId);
     }
 
     /**

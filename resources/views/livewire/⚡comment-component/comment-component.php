@@ -10,6 +10,7 @@ use App\Facades\Track;
 use App\Jobs\CheckCommentForSpam;
 use App\Jobs\TranslateComment;
 use App\Livewire\Concerns\RendersMarkdownPreview;
+use App\Models\Addon;
 use App\Models\Comment;
 use App\Models\CommentReaction;
 use App\Models\CommentVersion;
@@ -68,8 +69,11 @@ new class extends Component
     /**
      * The commentable model.
      *
+     * Must be locked to prevent data leak on disabled mods
+     *
      * @var Commentable<Mod|User>
      */
+    #[Locked]
     public Commentable $commentable;
 
     /**
@@ -194,11 +198,15 @@ new class extends Component
     #[Locked]
     public array $spamCheckStates = [];
 
-    // Version history modal properties
+    // Version history modal properties. The ids must stay locked cause openVersionModal() is the only
+    // authorized way to set them and the computed getters that read them do a bare find() with no further
+    // checks
     public bool $showVersionModal = false;
 
+    #[Locked]
     public ?int $viewingVersionId = null;
 
+    #[Locked]
     public ?int $viewingVersionCommentId = null;
 
     /**
@@ -209,6 +217,18 @@ new class extends Component
         $this->honeypotData = new HoneypotData;
         $this->initializeSubscriptionStatus();
         $this->initializeDescendantCounts();
+    }
+
+    /**
+     * Re-check a disabled commentable on every subsequent request
+     */
+    public function hydrate(): void
+    {
+        $commentable = $this->commentable;
+
+        if (($commentable instanceof Mod || $commentable instanceof Addon) && $commentable->disabled) {
+            CachedGate::authorize('view', $commentable);
+        }
     }
 
     /**

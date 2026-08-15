@@ -105,9 +105,12 @@ describe('versions tab', function (): void {
     });
 
     it('shows empty state when no versions exist', function (): void {
-        $mod = Mod::factory()->create();
+        // A versionless mod is not publicly visible, so only its owner/staff can view it.
+        $owner = User::factory()->create();
+        $mod = Mod::factory()->create(['owner_id' => $owner->id]);
 
         Livewire::withoutLazyLoading()
+            ->actingAs($owner)
             ->test('mod.show.versions-tab', ['modId' => $mod->id])
             ->assertSee('No Versions Yet')
             ->assertSuccessful();

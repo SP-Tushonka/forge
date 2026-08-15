@@ -113,7 +113,9 @@ describe('verification status badge', function (): void {
             ->assertSuccessful();
     });
 
-    it('shows the active run to guests and listens to the websocket channel', function (): void {
+    // Guests get no Echo instance, so the channel is declared only for authenticated users; declaring it for a guest
+    // would just log "Laravel Echo cannot be found" once per version card.
+    it('shows the active run to guests without declaring the websocket channel', function (): void {
         $version = ModVersion::factory()->create();
         VerificationResult::factory()->forModVersion($version)->create();
 
@@ -124,6 +126,20 @@ describe('verification status badge', function (): void {
         ])
             ->assertSeeHtml('data-test="verification-status-shield"')
             ->assertSee('Pending')
+            ->assertDontSeeHtml('echo:verification.mod-version.'.$version->id.',VerificationResultUpdated')
+            ->assertSuccessful();
+    });
+
+    it('listens to the websocket channel for an authenticated user', function (): void {
+        $version = ModVersion::factory()->create();
+        VerificationResult::factory()->forModVersion($version)->create();
+
+        Livewire::actingAs(User::factory()->create())
+            ->test('verification-status', [
+                'verifiableId' => $version->id,
+                'verifiableType' => ModVersion::class,
+                'modalName' => 'version-verification-'.$version->id,
+            ])
             ->assertSeeHtml('echo:verification.mod-version.'.$version->id.',VerificationResultUpdated')
             ->assertSuccessful();
     });
@@ -174,7 +190,6 @@ describe('verification status badge', function (): void {
         ])
             ->assertSeeHtml('data-test="verification-status-shield"')
             ->assertSee('Passed')
-            ->assertSeeHtml('echo:verification.mod-version.'.$version->id.',VerificationResultUpdated')
             ->assertSuccessful();
     });
 
