@@ -374,14 +374,12 @@
                                             <dt class="text-gray-400">{{ __('Disk') }}</dt>
                                             <dd class="text-right text-gray-200">
                                                 @if ($trends['disk']['slope_kb_per_day'] === null)
-                                                    <span class="text-gray-500">{{ __('Still collecting') }}</span><br>
-                                                    <span class="text-xs text-gray-500">
-                                                        @if ($trends['disk']['samples'] !== null && $trends['disk']['span_days'] !== null)
-                                                            {{ __(':samples samples over :span days; needs :min days', ['samples' => $trends['disk']['samples'], 'span' => number_format($trends['disk']['span_days'], 1), 'min' => $trends['min_span_days']]) }}
-                                                        @else
-                                                            {{ __('How much history has been collected is unknown; a trend needs :min days of it', ['min' => $trends['min_span_days']]) }}
-                                                        @endif
-                                                    </span>
+                                                    <x-vps.trend-collecting
+                                                        :samples="$trends['disk']['samples']"
+                                                        :span="$trends['disk']['span_days']"
+                                                        :min-span="$trends['min_span_days']"
+                                                        :min-samples="$trends['min_samples']"
+                                                    />
                                                 @else
                                                     {{ $trends['disk']['slope_kb_per_day'] < 0 ? '-' : '+' }}{{ Number::fileSize(abs($trends['disk']['slope_kb_per_day']) * 1024, precision: 1) }}
                                                     / {{ __('day') }}
@@ -396,7 +394,12 @@
                                             <dt class="text-gray-400">{{ __('Memory') }}</dt>
                                             <dd class="text-right text-gray-200">
                                                 @if ($trends['memory']['slope_pct_per_day'] === null)
-                                                    <span class="text-gray-500">{{ __('Still collecting') }}</span>
+                                                    <x-vps.trend-collecting
+                                                        :samples="$trends['memory']['samples']"
+                                                        :span="$trends['memory']['span_days']"
+                                                        :min-span="$trends['min_span_days']"
+                                                        :min-samples="$trends['min_samples']"
+                                                    />
                                                 @else
                                                     {{ number_format($trends['memory']['slope_pct_per_day'], 2) }}%
                                                     / {{ __('day') }}
@@ -411,7 +414,12 @@
                                             <dt class="text-gray-400">{{ __('Database') }}</dt>
                                             <dd class="text-right text-gray-200">
                                                 @if ($trends['database']['slope_bytes_per_day'] === null)
-                                                    <span class="text-gray-500">{{ __('Still collecting') }}</span>
+                                                    <x-vps.trend-collecting
+                                                        :samples="$trends['database']['samples']"
+                                                        :span="$trends['database']['span_days']"
+                                                        :min-span="$trends['min_span_days']"
+                                                        :min-samples="$trends['min_samples']"
+                                                    />
                                                 @else
                                                     {{ Number::fileSize($trends['database']['slope_bytes_per_day'], precision: 1) }}
                                                     / {{ __('day') }}

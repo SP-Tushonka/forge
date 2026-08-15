@@ -179,7 +179,7 @@
                                         name="check-circle"
                                         class="mr-3 mt-1 size-4 flex-shrink-0 text-blue-600"
                                     />
-                                    <span class="text-blue-200">Duplicate your EFT installation to a
+                                    <span class="text-blue-200">Duplicate your Live game installation to a
                                         selected folder</span>
                                 </li>
                                 <li class="flex items-start">
@@ -187,7 +187,7 @@
                                         name="check-circle"
                                         class="mr-3 mt-1 size-4 flex-shrink-0 text-blue-600"
                                     />
-                                    <span class="text-blue-200">Patch the duplicated EFT files to the
+                                    <span class="text-blue-200">Patch the duplicated Live game files to the
                                         version required for SPT</span>
                                 </li>
                                 <li class="flex items-start">
@@ -195,8 +195,8 @@
                                         name="check-circle"
                                         class="mr-3 mt-1 size-4 flex-shrink-0 text-blue-600"
                                     />
-                                    <span class="text-blue-200">Download the most recent version of
-                                        SPT and install it into the duplicated folder</span>
+                                    <span class="text-blue-200">Download the chosen version of SPT and install
+                                        it into the duplicated folder</span>
                                 </li>
                             </ul>
                         </div>
@@ -229,8 +229,8 @@
                                         name="arrow-right"
                                         class="mr-3 mt-1 size-4 flex-shrink-0 text-yellow-600"
                                     />
-                                    <span class="text-yellow-200">Do not place this installer on
-                                        your desktop and run it</span>
+                                    <span class="text-yellow-200">Do not install SPT to a protected folder
+                                        like Downloads, Desktop or Program Files</span>
                                 </li>
                                 <li class="flex items-start">
                                     <flux:icon
@@ -266,30 +266,14 @@
                                     <span
                                         class="mr-3 mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-green-900 text-sm font-medium text-green-200"
                                     >1</span>
-                                    <span class="text-green-200">Download installer</span>
+                                    <span class="text-green-200">Ensure your Live game is updated to the latest version</span>
                                 </li>
                                 <li class="flex items-start">
                                     <span
                                         class="mr-3 mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-green-900 text-sm font-medium text-green-200"
                                     >2</span>
-                                    <span class="text-green-200">Place in a new folder. We
-                                        recommend: <br /><code
-                                            class="whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-sm"
-                                        >C:\Games\SPT-4.0\</code></span>
-                                </li>
-                                <li class="flex items-start">
-                                    <span
-                                        class="mr-3 mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-green-900 text-sm font-medium text-green-200"
-                                    >3</span>
-                                    <span class="text-green-200">Ensure your EFT install is updated
-                                        to the latest version</span>
-                                </li>
-                                <li class="flex items-start">
-                                    <span
-                                        class="mr-3 mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-green-900 text-sm font-medium text-green-200"
-                                    >4</span>
                                     <div class="text-green-200">
-                                        <span>Run installer</span>
+                                        <span>Download and run the SPT Installer</span>
                                         <div class="ml-2 mt-1 text-sm text-red-400">
                                             <flux:icon
                                                 name="exclamation-triangle"
@@ -303,9 +287,26 @@
                                 <li class="flex items-start">
                                     <span
                                         class="mr-3 mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-green-900 text-sm font-medium text-green-200"
+                                    >3</span>
+                                    <span class="text-green-200">Choose a new empty folder for the Install Folder Path.
+                                        We recommend: <br /><code
+                                            class="whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-sm"
+                                        >C:\Games\SPT-4.0\</code> or <code
+                                            class="whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-sm"
+                                        >C:\Games\SPT-4.1\</code>, depending on the version you are installing</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span
+                                        class="mr-3 mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-green-900 text-sm font-medium text-green-200"
+                                    >4</span>
+                                    <span class="text-green-200">Pick your desired SPT version and press
+                                        Start Install</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span
+                                        class="mr-3 mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-green-900 text-sm font-medium text-green-200"
                                     >5</span>
-                                    <span class="text-green-200">Wait for it to say it has
-                                        completed</span>
+                                    <span class="text-green-200">Wait for it to finish</span>
                                 </li>
                                 <li class="flex items-start">
                                     <span
@@ -364,6 +365,16 @@
                             </ol>
                         </div>
                     </div>
+                </div>
+
+                {{-- Wiki Guide Callout --}}
+                <div class="-mt-2 mb-12 rounded-xl border border-yellow-800 bg-yellow-950/50 p-4 text-center">
+                    <p class="text-yellow-200">Read the <a
+                            href="https://wiki.sp-tushonka.com/en/SPT_4x/Installation_Guide"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="font-semibold text-yellow-100 underline underline-offset-2 hover:text-white"
+                        >Installation Guide</a> on the SPT Wiki for a more detailed tutorial</p>
                 </div>
 
                 {{-- Video Guide Section --}}

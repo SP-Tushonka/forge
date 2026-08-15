@@ -220,16 +220,18 @@ final class VpsHealthService
     }
 
     /**
-     * Growth projections. Slopes stay null until the history spans enough days to fit a line through, which means a
-     * freshly deployed host reports "unknown" rather than "fine".
+     * Growth projections. Slopes stay null until the history spans enough days to fit a line through, which a freshly
+     * deployed host reports as "collecting" - distinct from "unknown", which is a measurement that failed. The sample
+     * count and span accompany every trend so a reader can tell those two apart without inferring one from another.
      *
-     * @return array{window_days: int|null, min_span_days: int, disk: array{slope_kb_per_day: float|null, days_to_target: float|null, state: string, samples: int|null, span_days: float|null}, memory: array{slope_pct_per_day: float|null, days_to_target: float|null, state: string}, database: array{slope_bytes_per_day: float|null}}
+     * @return array{window_days: int|null, min_span_days: int, min_samples: int, disk: array{slope_kb_per_day: float|null, days_to_target: float|null, state: string, samples: int|null, span_days: float|null}, memory: array{slope_pct_per_day: float|null, days_to_target: float|null, state: string, samples: int|null, span_days: float|null}, database: array{slope_bytes_per_day: float|null, samples: int|null, span_days: float|null}}
      */
     public function trends(): array
     {
         return [
             'window_days' => $this->snapshotInt('trends.window_days'),
             'min_span_days' => $this->minSpanDays(),
+            'min_samples' => $this->minSamples(),
             'disk' => [
                 'slope_kb_per_day' => $this->snapshotFloat('trends.disk.slope_kb_per_day'),
                 'days_to_target' => $this->snapshotFloat('trends.disk.days_to_target'),
@@ -241,9 +243,13 @@ final class VpsHealthService
                 'slope_pct_per_day' => $this->snapshotFloat('trends.memory.slope_pct_per_day'),
                 'days_to_target' => $this->snapshotFloat('trends.memory.days_to_target'),
                 'state' => $this->snapshotState('trends.memory.state'),
+                'samples' => $this->snapshotInt('trends.memory.samples'),
+                'span_days' => $this->snapshotFloat('trends.memory.span_days'),
             ],
             'database' => [
                 'slope_bytes_per_day' => $this->snapshotFloat('trends.database.slope_bytes_per_day'),
+                'samples' => $this->snapshotInt('trends.database.samples'),
+                'span_days' => $this->snapshotFloat('trends.database.span_days'),
             ],
         ];
     }
@@ -493,27 +499,64 @@ final class VpsHealthService
             return null;
         }
 
+        $maxAge = config()->integer('vps.cpu_sample_max_age_seconds');
         $previous = Cache::get(self::CPU_SAMPLE_CACHE_KEY);
 
-        Cache::put(self::CPU_SAMPLE_CACHE_KEY, $sample, now()->addSeconds(config()->integer('vps.cpu_sample_max_age_seconds')));
+        Cache::put(self::CPU_SAMPLE_CACHE_KEY, $sample, now()->addSeconds($maxAge));
 
-        if (! is_array($previous) || ! isset($previous['at'], $previous['total'], $previous['idle'])) {
+        if (is_array($previous) && isset($previous['at'], $previous['total'], $previous['idle'])) {
+            /** @var array{at: int, total: int, idle: int} $previous */
+            $elapsed = $sample['at'] - $previous['at'];
+
+            if ($elapsed > 0 && $elapsed <= $maxAge) {
+                return $this->cpuPctBetween($previous, $sample);
+            }
+        }
+
+        return $this->primeCpuUsagePct($sample, $maxAge);
+    }
+
+    /**
+     * Close the delta inside this request when there is no baseline to compare against: the cached sample has expired,
+     * or a concurrent request replaced it less than a second ago. Without this, the first view of the page after an
+     * idle spell reports a reading that has merely not been taken yet as one that could not be taken.
+     *
+     * @param  array{at: int, total: int, idle: int}  $first
+     */
+    private function primeCpuUsagePct(array $first, int $maxAge): ?float
+    {
+        $delay = config()->integer('vps.cpu_priming_delay_ms');
+
+        if ($delay > 0) {
+            usleep($delay * 1000);
+        }
+
+        $second = $this->readCpuSample();
+
+        if ($second === null) {
             return null;
         }
 
-        /** @var array{at: int, total: int, idle: int} $previous */
-        $elapsed = $sample['at'] - $previous['at'];
+        Cache::put(self::CPU_SAMPLE_CACHE_KEY, $second, now()->addSeconds($maxAge));
 
-        if ($elapsed <= 0 || $elapsed > config()->integer('vps.cpu_sample_max_age_seconds')) {
-            return null;
-        }
+        return $this->cpuPctBetween($first, $second);
+    }
 
-        $totalDelta = $sample['total'] - $previous['total'];
-        $idleDelta = $sample['idle'] - $previous['idle'];
+    /**
+     * Busy share of the jiffies accumulated between two samples.
+     *
+     * @param  array{at: int, total: int, idle: int}  $from
+     * @param  array{at: int, total: int, idle: int}  $to
+     */
+    private function cpuPctBetween(array $from, array $to): ?float
+    {
+        $totalDelta = $to['total'] - $from['total'];
 
         if ($totalDelta <= 0) {
             return null;
         }
+
+        $idleDelta = $to['idle'] - $from['idle'];
 
         return max(0.0, min(100.0, (1 - ($idleDelta / $totalDelta)) * 100));
     }
@@ -767,6 +810,16 @@ final class VpsHealthService
     }
 
     /**
+     * Valid samples a trend needs alongside the span. Resolved on the same terms as the span floor.
+     */
+    private function minSamples(): int
+    {
+        $published = $this->publishedPolicy('trends.min_samples');
+
+        return is_numeric($published) ? (int) $published : config()->integer('vps.trends.min_samples');
+    }
+
+    /**
      * A policy value the snapshot may publish, or null when it may not be trusted to. Only policy - never a reading -
      * is resolved this way: readings stay null when they are missing, and are shown as stale when they are old.
      */
@@ -800,13 +853,14 @@ final class VpsHealthService
 
     /**
      * A published state field, collapsed to the vocabulary the snapshot uses. Anything unrecognised is "unknown", so a
-     * malformed document cannot read as healthy.
+     * malformed document cannot read as healthy. "collecting" is a trend that has not accumulated enough history yet,
+     * which is distinct from one the host failed to measure.
      */
     private function snapshotState(string $path): string
     {
         $value = $this->snapshotString($path);
 
-        return in_array($value, ['ok', 'breached'], true) ? $value : 'unknown';
+        return in_array($value, ['ok', 'breached', 'collecting'], true) ? $value : 'unknown';
     }
 
     private function readProc(string $file): ?string

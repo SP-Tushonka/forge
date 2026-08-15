@@ -137,8 +137,8 @@ describe('live readings', function (): void {
 });
 
 describe('cpu sampling', function (): void {
-    it('reports nothing on the first read and a delta on the next', function (): void {
-        expect(resolve(VpsHealthService::class)->cpuUsagePct())->toBeNull();
+    it('reports a delta against the cached sample', function (): void {
+        resolve(VpsHealthService::class)->cpuUsagePct();
 
         $this->travel(10)->seconds();
 
@@ -151,12 +151,37 @@ describe('cpu sampling', function (): void {
         expect(resolve(VpsHealthService::class)->cpuUsagePct())->toEqualWithDelta(15.0, 0.001);
     });
 
-    it('discards a sample older than the configured window', function (): void {
+    /**
+     * With no baseline the delta is closed inside the request instead. Counters that do not move between those two
+     * reads still yield nothing to report -- the point is that it is never a fabricated zero.
+     */
+    it('reports nothing rather than zero when the counters do not advance', function (): void {
+        expect(resolve(VpsHealthService::class)->cpuUsagePct())->toBeNull();
+    });
+
+    it('rebases on a sample older than the configured window instead of trusting it', function (): void {
         resolve(VpsHealthService::class)->cpuUsagePct();
 
         $this->travel(config()->integer('vps.cpu_sample_max_age_seconds') + 60)->seconds();
 
+        File::put($this->vpsRoot.'/proc/stat', implode("\n", [
+            'cpu  9000 0 100 1700 0 0 0 0 0 0',
+            'cpu0 4500 0 50 850 0 0 0 0 0 0',
+            'cpu1 4500 0 50 850 0 0 0 0 0 0',
+        ]));
+
+        // The stale sample would have read as a busy spike; the reading is refused rather than attributed to now.
         expect(resolve(VpsHealthService::class)->cpuUsagePct())->toBeNull();
+
+        $this->travel(10)->seconds();
+
+        File::put($this->vpsRoot.'/proc/stat', implode("\n", [
+            'cpu  9100 0 100 1700 0 0 0 0 0 0',
+            'cpu0 4550 0 50 850 0 0 0 0 0 0',
+            'cpu1 4550 0 50 850 0 0 0 0 0 0',
+        ]));
+
+        expect(resolve(VpsHealthService::class)->cpuUsagePct())->toEqualWithDelta(100.0, 0.001);
     });
 });
 
