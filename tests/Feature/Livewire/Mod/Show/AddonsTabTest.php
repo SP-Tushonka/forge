@@ -43,7 +43,9 @@ describe('addons tab', function (): void {
     });
 
     it('shows addons disabled message when addons are disabled', function (): void {
+        SptVersion::factory()->create(['version' => '1.0.0']);
         $mod = Mod::factory()->addonsDisabled()->create();
+        ModVersion::factory()->recycle($mod)->create(['spt_version_constraint' => '1.0.0']);
 
         Livewire::withoutLazyLoading()
             ->test('mod.show.addons-tab', ['modId' => $mod->id])
@@ -52,7 +54,9 @@ describe('addons tab', function (): void {
     });
 
     it('shows empty state when no addons exist', function (): void {
+        SptVersion::factory()->create(['version' => '1.0.0']);
         $mod = Mod::factory()->addonsEnabled()->create();
+        ModVersion::factory()->recycle($mod)->create(['spt_version_constraint' => '1.0.0']);
 
         Livewire::withoutLazyLoading()
             ->test('mod.show.addons-tab', ['modId' => $mod->id])

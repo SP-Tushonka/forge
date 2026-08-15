@@ -385,15 +385,16 @@ describe('live progress', function (): void {
             ->assertSuccessful();
     });
 
-    it('shows active runs and web socket channel to guests', function (): void {
+    // Guests get no Echo instance, so the channel is declared only for authenticated users; declaring it for a guest
+    // would just log "Laravel Echo cannot be found".
+    it('shows active runs to guests without declaring the web socket channel', function (): void {
         $version = ModVersion::factory()->create();
         VerificationResult::factory()->forModVersion($version)->create();
 
         Livewire::withoutLazyLoading()
             ->test('verification-details', ['verifiableId' => $version->id, 'verifiableType' => ModVersion::class])
             ->assertSee('Pending')
-            ->assertSee('This panel updates automatically.')
-            ->assertSeeHtml('echo:verification.mod-version.'.$version->id.',VerificationResultUpdated')
+            ->assertDontSeeHtml('echo:verification.mod-version.'.$version->id.',VerificationResultUpdated')
             ->assertSuccessful();
     });
 });

@@ -7,6 +7,7 @@ use App\Facades\CachedGate;
 use App\Models\AddonVersion;
 use App\Models\ModVersion;
 use App\Models\VerificationResult;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -69,12 +70,15 @@ new class extends Component
      */
     public function getListeners(): array
     {
-        $slug = $this->verifiableType === ModVersion::class ? 'mod-version' : 'addon-version';
+        $listeners = ['verification-submitted.'.$this->eventKey => 'refreshStatus'];
 
-        return [
-            'verification-submitted.'.$this->eventKey => 'refreshStatus',
-            sprintf('echo:verification.%s.%d,VerificationResultUpdated', $slug, $this->verifiableId) => 'refreshStatus',
-        ];
+        // Guests get no Echo instance (registerEcho.js), so declaring the channel would only log a console warning.
+        if (Auth::check()) {
+            $slug = $this->verifiableType === ModVersion::class ? 'mod-version' : 'addon-version';
+            $listeners[sprintf('echo:verification.%s.%d,VerificationResultUpdated', $slug, $this->verifiableId)] = 'refreshStatus';
+        }
+
+        return $listeners;
     }
 
     /**
