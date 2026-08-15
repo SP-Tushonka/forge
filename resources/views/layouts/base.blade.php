@@ -10,6 +10,7 @@
 <html
     lang="{{ str_replace('_', '-', app()->getLocale()) }}"
     class="dark"
+    data-authenticated="{{ auth()->check() ? '1' : '0' }}"
 >
 
 <head>

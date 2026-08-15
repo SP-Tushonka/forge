@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 new #[Layout('layouts::base')] class extends Component
@@ -21,6 +22,7 @@ new #[Layout('layouts::base')] class extends Component
     /**
      * The mod being shown.
      */
+    #[Locked]
     public Mod $mod;
 
     /**
@@ -40,6 +42,15 @@ new #[Layout('layouts::base')] class extends Component
         Gate::authorize('view', $this->mod);
 
         $this->openGraphImage = $this->mod->thumbnail;
+    }
+
+    /**
+     * Re-authorize on every subsequent request. Makes sure the user
+     * can actually be allowed to see this.
+     */
+    public function hydrate(): void
+    {
+        Gate::authorize('view', $this->mod);
     }
 
     /**

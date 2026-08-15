@@ -2,17 +2,14 @@
 
 declare(strict_types=1);
 
-use App\Models\Mod;
+use App\Traits\Livewire\AuthorizesModTab;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
 
 new #[Lazy] class extends Component
 {
-    /**
-     * The mod ID.
-     */
-    public int $modId;
+    use AuthorizesModTab;
 
     /**
      * Mount the component.
@@ -20,6 +17,7 @@ new #[Lazy] class extends Component
     public function mount(int $modId): void
     {
         $this->modId = $modId;
+        $this->authorizeModTab();
     }
 
     /**
@@ -28,6 +26,6 @@ new #[Lazy] class extends Component
     #[Computed]
     public function descriptionHtml(): string
     {
-        return Mod::query()->findOrFail($this->modId)->description_html;
+        return $this->mod->description_html;
     }
 };

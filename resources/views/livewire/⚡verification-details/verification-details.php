@@ -10,6 +10,7 @@ use App\Models\VerificationResult;
 use App\Support\DataTransferObjects\FileTreeNode;
 use App\Support\DataTransferObjects\VerificationCheck;
 use App\Traits\Livewire\SubmitsVerification;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Number;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Lazy;
@@ -52,6 +53,11 @@ new #[Lazy] class extends Component
      */
     public function getListeners(): array
     {
+        // Guests get no Echo instance (registerEcho.js), so declaring the channel would only log a console warning
+        if (Auth::guest()) {
+            return [];
+        }
+
         $slug = $this->verifiableType === ModVersion::class ? 'mod-version' : 'addon-version';
 
         return [
