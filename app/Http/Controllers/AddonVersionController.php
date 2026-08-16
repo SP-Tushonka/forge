@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Enums\TrackingEventType;
 use App\Facades\Track;
 use App\Models\AddonVersion;
+use App\Support\SpeculativeRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -25,6 +26,12 @@ final class AddonVersionController extends Controller
             ->firstOrFail();
 
         Gate::authorize('download', $addonVersion);
+
+        // A prefetch is the browser guessing, not the visitor downloading. The link is external, so the cross-origin
+        // redirect discards the speculation and the real click returns here to be counted exactly once.
+        if (SpeculativeRequest::isPrefetch($request)) {
+            return redirect($addonVersion->link, 307);
+        }
 
         // Rate limit the downloads to 5 per minute.
         $rateIdentifier = $request->user()?->id ?: $request->session()->getId();

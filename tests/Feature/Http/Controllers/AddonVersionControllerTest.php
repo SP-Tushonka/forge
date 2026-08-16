@@ -2,11 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Enums\TrackingEventType;
 use App\Models\Addon;
 use App\Models\Mod;
 use App\Models\ModVersion;
 use App\Models\SptVersion;
+use App\Models\TrackingEvent;
 use App\Models\User;
+use Illuminate\Support\Facades\RateLimiter;
 
 /**
  * Create a publicly visible mod with a published version pinned to a known SPT version so the addon download route
@@ -69,5 +72,31 @@ describe('download', function (): void {
         // The download count is incremented asynchronously via a queued job, so the request only needs to resolve to
         // the external link redirect here.
         $response->assertRedirect($version->link);
+    });
+
+    it('does not record a speculative prefetch as a download', function (): void {
+        // The counter and the tracking event are both written through defer(), so run them inline to assert on them.
+        $this->withoutDefer();
+
+        $user = User::factory()->create();
+        $mod = createVisibleModForDownload();
+        $addon = Addon::factory()->for($mod)->published()->withVersions(1)->create();
+        $version = $addon->latestVersion;
+        $version->update(['downloads' => 0]);
+
+        $this->actingAs($user)
+            ->get(route('addon.version.download', [
+                'addon' => $addon->id,
+                'slug' => $addon->slug,
+                'version' => $version->version,
+            ]), ['Sec-Purpose' => 'prefetch'])
+            ->assertRedirect($version->link);
+
+        expect($version->refresh()->downloads)->toBe(0)
+            ->and(TrackingEvent::query()
+                ->where('event_name', TrackingEventType::ADDON_DOWNLOAD->value)
+                ->where('visitable_id', $version->id)
+                ->exists())->toBeFalse()
+            ->and(RateLimiter::attempts(sprintf('addon.version.download.%s.%d', $user->id, $addon->id)))->toBe(0);
     });
 });
