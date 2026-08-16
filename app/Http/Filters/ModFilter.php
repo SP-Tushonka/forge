@@ -8,6 +8,7 @@ use App\Enums\FikaCompatibility;
 use App\Models\Mod;
 use App\Models\ModVersion;
 use App\Models\SptVersion;
+use App\Support\SemiJoinHint;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\Cache;
@@ -119,7 +120,7 @@ final class ModFilter
         $showDisabled = auth()->user()?->isModOrAdmin() ?? false;
 
         $this->builder->whereExists(function (QueryBuilder $query) use ($showDisabled): void {
-            $query->select(DB::raw(1))
+            $query->select(SemiJoinHint::firstMatch())
                 ->from('mod_versions')
                 ->join('mod_version_spt_version', 'mod_versions.id', '=', 'mod_version_spt_version.mod_version_id')
                 ->join('spt_versions', 'mod_version_spt_version.spt_version_id', '=', 'spt_versions.id')
@@ -296,7 +297,7 @@ final class ModFilter
         // Both normal versions and legacy
         if ($normalVersions !== [] && $hasLegacyVersion) {
             return $this->builder->whereExists(function (QueryBuilder $subQuery) use ($normalVersions, $showDisabled): void {
-                $subQuery->select(DB::raw(1))
+                $subQuery->select(SemiJoinHint::firstMatch())
                     ->from('mod_versions')
                     ->whereColumn('mod_versions.mod_id', 'mods.id')
                     ->unless($showDisabled, fn (QueryBuilder $query) => $query->where('mod_versions.disabled', false))
@@ -341,7 +342,7 @@ final class ModFilter
         // Only normal versions
         if ($normalVersions !== []) {
             return $this->builder->whereExists(function (QueryBuilder $query) use ($normalVersions, $showDisabled): void {
-                $query->select(DB::raw(1))
+                $query->select(SemiJoinHint::firstMatch())
                     ->from('mod_versions')
                     ->join('mod_version_spt_version', 'mod_versions.id', '=', 'mod_version_spt_version.mod_version_id')
                     ->join('spt_versions', 'mod_version_spt_version.spt_version_id', '=', 'spt_versions.id')
@@ -366,7 +367,7 @@ final class ModFilter
         // Get the active SPT versions that are shown in the filter
         $activeSptVersions = $this->getActiveSptVersions($showDisabled);
 
-        $query->select(DB::raw(1))
+        $query->select(SemiJoinHint::firstMatch())
             ->from('mod_versions')
             ->whereColumn('mod_versions.mod_id', 'mods.id')
             ->unless($showDisabled, fn (QueryBuilder $q) => $q->where('mod_versions.disabled', false))
