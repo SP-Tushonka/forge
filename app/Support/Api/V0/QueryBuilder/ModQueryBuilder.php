@@ -8,10 +8,10 @@ use App\Enums\FikaCompatibility;
 use App\Exceptions\Api\V0\InvalidQueryException;
 use App\Models\Mod;
 use App\Models\SptVersion;
+use App\Support\SemiJoinHint;
 use App\Support\VersionMatcher;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Override;
 
@@ -195,7 +195,7 @@ final class ModQueryBuilder extends AbstractQueryBuilder
     protected function applySptVersionCondition(Builder $query, ?array $compatibleVersions = null): void
     {
         $query->whereExists(function (\Illuminate\Database\Query\Builder $query) use ($compatibleVersions): void {
-            $query->select(DB::raw(1))
+            $query->select(SemiJoinHint::firstMatch())
                 ->from('mod_versions')
                 ->join('mod_version_spt_version', 'mod_versions.id', '=', 'mod_version_spt_version.mod_version_id')
                 ->join('spt_versions', 'mod_version_spt_version.spt_version_id', '=', 'spt_versions.id')
@@ -492,7 +492,7 @@ final class ModQueryBuilder extends AbstractQueryBuilder
         if ($includeLegacy) {
             // Include legacy mods: mods with versions that have empty spt_version_constraint
             $query->orWhereExists(function (\Illuminate\Database\Query\Builder $subQuery): void {
-                $subQuery->select(DB::raw(1))
+                $subQuery->select(SemiJoinHint::firstMatch())
                     ->from('mod_versions')
                     ->whereColumn('mod_versions.mod_id', 'mods.id')
                     ->where('mod_versions.disabled', false)

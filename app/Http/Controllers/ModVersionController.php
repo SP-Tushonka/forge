@@ -8,6 +8,7 @@ use App\Enums\TrackingEventType;
 use App\Facades\Track;
 use App\Models\ModVersion;
 use App\Models\Scopes\PublishedScope;
+use App\Support\SpeculativeRequest;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,6 +30,12 @@ final class ModVersionController extends Controller
             ->firstOrFail();
 
         Gate::authorize('download', $modVersion);
+
+        // A prefetch is the browser guessing, not the visitor downloading. The link is external, so the cross-origin
+        // redirect discards the speculation and the real click returns here to be counted exactly once.
+        if (SpeculativeRequest::isPrefetch($request)) {
+            return redirect($modVersion->link, 307);
+        }
 
         // Rate limit the downloads to 5 per minute.
         $rateIdentifier = $request->user()?->id ?: $request->session()->getId();
