@@ -107,9 +107,11 @@ final class ModResource extends JsonResource
         }
 
         if ($this->shouldInclude('description')) {
+            // Closure, not a value: an eagerly evaluated argument runs Markdown + Purify on every row of the index
+            // response only for when() to discard it.
             $data['description'] = $this->when(
                 $request->routeIs('api.v0.mods.show'),
-                $this->resource->description_html,
+                fn (): string => $this->resource->description_html,
             );
         }
 
@@ -136,7 +138,7 @@ final class ModResource extends JsonResource
         if ($this->shouldInclude('custom_ai_disclosure')) {
             $data['custom_ai_disclosure'] = $this->when(
                 $request->routeIs('api.v0.mods.show'),
-                $this->resource->custom_ai_disclosure_html,
+                fn (): string => $this->resource->custom_ai_disclosure_html,
             );
         }
 

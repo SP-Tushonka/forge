@@ -6,7 +6,9 @@ use App\Enums\UserImageType;
 use App\Jobs\GenerateUserImageVariants;
 use App\Models\User;
 use App\Services\ThumbnailService;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Scout\Jobs\MakeSearchable;
 use Tests\Concerns\MakesAnimatedTestImages;
 
 pest()->use(MakesAnimatedTestImages::class);
@@ -147,4 +149,33 @@ it('leaves the profile photo columns untouched when regenerating cover variants'
     expect($user->profile_photo_path)->toBe('profile-photos/avatar.png')
         ->and($user->profile_photo_variants)->toBe([128 => 'profile-photos/avatar_128w.webp'])
         ->and($user->cover_photo_variants)->toBe([1280 => 'cover-photos/banner_1280w.webp']);
+});
+
+describe('search index sync', function (): void {
+    beforeEach(function (): void {
+        // The collection Scout engine no-ops writes, so force the queued path to make the resync assertable.
+        config(['scout.queue' => true]);
+    });
+
+    it('resyncs the search index after quietly writing profile photo variants', function (): void {
+        // Regression: the quiet save skipped Scout, leaving profile_photo_url in the index pointing at the
+        // pre-normalisation file. No image processing is needed to reach that write when there is no source path.
+        $user = User::factory()->create(['profile_photo_path' => null]);
+
+        Queue::fake();
+
+        (new GenerateUserImageVariants($user, UserImageType::ProfilePhoto))->handle(app(ThumbnailService::class));
+
+        Queue::assertPushed(MakeSearchable::class);
+    });
+
+    it('does not resync the search index for cover photos', function (): void {
+        $user = User::factory()->create(['cover_photo_path' => null]);
+
+        Queue::fake();
+
+        (new GenerateUserImageVariants($user, UserImageType::CoverPhoto))->handle(app(ThumbnailService::class));
+
+        Queue::assertNotPushed(MakeSearchable::class);
+    });
 });

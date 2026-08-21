@@ -13,6 +13,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\Backoff;
+use Illuminate\Queue\Attributes\DeleteWhenMissingModels;
 use Illuminate\Queue\Attributes\Timeout;
 use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\InteractsWithQueue;
@@ -24,6 +25,7 @@ use Throwable;
 #[Timeout(60)]
 #[Backoff([1, 5, 10])]
 #[Tries(3)]
+#[DeleteWhenMissingModels]
 final class ProcessChatMessageNotification implements ShouldQueue
 {
     use Dispatchable;

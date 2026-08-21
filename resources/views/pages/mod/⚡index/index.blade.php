@@ -594,7 +594,7 @@
             wire:loading.grid
             class="my-8 hidden grid-cols-1 gap-6 lg:grid-cols-2"
         >
-            @for ($i = 0; $i < $perPage; $i++)
+            @for ($i = 0; $i < min($perPage, max($perPageOptions)); $i++)
                 <div class="@container mx-auto h-full w-full max-w-2xl">
                     <flux:skeleton.group
                         animate="shimmer"
