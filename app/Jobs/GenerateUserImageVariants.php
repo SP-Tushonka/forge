@@ -51,5 +51,11 @@ final class GenerateUserImageVariants implements ShouldQueue
             : null;
 
         $this->user->saveQuietly();
+
+        // profile_photo_url resolves to the largest variant, so a quiet save leaves the search index pointing at the
+        // unresized original. Cover photos are not in the searchable array and need no resync.
+        if ($this->type === UserImageType::ProfilePhoto) {
+            $this->user->shouldBeSearchable() ? $this->user->searchable() : $this->user->unsearchable();
+        }
     }
 }

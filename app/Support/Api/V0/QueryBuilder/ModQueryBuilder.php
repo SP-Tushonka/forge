@@ -194,22 +194,49 @@ final class ModQueryBuilder extends AbstractQueryBuilder
      */
     protected function applySptVersionCondition(Builder $query, ?array $compatibleVersions = null): void
     {
-        $query->whereExists(function (\Illuminate\Database\Query\Builder $query) use ($compatibleVersions): void {
-            $query->select(SemiJoinHint::firstMatch())
-                ->from('mod_versions')
-                ->join('mod_version_spt_version', 'mod_versions.id', '=', 'mod_version_spt_version.mod_version_id')
-                ->join('spt_versions', 'mod_version_spt_version.spt_version_id', '=', 'spt_versions.id')
-                ->whereColumn('mod_versions.mod_id', 'mods.id')
-                ->whereNotNull('spt_versions.version')
-                ->where('mod_versions.disabled', false)
-                ->whereNotNull('mod_versions.published_at')
-                ->where('mod_versions.published_at', '<=', now());
+        // The legacy alternative must be grouped with the SPT existence check. Applying it as a bare orWhereExists on
+        // the outer builder binds the OR at the top level, which escapes both mods.disabled and every other filter.
+        $query->where(function (Builder $group) use ($compatibleVersions): void {
+            $group->whereExists(function (\Illuminate\Database\Query\Builder $query) use ($compatibleVersions): void {
+                $query->select(SemiJoinHint::firstMatch())
+                    ->from('mod_versions')
+                    ->join('mod_version_spt_version', 'mod_versions.id', '=', 'mod_version_spt_version.mod_version_id')
+                    ->join('spt_versions', 'mod_version_spt_version.spt_version_id', '=', 'spt_versions.id')
+                    ->whereColumn('mod_versions.mod_id', 'mods.id')
+                    ->whereNotNull('spt_versions.version')
+                    ->where('mod_versions.disabled', false)
+                    ->whereNotNull('mod_versions.published_at')
+                    ->where('mod_versions.published_at', '<=', now());
 
-            // Get all mods with versions compatible with specific SPT versions.
-            if ($compatibleVersions !== null) {
-                $query->whereIn('spt_versions.version', $compatibleVersions);
+                // Get all mods with versions compatible with specific SPT versions.
+                if ($compatibleVersions !== null) {
+                    $query->whereIn('spt_versions.version', $compatibleVersions);
+                }
+            });
+
+            if ($this->shouldIncludeLegacy()) {
+                $group->orWhereExists(function (\Illuminate\Database\Query\Builder $subQuery): void {
+                    $subQuery->select(SemiJoinHint::firstMatch())
+                        ->from('mod_versions')
+                        ->whereColumn('mod_versions.mod_id', 'mods.id')
+                        ->where('mod_versions.disabled', false)
+                        ->whereNotNull('mod_versions.published_at')
+                        ->where('mod_versions.published_at', '<=', now())
+                        ->where('mod_versions.spt_version_constraint', '');
+                });
             }
         });
+    }
+
+    /**
+     * Whether the caller asked for legacy mods (versions carrying no SPT constraint) to be included alongside the
+     * SPT-compatible ones.
+     */
+    protected function shouldIncludeLegacy(): bool
+    {
+        $value = $this->filters['include_legacy'] ?? request()->input('filter.include_legacy');
+
+        return is_string($value) && self::parseBooleanInput($value);
     }
 
     /**
@@ -483,25 +510,7 @@ final class ModQueryBuilder extends AbstractQueryBuilder
      */
     protected function filterByIncludeLegacy(Builder $query, ?string $value): void
     {
-        if ($value === null) {
-            return;
-        }
-
-        $includeLegacy = self::parseBooleanInput($value);
-
-        if ($includeLegacy) {
-            // Include legacy mods: mods with versions that have empty spt_version_constraint
-            $query->orWhereExists(function (\Illuminate\Database\Query\Builder $subQuery): void {
-                $subQuery->select(SemiJoinHint::firstMatch())
-                    ->from('mod_versions')
-                    ->whereColumn('mod_versions.mod_id', 'mods.id')
-                    ->where('mod_versions.disabled', false)
-                    ->whereNotNull('mod_versions.published_at')
-                    ->where('mod_versions.published_at', '<=', now())
-                    ->where('mod_versions.spt_version_constraint', '');
-            });
-        }
-
-        // If false or not set, the default getBaseQuery() already excludes legacy mods
+        // Handled by applySptVersionCondition(), which groups the legacy alternative with the SPT existence check so
+        // the OR cannot escape mods.disabled or the other filters. Kept so the filter stays registered and accepted.
     }
 }

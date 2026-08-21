@@ -11,6 +11,7 @@ use App\Models\ModVersion;
 use App\Models\SptVersion;
 use App\Models\User;
 use App\Support\Api\V0\QueryBuilder\ModQueryBuilder;
+use GrahamCampbell\Markdown\Facades\Markdown;
 use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
@@ -511,6 +512,26 @@ describe('index', function (): void {
 
         $response->assertOk()
             ->assertJsonMissingPath('data.0.custom_ai_disclosure');
+    });
+
+    it('does not render markdown for description or ai disclosure on the index endpoint', function (): void {
+        SptVersion::factory()->state(['version' => '3.8.0'])->create();
+        Mod::factory()->hasVersions(1, ['spt_version_constraint' => '3.8.0'])->create([
+            'description' => 'A **markdown** description.',
+            'custom_ai_disclosure' => 'AI generated *item icons*.',
+        ]);
+
+        // Regression: when() was handed an eagerly evaluated value, so description_html ran Markdown + Purify for
+        // every row of the index response only for when() to discard it. The response body is identical either way,
+        // so only asserting that the conversion never runs can catch this.
+        // A proxied partial mock delegates every call to the real converter, so behaviour is unchanged and the
+        // assertion is about invocation only.
+        $markdown = Mockery::mock(Markdown::getFacadeRoot());
+        Markdown::swap($markdown);
+
+        $this->getJson('/api/v0/mods')->assertOk();
+
+        $markdown->shouldNotHaveReceived('convert');
     });
 
     it('returns fika_compatibility when requested', function (): void {

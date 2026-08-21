@@ -122,6 +122,11 @@ new #[Layout('layouts::base')] class extends Component
         if (in_array($this->sptVersions, ['', '0', []], true)) {
             $this->sptVersions = $this->defaultSptVersions();
         }
+
+        // The updated* hooks only fire when the client mutates the property, so a value arriving from the URL or a
+        // restored session is otherwise never validated. perPage in particular drives an unbounded skeleton loop.
+        $this->updatedPerPage($this->perPage);
+        $this->updatedOrder($this->order);
     }
 
     /**

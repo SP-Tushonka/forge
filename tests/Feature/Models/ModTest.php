@@ -2224,6 +2224,52 @@ describe('Legacy Support', function (): void {
             $response->assertJsonCount(1, 'data');
             $response->assertJsonPath('data.0.id', $modernMod->id);
         });
+
+        it('does not let include_legacy escape the other filters', function (): void {
+            // Regression: filterByIncludeLegacy applied a bare orWhereExists to the outer builder, so the OR bound at
+            // the top level and every other filter was discarded for legacy mods.
+            $legacyMod = Mod::factory()->create(['published_at' => now()]);
+            ModVersion::factory()->recycle($legacyMod)->create([
+                'spt_version_constraint' => '',
+                'published_at' => now()->subDay(),
+                'disabled' => false,
+            ]);
+
+            $modernMod = Mod::factory()->create(['published_at' => now()]);
+            $modernVersion = ModVersion::factory()->recycle($modernMod)->create([
+                'spt_version_constraint' => '3.8.0',
+                'published_at' => now()->subDay(),
+                'disabled' => false,
+            ]);
+            $modernVersion->sptVersions()->sync($this->sptVersion->id);
+
+            $response = $this->getJson(sprintf(
+                '/api/v0/mods?filter[guid]=%s&filter[include_legacy]=true',
+                $modernMod->guid,
+            ));
+
+            $response->assertOk();
+            $response->assertJsonCount(1, 'data');
+            $response->assertJsonPath('data.0.id', $modernMod->id);
+        });
+
+        it('does not surface disabled mods through include_legacy', function (): void {
+            // Regression: PublishedScope never checks `disabled`; that guard lives only in getBaseQuery(), so a
+            // top-level OR let disabled mods with a published legacy version through.
+            $disabledLegacyMod = Mod::factory()->disabled()->create(['published_at' => now()->subDay()]);
+            ModVersion::factory()->recycle($disabledLegacyMod)->create([
+                'spt_version_constraint' => '',
+                'published_at' => now()->subDay(),
+                'disabled' => false,
+            ]);
+
+            $response = $this->getJson('/api/v0/mods?filter[include_legacy]=true');
+
+            $response->assertOk();
+
+            $returnedIds = collect($response->json('data'))->pluck('id')->toArray();
+            expect($returnedIds)->not->toContain($disabledLegacyMod->id);
+        });
     });
 
     describe('Legacy mod visibility on detail page', function (): void {

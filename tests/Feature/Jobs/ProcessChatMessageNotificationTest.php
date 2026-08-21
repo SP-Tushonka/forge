@@ -8,6 +8,7 @@ use App\Models\Message;
 use App\Models\NotificationLog;
 use App\Models\User;
 use App\Notifications\NewChatMessageNotification;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;
@@ -480,5 +481,31 @@ it('does not send notification when the sender has blocked the recipient', funct
 
     new ProcessChatMessageNotification($message)->handle();
 
+    Notification::assertNotSentTo($recipient, NewChatMessageNotification::class);
+});
+
+it('discards the job rather than failing it when the message was deleted before it ran', function (): void {
+    Notification::fake();
+
+    $sender = User::factory()->create();
+    $recipient = User::factory()->create([
+        'email_chat_notifications_enabled' => true,
+    ]);
+
+    $conversation = Conversation::factory()->create([
+        'user1_id' => $sender->id,
+        'user2_id' => $recipient->id,
+    ]);
+
+    $message = Message::withoutEvents(fn (): Message => Message::factory()->create([
+        'conversation_id' => $conversation->id,
+        'user_id' => $sender->id,
+    ]));
+
+    $message->delete();
+
+    dispatch(new ProcessChatMessageNotification($message));
+
+    expect(DB::table('failed_jobs')->count())->toBe(0);
     Notification::assertNotSentTo($recipient, NewChatMessageNotification::class);
 });
