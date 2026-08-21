@@ -55,6 +55,9 @@ new #[Layout('layouts::base')] class extends Component
         abort_unless($user !== null, 403);
 
         $this->previousViewedAt = $user->mods_created_viewed_at?->toISOString();
+
+        // updatedPerPage only fires on client mutation, leaving a URL- or session-supplied value unvalidated.
+        $this->updatedPerPage($this->perPage);
     }
 
     /**

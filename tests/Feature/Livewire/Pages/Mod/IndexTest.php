@@ -298,6 +298,29 @@ describe('Index', function (): void {
                 ->toBe(['3.10.5']);
         });
 
+        it('clamps an oversized perPage arriving from the URL at mount', function (): void {
+            // Regression: updatedPerPage only fires on client mutation, so a URL- or session-supplied value was never
+            // validated. The blade skeleton loop renders $perPage cards unconditionally, so this was unbounded.
+            $component = Livewire::withQueryParams(['perPage' => 200])
+                ->test('pages::mod.index');
+
+            expect($component->get('perPage'))->toBe(50);
+        });
+
+        it('clamps a negative perPage arriving from the URL at mount', function (): void {
+            $component = Livewire::withQueryParams(['perPage' => -1])
+                ->test('pages::mod.index');
+
+            expect($component->get('perPage'))->toBe(6);
+        });
+
+        it('falls back to the default order for an unknown value at mount', function (): void {
+            $component = Livewire::withQueryParams(['order' => 'not-a-real-order'])
+                ->test('pages::mod.index');
+
+            expect($component->get('order'))->toBe('created');
+        });
+
         it('handles malformed query parameter gracefully', function (): void {
             // Create SPT versions and a mod
             SptVersion::factory()->create(['version' => '3.11.4']);

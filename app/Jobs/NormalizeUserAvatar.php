@@ -84,5 +84,9 @@ final class NormalizeUserAvatar implements ShouldQueue
         ])->saveQuietly();
 
         $storage->delete($this->sourcePath);
+
+        // The quiet save skips Scout, so the index would keep serving profile_photo_url for the raw upload we just
+        // deleted. Resync explicitly rather than saving loudly, to avoid firing unrelated model events.
+        $this->user->shouldBeSearchable() ? $this->user->searchable() : $this->user->unsearchable();
     }
 }
