@@ -54,6 +54,7 @@ use Stevebauman\Purify\Facades\Purify;
  * @property int|null $category_id
  * @property int $downloads
  * @property int $favourites_count
+ * @property int $endorsements_count
  * @property bool $featured
  * @property bool $contains_ai_content
  * @property bool $contains_ai_content_locked
@@ -243,6 +244,36 @@ final class Mod extends Model implements Commentable, Reportable, Trackable
     public function listItems(): MorphMany
     {
         return $this->morphMany(ModListItem::class, 'listable');
+    }
+
+    /**
+     * The relationship between a mod and the endorsements it has received.
+     *
+     * @return HasMany<ModEndorsement, $this>
+     */
+    public function endorsements(): HasMany
+    {
+        return $this->hasMany(ModEndorsement::class);
+    }
+
+    /**
+     * Move the denormalised endorsement counter up by one.
+     */
+    public function incrementEndorsements(): void
+    {
+        DB::table('mods')->where('id', $this->id)->increment('endorsements_count');
+    }
+
+    /**
+     * Move it back down. Guarded so a withdrawal can never take a drifted counter below zero, which would either
+     * error or wrap on an unsigned column. UpdateEndorsementsJob repairs the drift itself.
+     */
+    public function decrementEndorsements(): void
+    {
+        DB::table('mods')
+            ->where('id', $this->id)
+            ->where('endorsements_count', '>', 0)
+            ->decrement('endorsements_count');
     }
 
     /**
@@ -836,6 +867,7 @@ final class Mod extends Model implements Commentable, Reportable, Trackable
             'owner_id' => 'integer',
             'category_id' => 'integer',
             'favourites_count' => 'integer',
+            'endorsements_count' => 'integer',
             'thumbnail_variants' => 'array',
             'featured' => 'boolean',
             'contains_ai_content' => 'boolean',

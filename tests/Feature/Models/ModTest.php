@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 use App\Enums\FikaCompatibility;
 use App\Http\Filters\ModFilter;
+use App\Jobs\UpdateEndorsementsJob;
 use App\Models\Addon;
 use App\Models\License;
 use App\Models\Mod;
 use App\Models\ModCategory;
+use App\Models\ModEndorsement;
 use App\Models\ModVersion;
 use App\Models\SptVersion;
 use App\Models\User;
@@ -1284,6 +1286,54 @@ describe('Filtering', function (): void {
                 $modFavouritedOnce->id,
                 $modUnfavourited->id,
             ]);
+        });
+
+        it('orders by endorsement count descending with newest first as the tiebreaker', function (): void {
+            $sptVersion = SptVersion::factory()->create(['version' => '1.0.0']);
+
+            $modUnendorsed = Mod::factory()->create(['endorsements_count' => 0, 'created_at' => now()->subDays(3)]);
+            ModVersion::factory()->recycle($modUnendorsed)->create(['spt_version_constraint' => '1.0.0']);
+
+            $modEndorsedOnce = Mod::factory()->create(['endorsements_count' => 1, 'created_at' => now()->subDays(2)]);
+            ModVersion::factory()->recycle($modEndorsedOnce)->create(['spt_version_constraint' => '1.0.0']);
+
+            $modEndorsedTwice = Mod::factory()->create(['endorsements_count' => 2, 'created_at' => now()->subDay()]);
+            ModVersion::factory()->recycle($modEndorsedTwice)->create(['spt_version_constraint' => '1.0.0']);
+
+            $modTiedButNewer = Mod::factory()->create(['endorsements_count' => 1, 'created_at' => now()->subHour()]);
+            ModVersion::factory()->recycle($modTiedButNewer)->create(['spt_version_constraint' => '1.0.0']);
+
+            $filters = ['order' => 'endorsed', 'sptVersions' => [$sptVersion->version]];
+            $result = new ModFilter($filters)->apply()->get();
+
+            expect($result->pluck('id')->all())->toBe([
+                $modEndorsedTwice->id,
+                $modTiedButNewer->id,
+                $modEndorsedOnce->id,
+                $modUnendorsed->id,
+            ]);
+        });
+
+        it('does not let withdrawn endorsements inflate the most endorsed sort', function (): void {
+            $sptVersion = SptVersion::factory()->create(['version' => '1.0.0']);
+
+            $modMostlyWithdrawn = Mod::factory()->create(['created_at' => now()->subDays(2)]);
+            ModVersion::factory()->recycle($modMostlyWithdrawn)->create(['spt_version_constraint' => '1.0.0']);
+            ModEndorsement::factory()->recycle($modMostlyWithdrawn)->create();
+            ModEndorsement::factory()->count(4)->revoked()->recycle($modMostlyWithdrawn)->create();
+
+            $modStanding = Mod::factory()->create(['created_at' => now()->subDay()]);
+            ModVersion::factory()->recycle($modStanding)->create(['spt_version_constraint' => '1.0.0']);
+            ModEndorsement::factory()->count(3)->recycle($modStanding)->create();
+
+            new UpdateEndorsementsJob()->handle();
+
+            $filters = ['order' => 'endorsed', 'sptVersions' => [$sptVersion->version]];
+            $result = new ModFilter($filters)->apply()->get();
+
+            expect($result->pluck('id')->all())->toBe([$modStanding->id, $modMostlyWithdrawn->id])
+                ->and($result->firstWhere('id', $modMostlyWithdrawn->id)->endorsements_count)->toBe(1)
+                ->and($result->firstWhere('id', $modStanding->id)->endorsements_count)->toBe(3);
         });
     });
 

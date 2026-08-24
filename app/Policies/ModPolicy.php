@@ -12,6 +12,12 @@ use Illuminate\Database\Eloquent\Model;
 final class ModPolicy
 {
     /**
+     * How old an account has to be before it can endorse anything. A cheap throttle on throwaway accounts being
+     * spun up to inflate a mod's standing.
+     */
+    private const int ENDORSE_MIN_ACCOUNT_AGE_DAYS = 7;
+
+    /**
      * Determine whether the user can view multiple models.
      */
     public function viewAny(?User $user): bool
@@ -103,6 +109,28 @@ final class ModPolicy
     {
         // Check if mod can be viewed first. Allow downloads even if blocked.
         return $this->view($user, $mod);
+    }
+
+    /**
+     * Determine whether the user can endorse the mod.
+     */
+    public function endorse(User $user, Mod $mod): Response
+    {
+        if (! $user->hasVerifiedEmail()) {
+            return Response::deny(__('You must verify your email address before endorsing a mod.'));
+        }
+
+        if ($mod->isAuthorOrOwner($user)) {
+            return Response::deny(__('You cannot endorse your own mod.'));
+        }
+
+        if ($user->created_at->isAfter(now()->subDays(self::ENDORSE_MIN_ACCOUNT_AGE_DAYS))) {
+            return Response::deny(__('Your account must be at least :days days old to endorse a mod.', [
+                'days' => self::ENDORSE_MIN_ACCOUNT_AGE_DAYS,
+            ]));
+        }
+
+        return Response::allow();
     }
 
     /**

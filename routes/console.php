@@ -19,6 +19,7 @@ use App\Jobs\ProcessPinnedModVersionPublishDates;
 use App\Jobs\SearchSyncJob;
 use App\Jobs\SendDiscordNotifications;
 use App\Jobs\UpdateDisposableEmailBlocklist;
+use App\Jobs\UpdateEndorsementsJob;
 use App\Jobs\UpdateFavouritesJob;
 use App\Jobs\VerificationSweepJob;
 use Illuminate\Support\Facades\Schedule;
@@ -27,6 +28,7 @@ Schedule::command('horizon:snapshot')->everyFiveMinutes()->onOneServer();
 Schedule::command(CleanupOldNotificationLogs::class)->daily()->onOneServer();
 Schedule::command(EnsureFavouritesLists::class)->daily()->onOneServer();
 Schedule::job(new UpdateFavouritesJob)->hourly()->onOneServer()->withoutOverlapping();
+Schedule::job(new UpdateEndorsementsJob)->hourly()->onOneServer()->withoutOverlapping();
 Schedule::job(new ExpireStaleModClaimsJob)->hourly()->onOneServer()->withoutOverlapping();
 Schedule::job(new AuditCustomLicensedModsJob)->daily()->at('01:00')->onOneServer()->withoutOverlapping();
 

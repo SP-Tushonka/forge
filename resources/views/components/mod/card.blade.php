@@ -9,6 +9,7 @@
     'showActions' => null,
     'eager' => false,
     'favouritesCount' => null,
+    'endorsementsCount' => null,
 ])
 
 <div {{ $attributes->merge(['class' => 'mod-list-component relative isolate mx-auto max-w-2xl h-full w-full']) }}>
@@ -113,20 +114,36 @@
                             </div>
                         @elseif (($mod->updated_at || $mod->created_at) && $version)
                             <div class="flex w-full items-center">
-                                <div class="flex items-center gap-1">
+                                {{-- The date yields to the endorsement figure when space is tightest --}}
+                                <div @class([
+                                    'items-center gap-1',
+                                    'flex' => $endorsementsCount === null,
+                                    '@lg:flex hidden' => $endorsementsCount !== null,
+                                ])>
                                     <flux:icon.calendar class="size-5" />
                                     <span class="pt-0.5"><x-time :datetime="$version->created_at" /></span>
                                 </div>
                             </div>
                         @endif
-                        <div class="flex items-center justify-end gap-1">
-                            <span
-                                class="pt-0.5"
-                                title="{{ Number::format($mod->downloads) }} {{ __(Str::plural('Download', $mod->downloads)) }}"
-                            >
-                                {{ Number::downloads($mod->downloads) }}
-                            </span>
-                            <flux:icon.arrow-down-tray class="size-5" />
+                        <div class="ml-auto flex shrink-0 items-center justify-end gap-3">
+                            @if ($endorsementsCount !== null)
+                                <div
+                                    class="flex items-center gap-1"
+                                    title="{{ Number::format($endorsementsCount) }} {{ __(Str::plural('Endorsement', $endorsementsCount)) }}"
+                                >
+                                    <span class="pt-0.5">{{ Number::format($endorsementsCount) }}</span>
+                                    <flux:icon.hand-thumb-up class="size-5" />
+                                </div>
+                            @endif
+                            <div class="flex items-center gap-1">
+                                <span
+                                    class="pt-0.5"
+                                    title="{{ Number::format($mod->downloads) }} {{ __(Str::plural('Download', $mod->downloads)) }}"
+                                >
+                                    {{ Number::downloads($mod->downloads) }}
+                                </span>
+                                <flux:icon.arrow-down-tray class="size-5" />
+                            </div>
                         </div>
                     </div>
                 </div>

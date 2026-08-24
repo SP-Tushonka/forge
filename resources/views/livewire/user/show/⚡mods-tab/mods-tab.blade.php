@@ -51,6 +51,7 @@
                     <x-mod.card
                         :mod="$mod"
                         :version="$mod->latestVersion"
+                        :endorsements-count="$mod->endorsements_count"
                         placeholder-bg="bg-gray-900"
                     />
                 </div>
