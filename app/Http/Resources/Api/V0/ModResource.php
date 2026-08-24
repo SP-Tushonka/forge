@@ -106,6 +106,10 @@ final class ModResource extends JsonResource
             $data['favourites_count'] = $this->resource->favourites_count;
         }
 
+        if ($this->shouldInclude('endorsements_count')) {
+            $data['endorsements_count'] = $this->resource->endorsements_count;
+        }
+
         if ($this->shouldInclude('description')) {
             // Closure, not a value: an eagerly evaluated argument runs Markdown + Purify on every row of the index
             // response only for when() to discard it.

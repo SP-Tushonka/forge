@@ -424,3 +424,56 @@ describe('report', function (): void {
         expect($this->policy->report($author, $mod))->toBeFalse();
     });
 });
+
+describe('endorse', function (): void {
+    it('allows a verified non-author whose account is old enough', function (): void {
+        $user = User::factory()->create(['created_at' => now()->subDays(8)]);
+        $mod = Mod::factory()->create();
+
+        $result = $this->policy->endorse($user, $mod);
+
+        expect($result)->toBeInstanceOf(Response::class)
+            ->and($result->allowed())->toBeTrue();
+    });
+
+    it('denies the mod owner', function (): void {
+        $user = User::factory()->create(['created_at' => now()->subDays(8)]);
+        $mod = Mod::factory()->create(['owner_id' => $user->id]);
+
+        $result = $this->policy->endorse($user, $mod);
+
+        expect($result->denied())->toBeTrue()
+            ->and($result->message())->toBe('You cannot endorse your own mod.');
+    });
+
+    it('denies an additional author', function (): void {
+        $author = User::factory()->create(['created_at' => now()->subDays(8)]);
+        $mod = Mod::factory()->create();
+        $mod->additionalAuthors()->attach($author);
+
+        $result = $this->policy->endorse($author, $mod);
+
+        expect($result->denied())->toBeTrue()
+            ->and($result->message())->toBe('You cannot endorse your own mod.');
+    });
+
+    it('denies a user with an unverified email address', function (): void {
+        $user = User::factory()->unverified()->create(['created_at' => now()->subDays(8)]);
+        $mod = Mod::factory()->create();
+
+        $result = $this->policy->endorse($user, $mod);
+
+        expect($result->denied())->toBeTrue()
+            ->and($result->message())->toBe('You must verify your email address before endorsing a mod.');
+    });
+
+    it('denies an account younger than seven days', function (): void {
+        $user = User::factory()->create(['created_at' => now()->subDays(6)]);
+        $mod = Mod::factory()->create();
+
+        $result = $this->policy->endorse($user, $mod);
+
+        expect($result->denied())->toBeTrue()
+            ->and($result->message())->toBe('Your account must be at least 7 days old to endorse a mod.');
+    });
+});

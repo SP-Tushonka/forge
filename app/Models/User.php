@@ -761,6 +761,16 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
     }
 
     /**
+     * Get every mod endorsement this user has given, including ones they have since withdrawn.
+     *
+     * @return HasMany<ModEndorsement, $this>
+     */
+    public function modEndorsements(): HasMany
+    {
+        return $this->hasMany(ModEndorsement::class);
+    }
+
+    /**
      * Get all comment subscriptions for this user.
      *
      * @return HasMany<CommentSubscription, $this>

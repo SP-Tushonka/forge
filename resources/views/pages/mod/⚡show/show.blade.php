@@ -13,6 +13,10 @@
             {{ __('Mod Details') }}
         </h2>
         <div class="flex items-center gap-2">
+            <livewire:mod-endorse-button
+                :mod-id="$mod->id"
+                wire:key="mod-endorse-{{ $mod->id }}"
+            />
             @auth
                 <livewire:mod-add-to-list
                     :source-id="$mod->id"
@@ -166,6 +170,9 @@
                         @endif
                         <p title="{{ __('Exactly') }} {{ $mod->downloads }}">{{ Number::downloads($mod->downloads) }}
                             {{ __(Str::plural('Download', $mod->downloads)) }}</p>
+                        <p title="{{ __('Exactly') }} {{ $mod->endorsements_count }}">
+                            {{ Number::format($mod->endorsements_count) }}
+                            {{ __(Str::plural('Endorsement', $mod->endorsements_count)) }}</p>
                         <p class="mt-2 flex flex-wrap items-center gap-2">
                             @if ($displayVersion?->latestSptVersion)
                                 <span

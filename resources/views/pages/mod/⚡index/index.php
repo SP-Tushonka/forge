@@ -211,7 +211,7 @@ new #[Layout('layouts::base')] class extends Component
      */
     public function updatedOrder(string $value): void
     {
-        if (! in_array($value, ['created', 'updated', 'downloaded', 'favourited'], true)) {
+        if (! in_array($value, ['created', 'updated', 'downloaded', 'favourited', 'endorsed'], true)) {
             $this->order = 'created';
         }
     }
@@ -326,6 +326,7 @@ new #[Layout('layouts::base')] class extends Component
             'updated' => __('Recently Updated'),
             'downloaded' => __('Most Downloaded'),
             'favourited' => __('Most Favourited'),
+            'endorsed' => __('Most Endorsed'),
             default => __('Newest'),
         };
     }
