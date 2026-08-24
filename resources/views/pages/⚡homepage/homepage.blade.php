@@ -11,7 +11,7 @@
 
 <div>
     <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-        @if (! Laravel\Fortify\Features::enabled(Laravel\Fortify\Features::registration()))
+        @if (!Laravel\Fortify\Features::enabled(Laravel\Fortify\Features::registration()))
             <flux:callout
                 icon="exclamation-triangle"
                 color="yellow"
@@ -256,12 +256,15 @@
                                 <x-mod.card
                                     :mod="$mod"
                                     :version="$mod->latestVersion"
+                                    :endorsements-count="$mod->endorsements_count"
                                     section="featured"
                                     homepage-featured
                                 />
                             </div>
                         @endforeach
                     </div>
+
+                    <livewire:endorsed-mods wire:key="homepage-endorsed-mods" />
 
                     <x-page-content-title
                         :title="__('Newest Mods')"
@@ -274,6 +277,7 @@
                                 <x-mod.card
                                     :mod="$mod"
                                     :version="$mod->latestVersion"
+                                    :endorsements-count="$mod->endorsements_count"
                                     section="newest"
                                 />
                             </div>
@@ -291,6 +295,7 @@
                                 <x-mod.card
                                     :mod="$mod"
                                     :version="$mod->latestUpdatedVersion"
+                                    :endorsements-count="$mod->endorsements_count"
                                     section="updated"
                                 />
                             </div>

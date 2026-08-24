@@ -147,6 +147,7 @@ final class ModFilter
             'updated' => $this->orderByLatestVersionCreatedAt(),
             'downloaded' => $this->builder->orderByDesc('mods.downloads'),
             'favourited' => $this->orderByFavouriteCount(),
+            'endorsed' => $this->orderByEndorsementCount(),
             default => $this->builder->latest('mods.created_at'),
         };
     }
@@ -160,6 +161,18 @@ final class ModFilter
     {
         return $this->builder
             ->orderByDesc('mods.favourites_count')
+            ->latest('mods.created_at');
+    }
+
+    /**
+     * Order mods by their denormalized endorsement count, breaking ties by newest creation date.
+     *
+     * @return Builder<Mod>
+     */
+    private function orderByEndorsementCount(): Builder
+    {
+        return $this->builder
+            ->orderByDesc('mods.endorsements_count')
             ->latest('mods.created_at');
     }
 

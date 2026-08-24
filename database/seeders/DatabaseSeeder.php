@@ -26,6 +26,7 @@ final class DatabaseSeeder extends Seeder
             ModSeeder::class,
             AddonSeeder::class,
             ModListSeeder::class,
+            ModEndorsementSeeder::class,
             CommentSeeder::class,
             TrackingEventSeeder::class,
             ConversationSeeder::class,
@@ -35,6 +36,7 @@ final class DatabaseSeeder extends Seeder
         Artisan::call('app:resolve-versions');
         Artisan::call('app:count-mods');
         Artisan::call('app:update-downloads');
+        Artisan::call('app:update-endorsements');
 
         Artisan::call('cache:clear');
     }

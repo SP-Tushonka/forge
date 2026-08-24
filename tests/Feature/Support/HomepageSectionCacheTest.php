@@ -32,10 +32,27 @@ describe('HomepageSectionCache', function (): void {
             ->and($ids)->toBe([1]);
     });
 
+    it('caches the endorsed sections under their own keys as id => count maps', function (): void {
+        $week = HomepageSectionCache::remember(HomepageSectionCache::ENDORSED_WEEK, fn (): array => [7 => 3, 9 => 1]);
+        HomepageSectionCache::remember(HomepageSectionCache::ENDORSED_MONTH, fn (): array => [9 => 12]);
+        HomepageSectionCache::remember(HomepageSectionCache::ENDORSED_ALL, fn (): array => [4 => 99]);
+
+        expect($week)->toBe([7 => 3, 9 => 1])
+            ->and(Cache::get('homepage:sections:endorsed:7d'))->toBe([7 => 3, 9 => 1])
+            ->and(Cache::get('homepage:sections:endorsed:30d'))->toBe([9 => 12])
+            ->and(Cache::get('homepage:sections:endorsed:all'))->toBe([4 => 99])
+            ->and(Cache::has('illuminate:cache:flexible:created:homepage:sections:endorsed:7d'))->toBeTrue()
+            ->and(Cache::has('illuminate:cache:flexible:created:homepage:sections:endorsed:30d'))->toBeTrue()
+            ->and(Cache::has('illuminate:cache:flexible:created:homepage:sections:endorsed:all'))->toBeTrue();
+    });
+
     it('flushes the mod sections without touching the comment feed', function (): void {
         HomepageSectionCache::remember(HomepageSectionCache::FEATURED, fn (): array => [1]);
         HomepageSectionCache::remember(HomepageSectionCache::NEWEST, fn (): array => [2]);
         HomepageSectionCache::remember(HomepageSectionCache::UPDATED, fn (): array => [3]);
+        HomepageSectionCache::remember(HomepageSectionCache::ENDORSED_WEEK, fn (): array => [5 => 1]);
+        HomepageSectionCache::remember(HomepageSectionCache::ENDORSED_MONTH, fn (): array => [6 => 2]);
+        HomepageSectionCache::remember(HomepageSectionCache::ENDORSED_ALL, fn (): array => [7 => 3]);
         HomepageSectionCache::remember(HomepageSectionCache::COMMENTS, fn (): array => [4]);
 
         HomepageSectionCache::flushModSections();
@@ -43,6 +60,12 @@ describe('HomepageSectionCache', function (): void {
         expect(Cache::has('homepage:sections:featured'))->toBeFalse()
             ->and(Cache::has('homepage:sections:newest'))->toBeFalse()
             ->and(Cache::has('homepage:sections:updated'))->toBeFalse()
+            ->and(Cache::has('homepage:sections:endorsed:7d'))->toBeFalse()
+            ->and(Cache::has('homepage:sections:endorsed:30d'))->toBeFalse()
+            ->and(Cache::has('homepage:sections:endorsed:all'))->toBeFalse()
+            ->and(Cache::has('illuminate:cache:flexible:created:homepage:sections:endorsed:7d'))->toBeFalse()
+            ->and(Cache::has('illuminate:cache:flexible:created:homepage:sections:endorsed:30d'))->toBeFalse()
+            ->and(Cache::has('illuminate:cache:flexible:created:homepage:sections:endorsed:all'))->toBeFalse()
             ->and(Cache::has('homepage:sections:comments'))->toBeTrue();
     });
 

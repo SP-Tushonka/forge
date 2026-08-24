@@ -276,6 +276,11 @@
                                         filter="favourited"
                                         :currentFilter="$order"
                                     >{{ __('Most Favourited') }}</x-filter-menu-item>
+                                    <x-filter-menu-item
+                                        filterName="order"
+                                        filter="endorsed"
+                                        :currentFilter="$order"
+                                    >{{ __('Most Endorsed') }}</x-filter-menu-item>
                                 </div>
                             </div>
                         </div>
@@ -638,6 +643,7 @@
                                 :version="$this->getDisplayVersion($mod, $includeLegacy)"
                                 :eager="$loop->index < 4"
                                 :favourites-count="$order === 'favourited' ? $mod->favourites_count : null"
+                                :endorsements-count="$mod->endorsements_count"
                             />
                         </div>
                     @endforeach

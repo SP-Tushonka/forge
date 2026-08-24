@@ -757,6 +757,8 @@ describe('Index', function (): void {
                 ->assertSee('Sort: Most Downloaded')
                 ->set('order', 'favourited')
                 ->assertSee('Sort: Most Favourited')
+                ->set('order', 'endorsed')
+                ->assertSee('Sort: Most Endorsed')
                 ->set('order', 'updated')
                 ->assertSee('Sort: Recently Updated');
         });
@@ -869,6 +871,57 @@ describe('Index', function (): void {
 
             $adminComponent = Livewire::actingAs($admin)->test('pages::mod.index');
             expect($adminComponent->viewData('mods')->total())->toBe(2);
+        });
+    });
+
+    describe('endorsement counts on cards', function (): void {
+        it('offers the most endorsed sort in the sort dropdown', function (): void {
+            SptVersion::factory()->create(['version' => '3.11.4']);
+
+            Livewire::test('pages::mod.index')
+                ->assertSeeHtml("\$wire.set('order', 'endorsed')")
+                ->assertSee('Most Endorsed');
+        });
+
+        it('keeps the most endorsed sort when it arrives from the URL', function (): void {
+            SptVersion::factory()->create(['version' => '3.11.4']);
+
+            $component = Livewire::withQueryParams(['order' => 'endorsed'])->test('pages::mod.index');
+
+            expect($component->get('order'))->toBe('endorsed');
+        });
+
+        it('orders the listing by endorsement count when sorted by most endorsed', function (): void {
+            SptVersion::factory()->create(['version' => '3.11.4']);
+
+            $modLow = Mod::factory()->create(['name' => 'Quiet Mod', 'endorsements_count' => 1]);
+            ModVersion::factory()->recycle($modLow)->create(['spt_version_constraint' => '3.11.4']);
+
+            $modHigh = Mod::factory()->create(['name' => 'Loud Mod', 'endorsements_count' => 9]);
+            ModVersion::factory()->recycle($modHigh)->create(['spt_version_constraint' => '3.11.4']);
+
+            $ids = Livewire::test('pages::mod.index')
+                ->set('order', 'endorsed')
+                ->viewData('mods')
+                ->pluck('id')
+                ->all();
+
+            expect($ids)->toBe([$modHigh->id, $modLow->id]);
+        });
+
+        it('shows the endorsement count on cards for every sort order', function (): void {
+            // Also a regression guard for strict mode: endorsements_count must be selected by the listing query, or
+            // reading it in the card throws a MissingAttributeException rather than rendering nothing.
+            SptVersion::factory()->create(['version' => '3.11.4']);
+
+            $mod = Mod::factory()->create(['name' => 'Thumbs Up', 'endorsements_count' => 4]);
+            ModVersion::factory()->recycle($mod)->create(['spt_version_constraint' => '3.11.4']);
+
+            Livewire::test('pages::mod.index')
+                ->assertSee('Thumbs Up')
+                ->assertSee('4 Endorsements')
+                ->set('order', 'endorsed')
+                ->assertSee('4 Endorsements');
         });
     });
 

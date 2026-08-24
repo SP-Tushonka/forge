@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 new #[Layout('layouts::base')] class extends Component
@@ -51,6 +52,25 @@ new #[Layout('layouts::base')] class extends Component
     public function hydrate(): void
     {
         Gate::authorize('view', $this->mod);
+    }
+
+    /**
+     * The endorse button owns the write and lives in a child component, so the total in the stats row would
+     * otherwise sit stale until the next page load. The counter is written raw, without model events, so nothing
+     * else on the page needs re-reading.
+     */
+    #[On('mod-endorsement-changed')]
+    public function refreshEndorsementCount(int $modId): void
+    {
+        if ($modId !== $this->mod->id) {
+            return;
+        }
+
+        $fresh = Mod::query()->select(['id', 'endorsements_count'])->whereKey($this->mod->id)->first();
+
+        if ($fresh instanceof Mod) {
+            $this->mod->endorsements_count = $fresh->endorsements_count;
+        }
     }
 
     /**
