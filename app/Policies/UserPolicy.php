@@ -191,4 +191,60 @@ final class UserPolicy
         // Cannot message users you have blocked (to avoid confusion)
         return ! $user->hasBlocked($target);
     }
+
+    public function changeEmail(User $user, User $model): bool
+    {
+        return $this->canManageAccount($user, $model);
+    }
+
+    public function removeEmail(User $user, User $model): bool
+    {
+        return $this->canManageAccount($user, $model);
+    }
+
+    public function sendPasswordReset(User $user, User $model): bool
+    {
+        return $this->canManageAccount($user, $model);
+    }
+
+    public function invalidatePassword(User $user, User $model): bool
+    {
+        return $this->canManageAccount($user, $model);
+    }
+
+    public function removeTwoFactor(User $user, User $model): bool
+    {
+        return $this->canManageAccount($user, $model);
+    }
+
+    public function unlinkDiscord(User $user, User $model): bool
+    {
+        return $this->canManageAccount($user, $model);
+    }
+
+    public function lockAccount(User $user, User $model): bool
+    {
+        return $this->canManageAccount($user, $model);
+    }
+
+    public function removePhotos(User $user, User $model): bool
+    {
+        return $this->canManageAccount($user, $model);
+    }
+
+    /**
+     * Staff-only account administration. Never against yourself, never against another staff member.
+     */
+    private function canManageAccount(User $user, User $model): bool
+    {
+        if ($user->id === $model->id) {
+            return false;
+        }
+
+        if (! $user->isAdmin()) {
+            return false;
+        }
+
+        return ! $model->isAdmin();
+    }
 }

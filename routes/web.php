@@ -233,6 +233,7 @@ Route::middleware('auth.banned')->group(function (): void {
 
         // Authenticated, verified, administrator routes
         Route::middleware('can:admin')->group(function (): void {
+            Route::livewire('/staff-tools', 'pages::admin.staff-tools')->name('admin.staff-tools');
             Route::livewire('/admin/visitor-analytics', 'pages::admin.visitor-analytics')->name('admin.visitor-analytics');
             Route::livewire('/admin/api-analytics', 'pages::admin.api-analytics')->name('admin.api-analytics');
             Route::livewire('/admin/vps-health', 'pages::admin.vps-health')->name('admin.vps-health');

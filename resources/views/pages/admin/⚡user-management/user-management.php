@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Staff\BanUser;
+use App\Actions\Staff\UnbanUser;
 use App\Enums\TrackingEventType;
 use App\Facades\Track;
 use App\Models\Ban;
@@ -9,6 +11,7 @@ use App\Models\User;
 use App\Models\UserRole;
 use Carbon\CarbonInterface;
 use Flux\Flux;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -218,29 +221,20 @@ new #[Layout('layouts::base')] #[Title('User Management - The Forge')] class ext
         ]);
 
         $user = User::query()->findOrFail($this->selectedUserId);
+        $staff = auth()->user();
 
-        // Prevent banning other administrators
-        if ($user->isAdmin()) {
-            Flux::toast(heading: 'Error', text: 'Cannot ban other staff members.', variant: 'danger');
+        if (! $staff instanceof User) {
+            return;
+        }
+
+        try {
+            resolve(BanUser::class)->execute($staff, $user, $this->banDuration, $this->banReason ?: null);
+        } catch (AuthorizationException) {
+            Flux::toast(heading: 'Error', text: 'Cannot ban this user.', variant: 'danger');
             $this->closeBanModal();
 
             return;
         }
-
-        $attributes = [
-            'created_by_type' => User::class,
-            'created_by_id' => auth()->id(),
-            'comment' => $this->banReason ?: null,
-        ];
-
-        // Set expiration based on duration
-        if ($this->banDuration !== 'permanent') {
-            $attributes['expired_at'] = $this->getExpirationDate();
-        }
-
-        $user->ban($attributes);
-
-        Track::event(TrackingEventType::USER_BAN, $user);
 
         Flux::toast(heading: 'User Banned', text: sprintf('User %s has been banned successfully.', $user->name), variant: 'success');
         $this->closeBanModal();
@@ -252,9 +246,20 @@ new #[Layout('layouts::base')] #[Title('User Management - The Forge')] class ext
     public function unbanUser(): void
     {
         $user = User::query()->findOrFail($this->selectedUserId);
-        $user->unban();
+        $staff = auth()->user();
 
-        Track::event(TrackingEventType::USER_UNBAN, $user);
+        if (! $staff instanceof User) {
+            return;
+        }
+
+        try {
+            resolve(UnbanUser::class)->execute($staff, $user, null);
+        } catch (AuthorizationException) {
+            Flux::toast(heading: 'Error', text: 'Cannot unban this user.', variant: 'danger');
+            $this->closeUnbanModal();
+
+            return;
+        }
 
         Flux::toast(heading: 'User Unbanned', text: sprintf('User %s has been unbanned successfully.', $user->name), variant: 'success');
         $this->closeUnbanModal();
@@ -463,20 +468,6 @@ new #[Layout('layouts::base')] #[Title('User Management - The Forge')] class ext
 
             return $expiredAt === null || $expiredAt > now();
         });
-    }
-
-    /**
-     * Calculate the expiration date based on the selected duration.
-     */
-    protected function getExpirationDate(): CarbonInterface
-    {
-        return match ($this->banDuration) {
-            '1_hour' => now()->addHour(),
-            '24_hours' => now()->addDay(),
-            '7_days' => now()->addWeek(),
-            '30_days' => now()->addMonth(),
-            default => now()->addHour(),
-        };
     }
 
     /**
