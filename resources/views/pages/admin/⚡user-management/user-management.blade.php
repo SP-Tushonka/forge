@@ -394,6 +394,14 @@
                                                     View IP Addresses
                                                 </flux:menu.item>
                                                 @if (!$user->isAdmin())
+                                                    <flux:menu.item
+                                                        icon="wrench-screwdriver"
+                                                        href="{{ route('admin.staff-tools', ['userId' => $user->id]) }}#users"
+                                                    >
+                                                        Open in Staff Tools
+                                                    </flux:menu.item>
+                                                @endif
+                                                @if (!$user->isAdmin())
                                                     <flux:menu.separator />
                                                     @if ($activeBan)
                                                         <flux:menu.item

@@ -180,6 +180,11 @@
                                                 <div class="text-xs font-medium text-zinc-400">{{ __('Staff') }}</div>
                                             </div>
                                             <flux:navmenu.item
+                                                icon="wrench-screwdriver"
+                                                href="{{ route('admin.staff-tools') }}"
+                                                wire:navigate
+                                            >{{ __('Staff Tools') }}</flux:navmenu.item>
+                                            <flux:navmenu.item
                                                 icon="cube"
                                                 href="{{ route('admin.spt-versions') }}"
                                                 wire:navigate
@@ -534,6 +539,15 @@
                         </div>
                     </div>
                     <div class="space-y-1">
+                        <x-responsive-nav-link
+                            href="{{ route('admin.staff-tools') }}"
+                            :active="request()->routeIs('admin.staff-tools')"
+                        >
+                            <span class="flex items-center gap-2">
+                                <flux:icon.wrench-screwdriver class="h-5 w-5" />
+                                {{ __('Staff Tools') }}
+                            </span>
+                        </x-responsive-nav-link>
                         <x-responsive-nav-link
                             href="{{ route('admin.spt-versions') }}"
                             :active="request()->routeIs('admin.spt-versions')"
