@@ -13,9 +13,9 @@ use Illuminate\Support\Facades\RateLimiter;
  */
 final class StaffActionLimiter
 {
-    private const MAX_ATTEMPTS = 30;
+    private const int MAX_ATTEMPTS = 30;
 
-    private const DECAY_SECONDS = 900;
+    private const int DECAY_SECONDS = 900;
 
     public static function key(User $staff): string
     {

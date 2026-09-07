@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Notifications\Messages\NotificationMailMessage;
 use App\Support\DataTransferObjects\HeadlineSegment;
 use App\Support\DataTransferObjects\NotificationPresentation;
+use App\Traits\ThrottlesOutboundEmail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\DatabaseNotification;
@@ -19,6 +20,7 @@ use Illuminate\Notifications\Notification;
 final class StaffAccountActionNotification extends Notification implements Presentable, ShouldQueue
 {
     use Queueable;
+    use ThrottlesOutboundEmail;
 
     public function __construct(
         public StaffActionType $action,
