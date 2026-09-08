@@ -267,7 +267,7 @@
         <div class="mb-2 mt-4 text-center">
             <div class="mt-3">
                 <code
-                    class="rounded bg-gray-950/40 px-4 py-2 text-sm text-purple-100">TBD</code>
+                    class="rounded bg-gray-950/40 px-4 py-2 text-sm text-purple-100">clodan-spt@hotmail.com</code>
             </div>
             <small>If misused, you will be blocked from future communication.</small>
         </div>

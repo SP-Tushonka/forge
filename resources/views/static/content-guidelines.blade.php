@@ -662,7 +662,7 @@ public override SemanticVersioning.Range SptVersion { get; } = new("4.0.0");</co
     </ul>
     <p><strong>Remember:</strong> These guidelines ensure The Forge maintains high standards for content quality,
         security, and user experience. When in doubt, contact staff for guidance before submitting.</p>
-    <p><strong>Questions?</strong> Contact us at TBD</p>
+    <p><strong>Questions?</strong> Contact us at clodan-spt@hotmail.com</p>
 
     <hr>
 
