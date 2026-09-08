@@ -60,6 +60,7 @@
             <x-table-of-contents-subitem href="#adult-content">Adult Content Policy</x-table-of-contents-subitem>
             <x-table-of-contents-subitem href="#anti-cheat-policy">Anti-Cheat and Exploit
                 Policy</x-table-of-contents-subitem>
+            <x-table-of-contents-subitem href="#politics-guidelines">Politics Guidelines</x-table-of-contents-subitem>
             <x-table-of-contents-subitem href="#compilation-guidelines">Compilation and Collection
                 Guidelines</x-table-of-contents-subitem>
             <x-table-of-contents-subitem href="#payment-policy">Payment and Commercial Activity
@@ -507,7 +508,14 @@ public override SemanticVersioning.Range SptVersion { get; } = new("4.0.0");</co
         <li>Diagnostic tools for troubleshooting mod conflicts help maintain a healthy modding ecosystem</li>
     </ul>
 
-    <h3 id="compilation-guidelines">7.3 Compilation and Collection Guidelines</h3>
+    <h3 id="politics-guidelines">7.3 Politics Guidelines</h3>
+    <h4 id="politics-guidelines-prohibited-content">Prohibited Content:</h4>
+    <p>Under no circumstance there should be any real world politics topics involved in any part of a mod content.</p>
+    <p>This includes but is not limited to: flags of countries in active conflicts, symbols, logos, phrases, indirect
+        references, etc.</p>
+    <p>What is considered or not "politics", is fully up to the moderators or staff discretion.</p>
+
+    <h3 id="compilation-guidelines">7.4 Compilation and Collection Guidelines</h3>
     <h4 id="compilation-guidelines-prohibited-content">Prohibited Content:</h4>
     <p>Mod compilations, collections, and modpacks are not permitted on The Forge. While these packages may appear to
         offer convenience by bundling multiple mods together, they create significant and ongoing maintenance challenges
@@ -522,7 +530,7 @@ public override SemanticVersioning.Range SptVersion { get; } = new("4.0.0");</co
         most current versions while supporting mod authors directly and maintaining clear accountability for each
         component.</p>
 
-    <h3 id="payment-policy">7.4 Payment and Commercial Activity Policy</h3>
+    <h3 id="payment-policy">7.5 Payment and Commercial Activity Policy</h3>
     <h4 id="free-access-requirement">Free Access Requirement:</h4>
     <p>The Forge strictly prohibits any form of payment requirement for accessing content within our community. All
         mods, tools, and resources must remain completely free and accessible to all users without any financial
@@ -603,7 +611,14 @@ public override SemanticVersioning.Range SptVersion { get; } = new("4.0.0");</co
     <p><strong>Consequences:</strong> Immediate content removal, account restrictions proportional to violation
         severity, possible permanent ban for egregious violations</p>
 
-    <h3 id="appeals-process">9.2 Appeals Process</h3>
+    <h3 id="special-consideration">9.2 Special considerations</h3>
+    <h4 id="moderator-discretion">Moderator Discretion:</h4>
+    <p>A moderator or staff member may independently choose to remove any content at his own discretion, and without
+        warning. <strong>ANY</strong> content uploaded to The Forge is considered applicable. You are free to request
+        an appeal, but the final decision is made by the moderator and staff team. Moderators or Staff may give you a
+        reason for a removal, but this is understood to be a courtesy and not mandatory.</p>
+
+    <h3 id="appeals-process">9.3 Appeals Process</h3>
     <h4 id="content-removal-appeals">Content Removal Appeals:</h4>
     <p>The appeals process provides creators with opportunities to address violations while maintaining platform
         security and compliance standards.</p>
