@@ -101,3 +101,32 @@ describe('selection events', function (): void {
             ->assertDispatched('updateAuthorIds', ids: [$user->id]);
     });
 });
+
+describe('option presentation', function (): void {
+    it('shows an avatar alongside the name', function (): void {
+        $candidate = User::factory()->create(['name' => 'AvatarPerson']);
+
+        Livewire::test('form.user-select')
+            ->set('selectedUsers', [$candidate->id])
+            ->assertSeeHtml('data-user-id="'.$candidate->id.'"')
+            ->assertSeeHtml('data-flux-avatar')
+            ->assertSee('AvatarPerson');
+    });
+
+    it('hides the user id by default, keeping public author forms uncluttered', function (): void {
+        $candidate = User::factory()->create(['name' => 'PlainPerson']);
+
+        Livewire::test('form.user-select')
+            ->set('selectedUsers', [$candidate->id])
+            ->assertDontSeeHtml('data-user-id-label');
+    });
+
+    it('shows the user id when the parent asks for it', function (): void {
+        $candidate = User::factory()->create(['name' => 'IdentifiedPerson']);
+
+        Livewire::test('form.user-select', ['showUserId' => true])
+            ->set('selectedUsers', [$candidate->id])
+            ->assertSeeHtml('data-user-id-label')
+            ->assertSee('#'.$candidate->id);
+    });
+});

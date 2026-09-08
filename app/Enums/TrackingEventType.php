@@ -127,6 +127,22 @@ enum TrackingEventType: string
 
     case ALT_INVESTIGATION = 'alt_investigation';
 
+    case USER_EMAIL_CHANGE = 'user_email_change';
+
+    case USER_EMAIL_REMOVE = 'user_email_remove';
+
+    case USER_PASSWORD_RESET_SENT = 'user_password_reset_sent';
+
+    case USER_PASSWORD_INVALIDATE = 'user_password_invalidate';
+
+    case USER_MFA_REMOVE = 'user_mfa_remove';
+
+    case USER_DISCORD_UNLINK = 'user_discord_unlink';
+
+    case USER_ACCOUNT_LOCK = 'user_account_lock';
+
+    case USER_PHOTO_REMOVE = 'user_photo_remove';
+
     case MOD_FEATURE = 'mod_feature';
 
     case MOD_UNFEATURE = 'mod_unfeature';
@@ -138,6 +154,10 @@ enum TrackingEventType: string
     case MOD_PUBLISH = 'mod_publish';
 
     case MOD_UNPUBLISH = 'mod_unpublish';
+
+    case MOD_OWNERSHIP_TRANSFER = 'mod_ownership_transfer';
+
+    case MOD_OWNERSHIP_CLEARED = 'mod_ownership_cleared';
 
     case COMMENT_PIN = 'comment_pin';
 
@@ -240,6 +260,8 @@ enum TrackingEventType: string
             self::MOD_ENABLE => 'Enabled mod',
             self::MOD_PUBLISH => 'Published mod',
             self::MOD_UNPUBLISH => 'Unpublished mod',
+            self::MOD_OWNERSHIP_TRANSFER => 'Transferred mod ownership',
+            self::MOD_OWNERSHIP_CLEARED => 'Cleared mod ownership',
             self::COMMENT_PIN => 'Pinned comment',
             self::COMMENT_UNPIN => 'Unpinned comment',
             self::COMMENT_RESTORE => 'Restored comment',
@@ -248,6 +270,14 @@ enum TrackingEventType: string
             self::MOD_LIST_DISABLE => 'Disabled mod list',
             self::MOD_LIST_ENABLE => 'Enabled mod list',
             self::MOD_LIST_DELETE => 'Deleted mod list',
+            self::USER_EMAIL_CHANGE => 'Changed user email',
+            self::USER_EMAIL_REMOVE => 'Removed user email',
+            self::USER_PASSWORD_RESET_SENT => 'Sent password reset',
+            self::USER_PASSWORD_INVALIDATE => 'Invalidated password',
+            self::USER_MFA_REMOVE => 'Removed two-factor authentication',
+            self::USER_DISCORD_UNLINK => 'Unlinked Discord connection',
+            self::USER_ACCOUNT_LOCK => 'Locked account',
+            self::USER_PHOTO_REMOVE => 'Removed profile image',
         };
     }
 
@@ -315,6 +345,8 @@ enum TrackingEventType: string
             self::MOD_ENABLE => 'Moderator enabled a mod',
             self::MOD_PUBLISH => 'Moderator published a mod',
             self::MOD_UNPUBLISH => 'Moderator unpublished a mod',
+            self::MOD_OWNERSHIP_TRANSFER => 'Moderator transferred a mod to a different owner',
+            self::MOD_OWNERSHIP_CLEARED => 'Moderator removed a mod owner, returning the mod to the claimable pool',
             self::COMMENT_PIN => 'Moderator pinned a comment',
             self::COMMENT_UNPIN => 'Moderator unpinned a comment',
             self::COMMENT_RESTORE => 'Moderator restored a deleted comment',
@@ -323,6 +355,14 @@ enum TrackingEventType: string
             self::MOD_LIST_DISABLE => 'Moderator disabled a mod list',
             self::MOD_LIST_ENABLE => 'Moderator enabled a mod list',
             self::MOD_LIST_DELETE => 'Moderator deleted a mod list',
+            self::USER_EMAIL_CHANGE => 'A staff member changed this account\'s email address',
+            self::USER_EMAIL_REMOVE => 'A staff member detached this account\'s email address',
+            self::USER_PASSWORD_RESET_SENT => 'A staff member sent this account a password reset link',
+            self::USER_PASSWORD_INVALIDATE => 'A staff member invalidated this account\'s password',
+            self::USER_MFA_REMOVE => 'A staff member removed two-factor authentication from this account',
+            self::USER_DISCORD_UNLINK => 'A staff member unlinked this account\'s Discord connection',
+            self::USER_ACCOUNT_LOCK => 'A staff member locked this account for incident response',
+            self::USER_PHOTO_REMOVE => 'A staff member removed a profile image from this account',
         };
     }
 
@@ -332,12 +372,15 @@ enum TrackingEventType: string
     public function getTrackableModel(): ?string
     {
         return match ($this) {
-            self::MOD_CREATE, self::MOD_EDIT, self::MOD_DELETE, self::MOD_REPORT, self::MOD_FEATURE, self::MOD_UNFEATURE, self::MOD_DISABLE, self::MOD_ENABLE, self::MOD_PUBLISH, self::MOD_UNPUBLISH, self::MOD_CLAIM_INITIATED, self::MOD_CLAIM_VERIFIED, self::MOD_CLAIM_REJECTED => Mod::class,
+            self::MOD_CREATE, self::MOD_EDIT, self::MOD_DELETE, self::MOD_REPORT, self::MOD_FEATURE, self::MOD_UNFEATURE, self::MOD_DISABLE, self::MOD_ENABLE, self::MOD_PUBLISH, self::MOD_UNPUBLISH, self::MOD_CLAIM_INITIATED, self::MOD_CLAIM_VERIFIED, self::MOD_CLAIM_REJECTED, self::MOD_OWNERSHIP_TRANSFER, self::MOD_OWNERSHIP_CLEARED => Mod::class,
             self::MOD_DOWNLOAD, self::VERSION_CREATE, self::VERSION_EDIT, self::VERSION_DELETE, self::VERSION_DISABLE, self::VERSION_ENABLE, self::VERSION_PUBLISH, self::VERSION_UNPUBLISH => ModVersion::class,
             self::ADDON_CREATE, self::ADDON_EDIT, self::ADDON_DELETE, self::ADDON_REPORT, self::ADDON_ATTACH, self::ADDON_DETACH, self::ADDON_DISABLE, self::ADDON_ENABLE, self::ADDON_PUBLISH, self::ADDON_UNPUBLISH => Addon::class,
             self::ADDON_DOWNLOAD, self::ADDON_VERSION_CREATE, self::ADDON_VERSION_EDIT, self::ADDON_VERSION_DELETE, self::ADDON_VERSION_DISABLE, self::ADDON_VERSION_ENABLE, self::ADDON_VERSION_PUBLISH, self::ADDON_VERSION_UNPUBLISH => AddonVersion::class,
             self::COMMENT_CREATE, self::COMMENT_EDIT, self::COMMENT_SOFT_DELETE, self::COMMENT_HARD_DELETE, self::COMMENT_LIKE, self::COMMENT_UNLIKE, self::COMMENT_REPORT, self::COMMENT_PIN, self::COMMENT_UNPIN, self::COMMENT_RESTORE, self::COMMENT_MARK_SPAM, self::COMMENT_MARK_CLEAN => Comment::class,
-            self::USER_BAN, self::USER_UNBAN, self::USER_BANNED, self::USER_UNBANNED, self::ALT_INVESTIGATION => User::class,
+            self::USER_BAN, self::USER_UNBAN, self::USER_BANNED, self::USER_UNBANNED, self::ALT_INVESTIGATION,
+            self::USER_EMAIL_CHANGE, self::USER_EMAIL_REMOVE, self::USER_PASSWORD_RESET_SENT,
+            self::USER_PASSWORD_INVALIDATE, self::USER_MFA_REMOVE, self::USER_DISCORD_UNLINK,
+            self::USER_ACCOUNT_LOCK, self::USER_PHOTO_REMOVE => User::class,
             self::MOD_LIST_DISABLE, self::MOD_LIST_ENABLE, self::MOD_LIST_DELETE => ModList::class,
             default => null,
         };
@@ -418,6 +461,8 @@ enum TrackingEventType: string
             self::MOD_ENABLE => 'eye',
             self::MOD_PUBLISH => 'globe-alt',
             self::MOD_UNPUBLISH => 'eye-slash',
+            self::MOD_OWNERSHIP_TRANSFER => 'arrows-right-left',
+            self::MOD_OWNERSHIP_CLEARED => 'user-minus',
             self::COMMENT_PIN => 'bookmark',
             self::COMMENT_UNPIN => 'bookmark',
             self::COMMENT_RESTORE => 'arrow-uturn-left',
@@ -426,6 +471,12 @@ enum TrackingEventType: string
             self::MOD_LIST_DISABLE => 'eye-slash',
             self::MOD_LIST_ENABLE => 'eye',
             self::MOD_LIST_DELETE => 'trash',
+            self::USER_EMAIL_CHANGE, self::USER_EMAIL_REMOVE => 'envelope',
+            self::USER_PASSWORD_RESET_SENT, self::USER_PASSWORD_INVALIDATE => 'key',
+            self::USER_MFA_REMOVE => 'shield-exclamation',
+            self::USER_DISCORD_UNLINK => 'link-slash',
+            self::USER_ACCOUNT_LOCK => 'lock-closed',
+            self::USER_PHOTO_REMOVE => 'photo',
         };
     }
 
@@ -508,6 +559,8 @@ enum TrackingEventType: string
             self::MOD_ENABLE => 'green',
             self::MOD_PUBLISH => 'blue',
             self::MOD_UNPUBLISH => 'gray',
+            self::MOD_OWNERSHIP_TRANSFER => 'blue',
+            self::MOD_OWNERSHIP_CLEARED => 'red',
             self::COMMENT_PIN => 'blue',
             self::COMMENT_UNPIN => 'gray',
             self::COMMENT_RESTORE => 'green',
@@ -516,6 +569,9 @@ enum TrackingEventType: string
             self::MOD_LIST_DISABLE => 'red',
             self::MOD_LIST_ENABLE => 'green',
             self::MOD_LIST_DELETE => 'red',
+            self::USER_EMAIL_CHANGE, self::USER_PASSWORD_RESET_SENT, self::USER_PHOTO_REMOVE => 'amber',
+            self::USER_EMAIL_REMOVE, self::USER_PASSWORD_INVALIDATE, self::USER_MFA_REMOVE,
+            self::USER_DISCORD_UNLINK, self::USER_ACCOUNT_LOCK => 'red',
         };
     }
 
@@ -573,6 +629,12 @@ enum TrackingEventType: string
             self::MOD_ENABLE,
             self::MOD_PUBLISH,
             self::MOD_UNPUBLISH,
+            self::MOD_OWNERSHIP_TRANSFER,
+            self::MOD_OWNERSHIP_CLEARED,
+            // Staff edits and deletions are already flagged on the row by ModeratesMod and the
+            // staff tool; without these two the moderation log filtered them straight back out.
+            self::MOD_EDIT,
+            self::MOD_DELETE,
             self::MOD_CLAIM_VERIFIED,
             self::MOD_CLAIM_REJECTED,
             self::VERSION_DISABLE,
@@ -596,7 +658,15 @@ enum TrackingEventType: string
             self::COMMENT_MARK_CLEAN,
             self::MOD_LIST_DISABLE,
             self::MOD_LIST_ENABLE,
-            self::MOD_LIST_DELETE => true,
+            self::MOD_LIST_DELETE,
+            self::USER_EMAIL_CHANGE,
+            self::USER_EMAIL_REMOVE,
+            self::USER_PASSWORD_RESET_SENT,
+            self::USER_PASSWORD_INVALIDATE,
+            self::USER_MFA_REMOVE,
+            self::USER_DISCORD_UNLINK,
+            self::USER_ACCOUNT_LOCK,
+            self::USER_PHOTO_REMOVE => true,
             default => false,
         };
     }

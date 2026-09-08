@@ -54,6 +54,12 @@ new class extends Component
     public string $description = '';
 
     /**
+     * Show each candidate's numeric ID beside their name. Off by default: it disambiguates
+     * duplicate display names for staff, but is noise on the public author forms.
+     */
+    public bool $showUserId = false;
+
+    /**
      * Users to exclude from search results (e.g., the owner).
      *
      * @var array<int>

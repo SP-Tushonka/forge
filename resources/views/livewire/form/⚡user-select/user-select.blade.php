@@ -19,7 +19,25 @@
 
         @foreach ($this->searchResults as $user)
             <flux:pillbox.option :value="$user->id">
-                {{ $user->name }}
+                <span
+                    class="flex min-w-0 items-center gap-2"
+                    data-user-id="{{ $user->id }}"
+                >
+                    <flux:avatar
+                        src="{{ $user->profile_photo_url }}"
+                        size="xs"
+                        circle
+                        color="auto"
+                        color:seed="{{ $user->id }}"
+                    />
+                    <span class="truncate">{{ $user->name }}</span>
+                    @if ($showUserId)
+                        <span
+                            class="shrink-0 font-mono text-xs text-zinc-400"
+                            data-user-id-label
+                        >#{{ $user->id }}</span>
+                    @endif
+                </span>
             </flux:pillbox.option>
         @endforeach
 
