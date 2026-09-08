@@ -76,7 +76,7 @@
         />
     </x-slot>
 
-    <p><strong>Effective Date:</strong> August 26, 2025<br><strong>Last Updated:</strong> July 28, 2026</p>
+    <p><strong>Effective Date:</strong> August 26, 2025<br><strong>Last Updated:</strong> September 8, 2026</p>
 
     <h2 id="overview">1. Overview</h2>
     <p>These Content Guidelines establish the technical and quality standards for all files, mods, and content submitted
@@ -513,7 +513,7 @@ public override SemanticVersioning.Range SptVersion { get; } = new("4.0.0");</co
     <p>Under no circumstance there should be any real world politics topics involved in any part of a mod content.</p>
     <p>This includes but is not limited to: flags of countries in active conflicts, symbols, logos, phrases, indirect
         references, etc.</p>
-    <p>What is considered or not "politics", is fully up to the moderators or staff discretion.</p>
+    <p>What is considered or not "politics", is fully up to the moderators discretion.</p>
 
     <h3 id="compilation-guidelines">7.4 Compilation and Collection Guidelines</h3>
     <h4 id="compilation-guidelines-prohibited-content">Prohibited Content:</h4>
@@ -613,9 +613,9 @@ public override SemanticVersioning.Range SptVersion { get; } = new("4.0.0");</co
 
     <h3 id="special-consideration">9.2 Special considerations</h3>
     <h4 id="moderator-discretion">Moderator Discretion:</h4>
-    <p>A moderator or staff member may independently choose to remove any content at his own discretion, and without
-        warning. <strong>ANY</strong> content uploaded to The Forge is considered applicable. You are free to request
-        an appeal, but the final decision is made by the moderator and staff team. Moderators or Staff may give you a
+    <p>A moderator may independently choose to remove any content at its own discretion, and without warning.
+        <strong>ANY</strong> content uploaded to The Forge is considered applicable. You are free to request
+        an appeal, but the final decision is made by the moderator team. Moderators may give you a formal
         reason for a removal, but this is understood to be a courtesy and not mandatory.</p>
 
     <h3 id="appeals-process">9.3 Appeals Process</h3>
