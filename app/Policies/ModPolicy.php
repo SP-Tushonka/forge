@@ -225,6 +225,21 @@ final class ModPolicy
     }
 
     /**
+     * Determine whether the user can transfer or clear the mod's owner.
+     *
+     * Admin-only: reassigning a mod moves every download, endorsement and comment badge on it to
+     * a different account, and clearing the owner returns the mod to the claimable pool.
+     */
+    public function manageOwnership(User $user, Mod $mod): bool
+    {
+        if (! $user->hasVerifiedEmail()) {
+            return false;
+        }
+
+        return $user->isAdmin();
+    }
+
+    /**
      * Determine whether the user can lock or unlock the contains_ai_content flag.
      */
     public function lockAiContent(User $user, Mod $mod): bool
