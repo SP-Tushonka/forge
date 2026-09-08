@@ -463,7 +463,7 @@
         <strong>Our commitment:</strong> Industry-standard security and transparent practices
     </p>
 
-    <p><strong>Questions?</strong> Contact us at TBD</p>
+    <p><strong>Questions?</strong> Contact us at clodan-spt@hotmail.com</p>
 
     <hr>
 
