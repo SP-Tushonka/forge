@@ -8,11 +8,17 @@ use App\Http\Controllers\Controller;
 use App\Notifications\AccountRecoveryNotification;
 use App\Notifications\ResetPassword;
 use App\Notifications\VerifyEmail;
+use App\Traits\Livewire\EditsMod;
 use App\Traits\ThrottlesOutboundEmail;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 arch()->preset()->php();
-arch()->preset()->security();
+
+// EditsMod writes mods.thumbnail_hash with md5. That is a cache-busting fingerprint, never a
+// security token: it is only ever written and then read back into image URLs, never compared.
+// The same md5 call exists in five sibling pages under resources/views/pages, which this preset
+// does not scan; it only surfaced here because the shared field logic moved into app/.
+arch()->preset()->security()->ignoring(EditsMod::class);
 
 arch('strict types')
     ->expect('App')

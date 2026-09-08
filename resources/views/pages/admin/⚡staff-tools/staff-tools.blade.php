@@ -23,6 +23,7 @@
                     label:sr-only="{{ __('Select a tool') }}"
                 >
                     <flux:select.option value="users">{{ __('Users') }}</flux:select.option>
+                    <flux:select.option value="mods">{{ __('Mods') }}</flux:select.option>
                 </flux:select>
             </div>
 
@@ -36,12 +37,20 @@
                         name="Users"
                         value="users"
                     />
+                    <x-tab-button
+                        name="Mods"
+                        value="mods"
+                    />
                 </nav>
             </div>
         </div>
 
         <div x-show="selectedTab === 'users'">
             <livewire:admin.staff-tools.user-tool />
+        </div>
+
+        <div x-show="selectedTab === 'mods'">
+            <livewire:admin.staff-tools.mod-tool />
         </div>
     </div>
 </div>

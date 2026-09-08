@@ -155,6 +155,10 @@ enum TrackingEventType: string
 
     case MOD_UNPUBLISH = 'mod_unpublish';
 
+    case MOD_OWNERSHIP_TRANSFER = 'mod_ownership_transfer';
+
+    case MOD_OWNERSHIP_CLEARED = 'mod_ownership_cleared';
+
     case COMMENT_PIN = 'comment_pin';
 
     case COMMENT_UNPIN = 'comment_unpin';
@@ -256,6 +260,8 @@ enum TrackingEventType: string
             self::MOD_ENABLE => 'Enabled mod',
             self::MOD_PUBLISH => 'Published mod',
             self::MOD_UNPUBLISH => 'Unpublished mod',
+            self::MOD_OWNERSHIP_TRANSFER => 'Transferred mod ownership',
+            self::MOD_OWNERSHIP_CLEARED => 'Cleared mod ownership',
             self::COMMENT_PIN => 'Pinned comment',
             self::COMMENT_UNPIN => 'Unpinned comment',
             self::COMMENT_RESTORE => 'Restored comment',
@@ -339,6 +345,8 @@ enum TrackingEventType: string
             self::MOD_ENABLE => 'Moderator enabled a mod',
             self::MOD_PUBLISH => 'Moderator published a mod',
             self::MOD_UNPUBLISH => 'Moderator unpublished a mod',
+            self::MOD_OWNERSHIP_TRANSFER => 'Moderator transferred a mod to a different owner',
+            self::MOD_OWNERSHIP_CLEARED => 'Moderator removed a mod owner, returning the mod to the claimable pool',
             self::COMMENT_PIN => 'Moderator pinned a comment',
             self::COMMENT_UNPIN => 'Moderator unpinned a comment',
             self::COMMENT_RESTORE => 'Moderator restored a deleted comment',
@@ -364,7 +372,7 @@ enum TrackingEventType: string
     public function getTrackableModel(): ?string
     {
         return match ($this) {
-            self::MOD_CREATE, self::MOD_EDIT, self::MOD_DELETE, self::MOD_REPORT, self::MOD_FEATURE, self::MOD_UNFEATURE, self::MOD_DISABLE, self::MOD_ENABLE, self::MOD_PUBLISH, self::MOD_UNPUBLISH, self::MOD_CLAIM_INITIATED, self::MOD_CLAIM_VERIFIED, self::MOD_CLAIM_REJECTED => Mod::class,
+            self::MOD_CREATE, self::MOD_EDIT, self::MOD_DELETE, self::MOD_REPORT, self::MOD_FEATURE, self::MOD_UNFEATURE, self::MOD_DISABLE, self::MOD_ENABLE, self::MOD_PUBLISH, self::MOD_UNPUBLISH, self::MOD_CLAIM_INITIATED, self::MOD_CLAIM_VERIFIED, self::MOD_CLAIM_REJECTED, self::MOD_OWNERSHIP_TRANSFER, self::MOD_OWNERSHIP_CLEARED => Mod::class,
             self::MOD_DOWNLOAD, self::VERSION_CREATE, self::VERSION_EDIT, self::VERSION_DELETE, self::VERSION_DISABLE, self::VERSION_ENABLE, self::VERSION_PUBLISH, self::VERSION_UNPUBLISH => ModVersion::class,
             self::ADDON_CREATE, self::ADDON_EDIT, self::ADDON_DELETE, self::ADDON_REPORT, self::ADDON_ATTACH, self::ADDON_DETACH, self::ADDON_DISABLE, self::ADDON_ENABLE, self::ADDON_PUBLISH, self::ADDON_UNPUBLISH => Addon::class,
             self::ADDON_DOWNLOAD, self::ADDON_VERSION_CREATE, self::ADDON_VERSION_EDIT, self::ADDON_VERSION_DELETE, self::ADDON_VERSION_DISABLE, self::ADDON_VERSION_ENABLE, self::ADDON_VERSION_PUBLISH, self::ADDON_VERSION_UNPUBLISH => AddonVersion::class,
@@ -453,6 +461,8 @@ enum TrackingEventType: string
             self::MOD_ENABLE => 'eye',
             self::MOD_PUBLISH => 'globe-alt',
             self::MOD_UNPUBLISH => 'eye-slash',
+            self::MOD_OWNERSHIP_TRANSFER => 'arrows-right-left',
+            self::MOD_OWNERSHIP_CLEARED => 'user-minus',
             self::COMMENT_PIN => 'bookmark',
             self::COMMENT_UNPIN => 'bookmark',
             self::COMMENT_RESTORE => 'arrow-uturn-left',
@@ -549,6 +559,8 @@ enum TrackingEventType: string
             self::MOD_ENABLE => 'green',
             self::MOD_PUBLISH => 'blue',
             self::MOD_UNPUBLISH => 'gray',
+            self::MOD_OWNERSHIP_TRANSFER => 'blue',
+            self::MOD_OWNERSHIP_CLEARED => 'red',
             self::COMMENT_PIN => 'blue',
             self::COMMENT_UNPIN => 'gray',
             self::COMMENT_RESTORE => 'green',
@@ -617,6 +629,12 @@ enum TrackingEventType: string
             self::MOD_ENABLE,
             self::MOD_PUBLISH,
             self::MOD_UNPUBLISH,
+            self::MOD_OWNERSHIP_TRANSFER,
+            self::MOD_OWNERSHIP_CLEARED,
+            // Staff edits and deletions are already flagged on the row by ModeratesMod and the
+            // staff tool; without these two the moderation log filtered them straight back out.
+            self::MOD_EDIT,
+            self::MOD_DELETE,
             self::MOD_CLAIM_VERIFIED,
             self::MOD_CLAIM_REJECTED,
             self::VERSION_DISABLE,
