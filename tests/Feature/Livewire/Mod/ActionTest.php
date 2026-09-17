@@ -319,7 +319,7 @@ describe('mod publishing functionality', function (): void {
 describe('mod featuring functionality', function (): void {
     it('allows administrators to feature mods without AI content', function (): void {
         $user = User::factory()->admin()->create();
-        $mod = Mod::factory()->create(['featured' => false, 'contains_ai_content' => false]);
+        $mod = Mod::factory()->create(['featured' => false]);
 
         Livewire::actingAs($user)
             ->test('mod.action', [
@@ -336,28 +336,9 @@ describe('mod featuring functionality', function (): void {
         expect($mod->featured)->toBeTrue();
     });
 
-    it('prevents administrators from featuring mods with AI content', function (): void {
+    it('allows administrators to unfeature mods', function (): void {
         $user = User::factory()->admin()->create();
-        $mod = Mod::factory()->create(['featured' => false, 'contains_ai_content' => true]);
-
-        Livewire::actingAs($user)
-            ->test('mod.action', [
-                'modId' => $mod->id,
-                'modName' => $mod->name,
-                'modFeatured' => false,
-                'modDisabled' => (bool) $mod->disabled,
-                'modPublished' => (bool) $mod->published_at,
-            ])
-            ->call('feature')
-            ->assertForbidden();
-
-        $mod->refresh();
-        expect($mod->featured)->toBeFalse();
-    });
-
-    it('allows administrators to unfeature mods with AI content', function (): void {
-        $user = User::factory()->admin()->create();
-        $mod = Mod::factory()->create(['featured' => true, 'contains_ai_content' => true]);
+        $mod = Mod::factory()->create(['featured' => true]);
 
         Livewire::actingAs($user)
             ->test('mod.action', [
@@ -374,25 +355,9 @@ describe('mod featuring functionality', function (): void {
         expect($mod->featured)->toBeFalse();
     });
 
-    it('hides feature option for mods with AI content in permissions', function (): void {
-        $user = User::factory()->admin()->create();
-        $mod = Mod::factory()->create(['featured' => false, 'contains_ai_content' => true]);
-
-        Livewire::actingAs($user)
-            ->test('mod.action', [
-                'modId' => $mod->id,
-                'modName' => $mod->name,
-                'modFeatured' => false,
-                'modDisabled' => (bool) $mod->disabled,
-                'modPublished' => (bool) $mod->published_at,
-            ])
-            ->call('loadMenu')
-            ->assertSet('permissions.feature', false);
-    });
-
     it('prevents normal users from featuring mods', function (): void {
         $user = User::factory()->create(['user_role_id' => null]);
-        $mod = Mod::factory()->create(['featured' => false, 'contains_ai_content' => false]);
+        $mod = Mod::factory()->create(['featured' => false]);
 
         Livewire::actingAs($user)
             ->test('mod.action', [

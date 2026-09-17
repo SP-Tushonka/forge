@@ -92,7 +92,6 @@ final class ModSeeder extends Seeder
         for ($i = 0; $i < $modCount; $i++) {
             $name = Str::title(mb_rtrim($this->faker->sentence(random_int(3, 5)), '.'));
             $slug = Str::slug($name);
-            $containsAiContent = $this->faker->boolean();
             $createdAt = $this->randomPastDate(365);
 
             $rows[] = [
@@ -105,8 +104,6 @@ final class ModSeeder extends Seeder
                 'license_id' => $this->randomElement($licenseIds),
                 'category_id' => $categoryIds !== [] && random_int(1, 10) <= 8 ? $this->randomElement($categoryIds) : null,
                 'featured' => $this->faker->boolean(),
-                'contains_ai_content' => $containsAiContent,
-                'custom_ai_disclosure' => $containsAiContent ? $this->faker->sentence() : null,
                 'contains_ads' => $this->faker->boolean(),
                 'discord_notification_sent' => true,
                 'published_at' => $this->randomPastDate(365),

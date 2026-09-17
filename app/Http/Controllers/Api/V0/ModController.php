@@ -28,7 +28,7 @@ final class ModController extends Controller
      * Retrieves a paginated list of mods, allowing filtering, sorting, and relationship inclusion.
      *
      * Fields available:<br /><code>hub_id, guid, name, slug, teaser, thumbnail, downloads, favourites_count,
-     * endorsements_count, detail_url, fika_compatibility, featured, contains_ai_content, contains_ads,
+     * endorsements_count, detail_url, fika_compatibility, featured, contains_ads,
      * shows_profile_binding_notice, category_id, published_at, created_at, updated_at</code>
      *
      * <aside class="notice">This endpoint only offers limited version information. Only the latest 6 versions will be
@@ -77,7 +77,6 @@ final class ModController extends Controller
      *              "fika_compatibility": true,
      *              "featured": true,
      *              "contains_ads": true,
-     *              "contains_ai_content": false,
      *              "shows_profile_binding_notice": false,
      *              "published_at": "2025-01-09T17:48:53.000000Z",
      *              "created_at": "2024-12-11T14:48:53.000000Z",
@@ -111,7 +110,6 @@ final class ModController extends Controller
      *              "fika_compatibility": false,
      *              "featured": false,
      *              "contains_ads": true,
-     *              "contains_ai_content": true,
      *              "shows_profile_binding_notice": false,
      *              "published_at": "2024-08-30T14:48:53.000000Z",
      *              "created_at": "2024-06-22T04:48:53.000000Z",
@@ -189,7 +187,6 @@ final class ModController extends Controller
      *              "fika_compatibility": true,
      *              "featured": true,
      *              "contains_ads": true,
-     *              "contains_ai_content": false,
      *              "shows_profile_binding_notice": false,
      *              "published_at": "2025-01-09T17:48:53.000000Z",
      *              "created_at": "2024-12-11T14:48:53.000000Z",
@@ -261,7 +258,6 @@ final class ModController extends Controller
      *              "fika_compatibility": true,
      *              "featured": true,
      *              "contains_ads": true,
-     *              "contains_ai_content": false,
      *              "shows_profile_binding_notice": false,
      *              "versions": [
      *                  {
@@ -338,7 +334,6 @@ final class ModController extends Controller
     #[QueryParam('filter[teaser]', description: 'Filter by teaser text (fuzzy filter).', required: false, example: 'important')]
     #[QueryParam('filter[featured]', description: 'Filter by featured status (1, true, 0, false).', required: false, example: 'true')]
     #[QueryParam('filter[contains_ads]', description: 'Filter by contains_ads status (1, true, 0, false).', required: false, example: 'false')]
-    #[QueryParam('filter[contains_ai_content]', description: 'Filter by contains_ai_content status (1, true, 0, false).', required: false, example: 'false')]
     #[QueryParam('filter[category_id]', description: 'Filter by comma-separated category IDs.', required: false, example: '1,2,3')]
     #[QueryParam('filter[category_slug]', description: 'Filter by comma-separated category slugs.', required: false, example: 'weapons,gear')]
     #[QueryParam('filter[created_between]', description: 'Filter by creation date range (YYYY-MM-DD,YYYY-MM-DD).', required: false, example: '2025-01-01,2025-03-31')]
@@ -375,8 +370,8 @@ final class ModController extends Controller
      * Retrieves details for a single mod, allowing relationship inclusion.
      *
      * Fields available:<br /><code>hub_id, guid, name, slug, teaser, description, thumbnail, downloads,
-     * favourites_count, endorsements_count, detail_url, fika_compatibility, featured, contains_ai_content,
-     * custom_ai_disclosure, contains_ads, shows_profile_binding_notice, published_at, created_at, updated_at</code>
+     * favourites_count, endorsements_count, detail_url, fika_compatibility, featured, contains_ads,
+     * shows_profile_binding_notice, published_at, created_at, updated_at</code>
      *
      * <aside class="notice">This endpoint only offers limited version information. Only the latest 6 versions will be
      * included. For additional version information, use the <code>mod/{id}/versions</code> endpoint.</aside>
@@ -424,8 +419,6 @@ final class ModController extends Controller
      *          "fika_compatibility": true,
      *          "featured": false,
      *          "contains_ads": true,
-     *          "contains_ai_content": true,
-     *          "custom_ai_disclosure": "<p>AI tools were used to generate placeholder item icons and textures.</p>",
      *          "shows_profile_binding_notice": false,
      *          "published_at": "2024-08-30T14:48:53.000000Z",
      *          "created_at": "2024-06-22T04:48:53.000000Z",
@@ -477,8 +470,6 @@ final class ModController extends Controller
      *          "fika_compatibility": true,
      *          "featured": false,
      *          "contains_ads": true,
-     *          "contains_ai_content": true,
-     *          "custom_ai_disclosure": "<p>AI tools were used to generate placeholder item icons and textures.</p>",
      *          "shows_profile_binding_notice": false,
      *          "license": {
      *              "id": 2,
@@ -515,8 +506,6 @@ final class ModController extends Controller
      *          "fika_compatibility": true,
      *          "featured": false,
      *          "contains_ads": true,
-     *          "contains_ai_content": true,
-     *          "custom_ai_disclosure": "<p>AI tools were used to generate placeholder item icons and textures.</p>",
      *          "shows_profile_binding_notice": false,
      *          "owner": {
      *              "id": 1,

@@ -100,7 +100,7 @@ new class extends Component
     {
         return Mod::query()
             ->withoutGlobalScopes()
-            ->select(['id', 'name', 'slug', 'description', 'featured', 'disabled', 'published_at', 'owner_id', 'contains_ai_content'])
+            ->select(['id', 'name', 'slug', 'description', 'featured', 'disabled', 'published_at', 'owner_id'])
             ->with(['owner:id,name', 'additionalAuthors:id'])
             ->findOrFail($this->modId);
     }

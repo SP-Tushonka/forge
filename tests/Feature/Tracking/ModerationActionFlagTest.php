@@ -182,7 +182,7 @@ describe('mod disable/enable - always moderation actions', function (): void {
 describe('mod featuring - always moderation actions', function (): void {
     it('always flags feature action as moderation since only admins can feature', function (): void {
         $admin = User::factory()->admin()->create();
-        $mod = Mod::factory()->create(['featured' => false, 'contains_ai_content' => false]);
+        $mod = Mod::factory()->create(['featured' => false]);
 
         Livewire::actingAs($admin)
             ->test('mod.action', [

@@ -75,12 +75,6 @@ new #[Layout('layouts::base')] class extends Component
     public mixed $featured = 'include';
 
     /**
-     * The AI generated content filter value.
-     */
-    #[Url(as: 'ai')]
-    public mixed $aiContent = 'include';
-
-    /**
      * The category filter value.
      */
     #[Url(except: '')]
@@ -104,10 +98,6 @@ new #[Layout('layouts::base')] class extends Component
 
         if (! is_string($this->featured)) {
             $this->featured = 'include';
-        }
-
-        if (! is_string($this->aiContent)) {
-            $this->aiContent = 'include';
         }
 
         if (! is_string($this->category)) {
@@ -139,7 +129,6 @@ new #[Layout('layouts::base')] class extends Component
         $this->query = '';
         $this->sptVersions = $this->defaultSptVersions();
         $this->featured = 'include';
-        $this->aiContent = 'include';
         $this->category = '';
         $this->fikaCompatibility = false;
 
@@ -154,7 +143,6 @@ new #[Layout('layouts::base')] class extends Component
         match ($filter) {
             'query' => $this->query = '',
             'featured' => $this->featured = 'include',
-            'ai' => $this->aiContent = 'include',
             'category' => $this->category = '',
             'fika' => $this->fikaCompatibility = false,
             'versions' => $this->sptVersions = $this->defaultSptVersions(),
@@ -289,12 +277,6 @@ new #[Layout('layouts::base')] class extends Component
             $chips[] = new ActiveFilterChip('featured', __('Featured only'), "clearFilter('featured')");
         }
 
-        if ($this->aiContent === 'exclude') {
-            $chips[] = new ActiveFilterChip('ai', __('AI generation: excluded'), "clearFilter('ai')");
-        } elseif ($this->aiContent === 'only') {
-            $chips[] = new ActiveFilterChip('ai', __('AI generation only'), "clearFilter('ai')");
-        }
-
         if ($this->fikaCompatibility === true) {
             $chips[] = new ActiveFilterChip('fika', __('Fika compatible'), "clearFilter('fika')");
         }
@@ -356,7 +338,6 @@ new #[Layout('layouts::base')] class extends Component
         $filters = new ModFilter([
             'query' => $this->query,
             'featured' => $this->featured,
-            'aiContent' => $this->aiContent,
             'order' => $this->order,
             'sptVersions' => $this->sptVersions,
             'category' => $this->category,
@@ -548,7 +529,6 @@ new #[Layout('layouts::base')] class extends Component
         return sprintf('mod-index:total:%s:%s', $role, md5((string) json_encode([
             'versions' => $versions,
             'featured' => in_array($this->featured, ['exclude', 'only'], true) ? $this->featured : 'include',
-            'ai' => in_array($this->aiContent, ['exclude', 'only'], true) ? $this->aiContent : 'include',
             'category' => $category,
             'fika' => $this->fikaCompatibility === true,
         ])));

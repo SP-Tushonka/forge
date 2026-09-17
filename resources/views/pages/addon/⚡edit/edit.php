@@ -85,21 +85,6 @@ new #[Layout('layouts::base')] class extends Component
     public ?string $publishedAtTime = null;
 
     /**
-     * Whether the addon contains AI content.
-     */
-    public bool $containsAiContent = false;
-
-    /**
-     * Whether the contains AI content flag is locked by staff.
-     */
-    public bool $containsAiContentLocked = false;
-
-    /**
-     * The custom AI disclosure message.
-     */
-    public string $customAiDisclosure = '';
-
-    /**
      * Whether the addon contains ads.
      */
     public bool $containsAds = false;
@@ -164,9 +149,6 @@ new #[Layout('layouts::base')] class extends Component
             $this->publishedAtTime = $publishedAtLocal->format('H:i');
         }
 
-        $this->containsAiContent = (bool) $this->addon->contains_ai_content;
-        $this->containsAiContentLocked = (bool) $this->addon->contains_ai_content_locked;
-        $this->customAiDisclosure = $this->addon->custom_ai_disclosure ?? '';
         $this->containsAds = (bool) $this->addon->contains_ads;
         $this->commentsDisabled = (bool) $this->addon->comments_disabled;
 
@@ -189,24 +171,6 @@ new #[Layout('layouts::base')] class extends Component
     public function updateAuthorIds(array $ids): void
     {
         $this->authorIds = $ids;
-    }
-
-    /**
-     * Whether the current user can lock or unlock the AI content flag.
-     */
-    #[Computed]
-    public function canLockAiContent(): bool
-    {
-        return auth()->user()?->can('lockAiContent', $this->addon) ?? false;
-    }
-
-    /**
-     * Whether the AI content flag is currently locked and the user cannot change it.
-     */
-    #[Computed]
-    public function aiContentLockedForUser(): bool
-    {
-        return $this->addon->contains_ai_content_locked && ! $this->canLockAiContent;
     }
 
     /**
@@ -250,18 +214,6 @@ new #[Layout('layouts::base')] class extends Component
         $this->addon->teaser = $this->teaser;
         $this->addon->description = $this->description;
         $this->addon->license_id = (int) $this->license;
-
-        if ($this->canLockAiContent) {
-            $this->addon->contains_ai_content_locked = $this->containsAiContentLocked;
-            $this->addon->contains_ai_content = $this->containsAiContentLocked ? true : $this->containsAiContent;
-        } elseif (! $this->addon->contains_ai_content_locked) {
-            $this->addon->contains_ai_content = $this->containsAiContent;
-        }
-
-        $this->addon->custom_ai_disclosure = $this->addon->contains_ai_content && $this->customAiDisclosure !== ''
-            ? $this->customAiDisclosure
-            : null;
-
         $this->addon->contains_ads = $this->containsAds;
         $this->addon->comments_disabled = $this->commentsDisabled;
         $this->addon->published_at = $publishedAtCarbon;
@@ -416,9 +368,6 @@ new #[Layout('layouts::base')] class extends Component
             'sourceCodeLinks.*.label' => 'nullable|string|max:50',
             'publishedAtDate' => 'nullable|date',
             'publishedAtTime' => 'nullable|date_format:H:i',
-            'containsAiContent' => 'boolean',
-            'containsAiContentLocked' => 'boolean',
-            'customAiDisclosure' => 'required_if:containsAiContent,true|string|max:1000',
             'containsAds' => 'boolean',
             'commentsDisabled' => 'boolean',
             'subscribeToComments' => 'boolean',
@@ -453,7 +402,6 @@ new #[Layout('layouts::base')] class extends Component
             'sourceCodeLinks.*.url.url' => 'Please enter a valid URL (e.g., https://github.com/username/repo).',
             'sourceCodeLinks.*.url.starts_with' => 'The URL must start with https:// or http://',
             'sourceCodeLinks.*.label.max' => 'The label must not exceed 50 characters.',
-            'customAiDisclosure.required_if' => 'Please describe how AI was used when your addon contains AI content.',
         ];
     }
 };

@@ -56,9 +56,6 @@ use Stevebauman\Purify\Facades\Purify;
  * @property int $favourites_count
  * @property int $endorsements_count
  * @property bool $featured
- * @property bool $contains_ai_content
- * @property bool $contains_ai_content_locked
- * @property string|null $custom_ai_disclosure
  * @property bool $contains_ads
  * @property bool $disabled
  * @property bool $comments_disabled
@@ -72,7 +69,6 @@ use Stevebauman\Purify\Facades\Purify;
  * @property-read string $detail_url
  * @property-read string $thumbnailSrcset
  * @property-read string $description_html
- * @property-read string $custom_ai_disclosure_html
  * @property-read bool $addons_enabled
  * @property-read bool $lists_enabled
  * @property-read bool $fika_compatibility
@@ -870,8 +866,6 @@ final class Mod extends Model implements Commentable, Reportable, Trackable
             'endorsements_count' => 'integer',
             'thumbnail_variants' => 'array',
             'featured' => 'boolean',
-            'contains_ai_content' => 'boolean',
-            'contains_ai_content_locked' => 'boolean',
             'contains_ads' => 'boolean',
             'disabled' => 'boolean',
             'comments_disabled' => 'boolean',
@@ -965,29 +959,6 @@ final class Mod extends Model implements Commentable, Reportable, Trackable
                 /** @var string $clean */
                 $clean = Purify::config('description')->clean(
                     Markdown::convert($this->description)->getContent()
-                );
-
-                return $clean;
-            }
-        )->shouldCache();
-    }
-
-    /**
-     * Generate the cleaned HTML version of the custom AI disclosure.
-     *
-     * @return Attribute<string, never>
-     */
-    protected function customAiDisclosureHtml(): Attribute
-    {
-        return Attribute::make(
-            get: function (): string {
-                if (! $this->custom_ai_disclosure) {
-                    return '';
-                }
-
-                /** @var string $clean */
-                $clean = Purify::config('description')->clean(
-                    Markdown::convert($this->custom_ai_disclosure)->getContent()
                 );
 
                 return $clean;

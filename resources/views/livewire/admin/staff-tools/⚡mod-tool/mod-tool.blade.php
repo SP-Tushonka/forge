@@ -69,9 +69,6 @@
                 @if ($mod->featured)
                     <flux:badge color="yellow">{{ __('Featured') }}</flux:badge>
                 @endif
-                @if ($mod->contains_ai_content)
-                    <flux:badge color="purple">{{ __('AI content') }}</flux:badge>
-                @endif
             </div>
 
             <dl class="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
@@ -140,13 +137,7 @@
                 <flux:checkbox wire:model="listsDisabled" :label="__('Lists disabled')" />
                 <flux:checkbox wire:model="cheatNotice" :label="__('Show cheat notice')" />
                 <flux:checkbox wire:model="disableProfileBindingNotice" :label="__('Hide profile binding notice')" />
-                @if ($this->canLockAiContent)
-                    <flux:checkbox wire:model="containsAiContentLocked" :label="__('Lock the AI content flag')" />
-                @endif
-                <flux:checkbox wire:model="containsAiContent" :label="__('Contains AI content')" />
             </div>
-
-            <flux:textarea wire:model="customAiDisclosure" :label="__('AI disclosure')" rows="3" />
 
             <flux:textarea
                 wire:model="reason"

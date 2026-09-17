@@ -50,12 +50,6 @@ trait EditsMod
 
     public ?string $publishedAtTime = null;
 
-    public bool $containsAiContent = false;
-
-    public bool $containsAiContentLocked = false;
-
-    public string $customAiDisclosure = '';
-
     public bool $containsAds = false;
 
     public bool $commentsDisabled = false;
@@ -135,9 +129,6 @@ trait EditsMod
             $this->publishedAtTime = $publishedAtLocal->format('H:i');
         }
 
-        $this->containsAiContent = (bool) $mod->contains_ai_content;
-        $this->containsAiContentLocked = (bool) $mod->contains_ai_content_locked;
-        $this->customAiDisclosure = $mod->custom_ai_disclosure ?? '';
         $this->containsAds = (bool) $mod->contains_ads;
         $this->commentsDisabled = (bool) $mod->comments_disabled;
         $this->disableProfileBindingNotice = (bool) $mod->profile_binding_notice_disabled;
@@ -179,9 +170,6 @@ trait EditsMod
             'sourceCodeLinks.*.label' => 'nullable|string|max:50',
             'publishedAtDate' => 'nullable|date',
             'publishedAtTime' => 'nullable|date_format:H:i',
-            'containsAiContent' => 'boolean',
-            'containsAiContentLocked' => 'boolean',
-            'customAiDisclosure' => 'required_if:containsAiContent,true|string|max:1000',
             'containsAds' => 'boolean',
             'commentsDisabled' => 'boolean',
             'authorIds' => 'array|max:10',
@@ -208,7 +196,6 @@ trait EditsMod
             'sourceCodeLinks.*.url.url' => 'Please enter a valid URL (e.g., https://github.com/username/repo).',
             'sourceCodeLinks.*.url.starts_with' => 'The URL must start with https:// or http://',
             'sourceCodeLinks.*.label.max' => 'The label must not exceed 50 characters.',
-            'customAiDisclosure.required_if' => 'Please describe how AI was used when your mod contains AI content.',
         ];
     }
 
@@ -287,7 +274,7 @@ trait EditsMod
     /**
      * Write every field, the thumbnail, the source code links and the authors.
      */
-    protected function applyModFields(Mod $mod, bool $canLockAiContent, string $timezone): Mod
+    protected function applyModFields(Mod $mod, string $timezone): Mod
     {
         $mod->name = $this->name;
         // Slug from the stored (censored) name so a censored word never leaks into the URL
@@ -297,18 +284,6 @@ trait EditsMod
         $mod->description = $this->description;
         $mod->license_id = (int) $this->license;
         $mod->category_id = (int) $this->category;
-
-        if ($canLockAiContent) {
-            $mod->contains_ai_content_locked = $this->containsAiContentLocked;
-            $mod->contains_ai_content = $this->containsAiContentLocked ? true : $this->containsAiContent;
-        } elseif (! $mod->contains_ai_content_locked) {
-            $mod->contains_ai_content = $this->containsAiContent;
-        }
-
-        $mod->custom_ai_disclosure = $mod->contains_ai_content && $this->customAiDisclosure !== ''
-            ? $this->customAiDisclosure
-            : null;
-
         $mod->contains_ads = $this->containsAds;
         $mod->comments_disabled = $this->commentsDisabled;
         $mod->profile_binding_notice_disabled = $this->disableProfileBindingNotice;

@@ -441,65 +441,6 @@
                             </h3>
                         </li>
                     @endif
-                    @if ($addon->contains_ai_content)
-                        @if ($addon->custom_ai_disclosure)
-                            <li
-                                class="px-4 py-4 last:pb-0 sm:px-0"
-                                x-data="{ expanded: false }"
-                            >
-                                <button
-                                    type="button"
-                                    @click="expanded = !expanded"
-                                    :aria-expanded="expanded.toString()"
-                                    class="flex w-full cursor-pointer flex-row items-center gap-2 text-left"
-                                >
-                                    <svg
-                                        class="h-[16px] w-[16px] grow-0"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 16 16"
-                                        fill="currentColor"
-                                    >
-                                        <path
-                                            fill-rule="evenodd"
-                                            d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm3.844-8.791a.75.75 0 0 0-1.188-.918l-3.7 4.79-1.649-1.833a.75.75 0 1 0-1.114 1.004l2.25 2.5a.75.75 0 0 0 1.15-.043l4.25-5.5Z"
-                                            clip-rule="evenodd"
-                                        />
-                                    </svg>
-                                    <h3 class="grow text-gray-100">
-                                        {{ __('Includes AI Generated Content') }}
-                                    </h3>
-                                    <flux:icon.chevron-up
-                                        variant="micro"
-                                        class="size-4 grow-0 text-gray-400 transition-transform"
-                                        x-bind:class="expanded ? 'rotate-180' : ''"
-                                    />
-                                </button>
-                                <div
-                                    x-show="expanded"
-                                    x-collapse
-                                    class="user-markdown ms-6 mt-2 text-sm text-gray-300"
-                                >{!! $addon->custom_ai_disclosure_html !!}</div>
-                            </li>
-                        @else
-                            <li class="flex flex-row items-center gap-2 px-4 py-4 last:pb-0 sm:px-0">
-                                <svg
-                                    class="h-[16px] w-[16px] grow-0"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 16 16"
-                                    fill="currentColor"
-                                >
-                                    <path
-                                        fill-rule="evenodd"
-                                        d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm3.844-8.791a.75.75 0 0 0-1.188-.918l-3.7 4.79-1.649-1.833a.75.75 0 1 0-1.114 1.004l2.25 2.5a.75.75 0 0 0 1.15-.043l4.25-5.5Z"
-                                        clip-rule="evenodd"
-                                    />
-                                </svg>
-                                <h3 class="grow text-gray-100">
-                                    {{ __('Includes AI Generated Content') }}
-                                </h3>
-                            </li>
-                        @endif
-                    @endif
                 </ul>
                 <livewire:report-component
                     variant="link"

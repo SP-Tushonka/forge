@@ -323,33 +323,27 @@ describe('publish', function (): void {
 });
 
 describe('feature', function (): void {
-    it('returns true for admins on mods without AI content', function (): void {
-        $mod = Mod::factory()->create(['contains_ai_content' => false]);
+    it('returns true for admins', function (): void {
+        $mod = Mod::factory()->create();
 
         expect($this->policy->feature($this->admin, $mod))->toBeTrue();
     });
 
-    it('returns false for admins on mods with AI content', function (): void {
-        $mod = Mod::factory()->create(['contains_ai_content' => true]);
-
-        expect($this->policy->feature($this->admin, $mod))->toBeFalse();
-    });
-
     it('returns false for moderators', function (): void {
-        $mod = Mod::factory()->create(['contains_ai_content' => false]);
+        $mod = Mod::factory()->create();
 
         expect($this->policy->feature($this->moderator, $mod))->toBeFalse();
     });
 
     it('returns false for regular users', function (): void {
-        $mod = Mod::factory()->create(['contains_ai_content' => false]);
+        $mod = Mod::factory()->create();
 
         expect($this->policy->feature($this->user, $mod))->toBeFalse();
     });
 
     it('returns false for unverified admins', function (): void {
         $unverifiedAdmin = User::factory()->unverified()->admin()->create();
-        $mod = Mod::factory()->create(['contains_ai_content' => false]);
+        $mod = Mod::factory()->create();
 
         expect($this->policy->feature($unverifiedAdmin, $mod))->toBeFalse();
     });

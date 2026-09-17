@@ -58,7 +58,6 @@ final class AddonSeeder extends Seeder
             $addonCount = random_int(1, 3);
             for ($i = 0; $i < $addonCount; $i++) {
                 $name = Str::title(mb_rtrim($this->faker->sentence(random_int(2, 4)), '.'));
-                $containsAiContent = $this->faker->boolean();
                 $isDetached = random_int(1, 100) <= 5;
                 $createdAt = $this->randomPastDate(365);
 
@@ -72,8 +71,6 @@ final class AddonSeeder extends Seeder
                     'license_id' => $licenseIds !== [] ? $this->randomElement($licenseIds) : null,
                     'downloads' => 0,
                     'disabled' => random_int(1, 100) <= 20,
-                    'contains_ai_content' => $containsAiContent,
-                    'custom_ai_disclosure' => $containsAiContent ? $this->faker->sentence() : null,
                     'contains_ads' => $this->faker->boolean(),
                     'comments_disabled' => random_int(1, 100) <= 10,
                     'detached_at' => $isDetached ? Date::now()->subDays(random_int(0, 30)) : null,

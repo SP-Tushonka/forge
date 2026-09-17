@@ -74,7 +74,6 @@ describe('Mod Edit Form', function (): void {
                 ->set('license', (string) $license->id)
                 ->set('sourceCodeLinks.0.url', 'https://github.com/example/updated')
                 ->set('sourceCodeLinks.0.label', '')
-                ->set('containsAiContent', false)
                 ->set('containsAds', false)
                 ->call('save')
                 ->assertHasErrors(['guid']);
@@ -98,7 +97,6 @@ describe('Mod Edit Form', function (): void {
                 ->set('license', (string) $license->id)
                 ->set('sourceCodeLinks.0.url', 'https://github.com/example/updated')
                 ->set('sourceCodeLinks.0.label', '')
-                ->set('containsAiContent', false)
                 ->set('containsAds', false)
                 ->call('save')
                 ->assertHasNoErrors()
@@ -125,7 +123,6 @@ describe('Mod Edit Form', function (): void {
                 ->set('license', (string) $license->id)
                 ->set('sourceCodeLinks.0.url', 'https://github.com/example/updated')
                 ->set('sourceCodeLinks.0.label', '')
-                ->set('containsAiContent', false)
                 ->set('containsAds', false)
                 ->set('authorIds', [$blockingAuthor->id])
                 ->call('save')
@@ -153,7 +150,6 @@ describe('Mod Edit Form', function (): void {
                 ->set('license', (string) $license->id)
                 ->set('sourceCodeLinks.0.url', 'https://github.com/example/updated')
                 ->set('sourceCodeLinks.0.label', '')
-                ->set('containsAiContent', false)
                 ->set('containsAds', false)
                 ->set('authorIds', [$existingAuthor->id])
                 ->call('save')
@@ -336,7 +332,6 @@ describe('Mod Editing Functionality', function (): void {
         $license = License::factory()->create();
         $owner = User::factory()->withMfa()->create();
         $mod = Mod::factory()->recycle($owner)->create([
-            'contains_ai_content' => false,
             'contains_ads' => true,
         ]);
 
@@ -350,8 +345,6 @@ describe('Mod Editing Functionality', function (): void {
             ->set('sourceCodeLinks.0.url', 'https://github.com/updated/repo')
             ->set('sourceCodeLinks.0.label', '')
             ->set('license', (string) $license->id)
-            ->set('containsAiContent', true)
-            ->set('customAiDisclosure', 'Used AI to generate placeholder art.')
             ->set('containsAds', false)
             ->call('save')
             ->assertHasNoErrors()
@@ -364,7 +357,6 @@ describe('Mod Editing Functionality', function (): void {
             ->and($mod->teaser)->toBe('Comprehensive teaser update')
             ->and($mod->description)->toBe('Comprehensive description update')
             ->and($mod->license_id)->toBe($license->id)
-            ->and($mod->contains_ai_content)->toBeTrue()
             ->and($mod->contains_ads)->toBeFalse();
     });
 
@@ -416,117 +408,6 @@ describe('Mod Editing Functionality', function (): void {
         $mod->refresh();
         expect($mod->name)->toBe('Successfully Updated Mod')
             ->and($mod->guid)->toBe('com.success.updated');
-    });
-});
-
-describe('Custom AI Disclosure', function (): void {
-
-    beforeEach(function (): void {
-        config()->set('honeypot.enabled', false);
-    });
-
-    it('hydrates the custom AI disclosure field from the existing mod', function (): void {
-        $owner = User::factory()->withMfa()->create();
-        $mod = Mod::factory()->recycle($owner)->create([
-            'contains_ai_content' => true,
-            'custom_ai_disclosure' => 'Existing disclosure text.',
-        ]);
-
-        $this->actingAs($owner);
-
-        Livewire::test('pages::mod.edit', ['modId' => $mod->id])
-            ->assertSet('customAiDisclosure', 'Existing disclosure text.');
-    });
-
-    it('hydrates an empty string when the mod has no custom AI disclosure', function (): void {
-        $owner = User::factory()->withMfa()->create();
-        $mod = Mod::factory()->recycle($owner)->create([
-            'contains_ai_content' => true,
-            'custom_ai_disclosure' => null,
-        ]);
-
-        $this->actingAs($owner);
-
-        Livewire::test('pages::mod.edit', ['modId' => $mod->id])
-            ->assertSet('customAiDisclosure', '');
-    });
-
-    it('persists the custom AI disclosure when AI content is enabled and a message is provided', function (): void {
-        $license = License::factory()->create();
-        $owner = User::factory()->withMfa()->create();
-        $mod = Mod::factory()->recycle($owner)->create([
-            'contains_ai_content' => true,
-            'custom_ai_disclosure' => null,
-            'license_id' => $license->id,
-        ]);
-
-        $this->actingAs($owner);
-
-        Livewire::test('pages::mod.edit', ['modId' => $mod->id])
-            ->set('containsAiContent', true)
-            ->set('customAiDisclosure', 'Used AI to refactor a helper class.')
-            ->call('save')
-            ->assertHasNoErrors()
-            ->assertRedirect();
-
-        $mod->refresh();
-        expect($mod->contains_ai_content)->toBeTrue()
-            ->and($mod->custom_ai_disclosure)->toBe('Used AI to refactor a helper class.');
-    });
-
-    it('clears the custom AI disclosure when AI content is disabled', function (): void {
-        $license = License::factory()->create();
-        $owner = User::factory()->withMfa()->create();
-        $mod = Mod::factory()->recycle($owner)->create([
-            'contains_ai_content' => true,
-            'custom_ai_disclosure' => 'Old disclosure that should be cleared.',
-            'license_id' => $license->id,
-        ]);
-
-        $this->actingAs($owner);
-
-        Livewire::test('pages::mod.edit', ['modId' => $mod->id])
-            ->set('containsAiContent', false)
-            ->call('save')
-            ->assertHasNoErrors()
-            ->assertRedirect();
-
-        $mod->refresh();
-        expect($mod->contains_ai_content)->toBeFalse()
-            ->and($mod->custom_ai_disclosure)->toBeNull();
-    });
-
-    it('requires a disclosure message when the message is emptied while AI content remains enabled', function (): void {
-        $license = License::factory()->create();
-        $owner = User::factory()->withMfa()->create();
-        $mod = Mod::factory()->recycle($owner)->create([
-            'contains_ai_content' => true,
-            'custom_ai_disclosure' => 'Original disclosure.',
-            'license_id' => $license->id,
-        ]);
-
-        $this->actingAs($owner);
-
-        Livewire::test('pages::mod.edit', ['modId' => $mod->id])
-            ->set('containsAiContent', true)
-            ->set('customAiDisclosure', '')
-            ->call('save')
-            ->assertHasErrors(['customAiDisclosure' => 'required_if']);
-
-        $mod->refresh();
-        expect($mod->custom_ai_disclosure)->toBe('Original disclosure.');
-    });
-
-    it('rejects a custom AI disclosure longer than 1000 characters', function (): void {
-        $owner = User::factory()->withMfa()->create();
-        $mod = Mod::factory()->recycle($owner)->create();
-
-        $this->actingAs($owner);
-
-        Livewire::test('pages::mod.edit', ['modId' => $mod->id])
-            ->set('customAiDisclosure', str_repeat('a', 1001))
-            ->call('save')
-            ->assertHasErrors(['customAiDisclosure']);
     });
 });
 

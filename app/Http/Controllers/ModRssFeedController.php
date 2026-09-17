@@ -28,7 +28,6 @@ final class ModRssFeedController extends Controller
             'order' => $request->string('order', 'created')->toString(),
             'sptVersions' => $this->parseSptVersions($request),
             'featured' => $request->string('featured', 'include')->toString(),
-            'aiContent' => $request->string('ai', 'include')->toString(),
             'category' => $request->string('category', '')->toString(),
         ];
 
@@ -190,14 +189,6 @@ final class ModRssFeedController extends Controller
                 $parts[] = 'featured mods only';
             } elseif ($filters['featured'] === 'exclude') {
                 $parts[] = 'excluding featured mods';
-            }
-        }
-
-        if (isset($filters['aiContent']) && is_string($filters['aiContent'])) {
-            if ($filters['aiContent'] === 'only') {
-                $parts[] = 'AI generated mods only';
-            } elseif ($filters['aiContent'] === 'exclude') {
-                $parts[] = 'excluding AI generated mods';
             }
         }
 
