@@ -648,49 +648,6 @@
                             </h3>
                         </li>
                     @endif
-                    @if ($mod->contains_ai_content)
-                        @if ($mod->custom_ai_disclosure)
-                            <li
-                                class="px-4 py-4 last:pb-0 sm:px-0"
-                                x-data="{ expanded: false }"
-                            >
-                                <button
-                                    type="button"
-                                    @click="expanded = !expanded"
-                                    :aria-expanded="expanded.toString()"
-                                    class="flex w-full cursor-pointer flex-row items-center gap-2 text-left"
-                                >
-                                    <flux:icon.check-circle
-                                        variant="micro"
-                                        class="size-4 grow-0 text-green-500"
-                                    />
-                                    <h3 class="grow text-gray-100">
-                                        {{ __('Includes AI Generated Content') }}
-                                    </h3>
-                                    <flux:icon.chevron-up
-                                        variant="micro"
-                                        class="size-4 grow-0 text-gray-400 transition-transform"
-                                        x-bind:class="expanded ? 'rotate-180' : ''"
-                                    />
-                                </button>
-                                <div
-                                    x-show="expanded"
-                                    x-collapse
-                                    class="user-markdown ms-6 mt-2 text-sm text-gray-300"
-                                >{!! $mod->custom_ai_disclosure_html !!}</div>
-                            </li>
-                        @else
-                            <li class="flex flex-row items-center gap-2 px-4 py-4 last:pb-0 sm:px-0">
-                                <flux:icon.check-circle
-                                    variant="micro"
-                                    class="size-4 grow-0 text-green-500"
-                                />
-                                <h3 class="grow text-gray-100">
-                                    {{ __('Includes AI Generated Content') }}
-                                </h3>
-                            </li>
-                        @endif
-                    @endif
                 </ul>
             </div>
 

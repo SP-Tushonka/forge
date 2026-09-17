@@ -177,14 +177,6 @@ new class extends Component
         return License::query()->find((int) $this->license)?->isCustom() ?? false;
     }
 
-    #[Computed]
-    public function canLockAiContent(): bool
-    {
-        $mod = $this->target;
-
-        return $mod !== null && (auth()->user()?->can('lockAiContent', $mod) ?? false);
-    }
-
     /**
      * @param  array<int>  $ids
      */
@@ -212,7 +204,7 @@ new class extends Component
 
         // Custom-licence reverification is deliberately skipped. It proves the *acting* user
         // controls the linked repository, which is meaningless when staff edit someone else's mod.
-        $this->applyModFields($mod, $this->canLockAiContent, $staff->timezone ?? 'UTC');
+        $this->applyModFields($mod, $staff->timezone ?? 'UTC');
 
         Track::eventSync(
             TrackingEventType::MOD_EDIT,

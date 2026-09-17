@@ -25,7 +25,6 @@ final class ModFilter
         'query',
         'order',
         'featured',
-        'aiContent',
         'category',
         'fikaCompatibility',
         'sptVersions',
@@ -220,24 +219,6 @@ final class ModFilter
         return match ($option) {
             'exclude' => $this->builder->where('mods.featured', false),
             'only' => $this->builder->where('mods.featured', true),
-            default => $this->builder,
-        };
-    }
-
-    /**
-     * Filter the results by the AI generated content status.
-     *
-     * @return Builder<Mod>
-     */
-    private function aiContent(mixed $option): Builder
-    {
-        if (! is_string($option)) {
-            return $this->builder;
-        }
-
-        return match ($option) {
-            'exclude' => $this->builder->where('mods.contains_ai_content', false),
-            'only' => $this->builder->where('mods.contains_ai_content', true),
             default => $this->builder,
         };
     }

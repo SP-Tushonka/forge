@@ -172,7 +172,6 @@ it('includes all mod details in discord embed', function (): void {
             'teaser' => 'This is an amazing mod for SPT',
             'thumbnail' => 'https://example.com/thumb.jpg',
             'featured' => true,
-            'contains_ai_content' => true,
             'contains_ads' => false,
             'disabled' => false,
             'published_at' => now(),

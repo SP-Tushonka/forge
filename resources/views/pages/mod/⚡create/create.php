@@ -88,16 +88,6 @@ new #[Layout('layouts::base')] class extends Component
     public ?string $publishedAtTime = null;
 
     /**
-     * Whether the mod contains AI content.
-     */
-    public bool $containsAiContent = false;
-
-    /**
-     * The custom AI disclosure message.
-     */
-    public string $customAiDisclosure = '';
-
-    /**
      * Whether the mod contains ads.
      */
     public bool $containsAds = false;
@@ -241,8 +231,6 @@ new #[Layout('layouts::base')] class extends Component
             'description' => $this->description,
             'license_id' => $this->license,
             'category_id' => (int) $this->category,
-            'contains_ai_content' => $this->containsAiContent,
-            'custom_ai_disclosure' => $this->containsAiContent && $this->customAiDisclosure !== '' ? $this->customAiDisclosure : null,
             'contains_ads' => $this->containsAds,
             'comments_disabled' => $this->commentsDisabled,
             'addons_disabled' => $this->addonsDisabled,
@@ -354,8 +342,6 @@ new #[Layout('layouts::base')] class extends Component
             'sourceCodeLinks.*.label' => 'nullable|string|max:50',
             'publishedAtDate' => 'nullable|date',
             'publishedAtTime' => 'nullable|date_format:H:i',
-            'containsAiContent' => 'boolean',
-            'customAiDisclosure' => 'required_if:containsAiContent,true|string|max:1000',
             'containsAds' => 'boolean',
             'commentsDisabled' => 'boolean',
             'addonsDisabled' => 'boolean',
@@ -382,7 +368,6 @@ new #[Layout('layouts::base')] class extends Component
             'sourceCodeLinks.*.url.url' => 'Please enter a valid URL (e.g., https://github.com/username/repo).',
             'sourceCodeLinks.*.url.starts_with' => 'The URL must start with https:// or http://',
             'sourceCodeLinks.*.label.max' => 'The label must not exceed 50 characters.',
-            'customAiDisclosure.required_if' => 'Please describe how AI was used when your mod contains AI content.',
         ];
     }
 

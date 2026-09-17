@@ -271,10 +271,6 @@ final class SendDiscordNotifications implements ShouldBeUnique, ShouldQueue
         }
 
         $features = [];
-        if ($mod->contains_ai_content) {
-            $features[] = 'Contains AI Content';
-        }
-
         if ($mod->contains_ads) {
             $features[] = 'Contains Ads';
         }
@@ -406,10 +402,6 @@ final class SendDiscordNotifications implements ShouldBeUnique, ShouldQueue
         }
 
         $features = [];
-        if ($addon->contains_ai_content) {
-            $features[] = 'Contains AI Content';
-        }
-
         if ($addon->contains_ads) {
             $features[] = 'Contains Ads';
         }
