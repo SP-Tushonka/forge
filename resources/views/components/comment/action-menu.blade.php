@@ -32,6 +32,7 @@
         <flux:button
             icon="cog-8-tooth"
             size="sm"
+            data-test="comment-actions-{{ $comment->id }}"
         />
         <flux:menu class="action-comments">
             @if ($permissions->can($comment->id, 'modOwnerSoftDelete') || $permissions->can($comment->id, 'modOwnerRestore') || $permissions->can($comment->id, 'showOwnerPinAction'))

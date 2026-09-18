@@ -24,6 +24,7 @@
                 >
                     <flux:select.option value="users">{{ __('Users') }}</flux:select.option>
                     <flux:select.option value="mods">{{ __('Mods') }}</flux:select.option>
+                    <flux:select.option value="reactions">{{ __('Reactions') }}</flux:select.option>
                 </flux:select>
             </div>
 
@@ -41,6 +42,10 @@
                         name="Mods"
                         value="mods"
                     />
+                    <x-tab-button
+                        name="Reactions"
+                        value="reactions"
+                    />
                 </nav>
             </div>
         </div>
@@ -51,6 +56,10 @@
 
         <div x-show="selectedTab === 'mods'">
             <livewire:admin.staff-tools.mod-tool />
+        </div>
+
+        <div x-show="selectedTab === 'reactions'">
+            <livewire:admin.staff-tools.emoji-tool />
         </div>
     </div>
 </div>

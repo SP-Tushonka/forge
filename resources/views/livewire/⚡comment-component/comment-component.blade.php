@@ -45,7 +45,7 @@
 
     @auth
         @if (CachedGate::allows('create', [App\Models\Comment::class, $commentable]))
-            <div class="mb-6 rounded-xl bg-gray-950 p-6 shadow-md shadow-gray-950 drop-shadow-2xl">
+            <div class="mb-6 rounded-xl bg-gray-950 p-6 shadow-md shadow-gray-950 drop-shadow-2xl filter-none">
                 <div class="mb-4 flex items-center justify-between">
                     <h2 class="text-xl font-bold text-white">
                         {{ __('Discussion') }}
@@ -82,7 +82,7 @@
                 </div>
             </div>
         @else
-            <div class="mb-6 rounded-xl bg-gray-950 p-6 shadow-md shadow-gray-950 drop-shadow-2xl">
+            <div class="mb-6 rounded-xl bg-gray-950 p-6 shadow-md shadow-gray-950 drop-shadow-2xl filter-none">
                 <div class="py-8 text-center text-gray-400">
                     <flux:icon.chat-bubble-left-ellipsis class="mx-auto mb-4 h-12 w-12 opacity-50" />
                     @if (!$commentable->canReceiveComments())

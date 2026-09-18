@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Contracts\Commentable;
-use App\Enums\SpamStatus;
+use App\Enums\EmojiSurface;
 use App\Enums\TrackingEventType;
 use App\Facades\CachedGate;
 use App\Facades\Track;
@@ -12,14 +12,13 @@ use App\Jobs\TranslateComment;
 use App\Livewire\Concerns\RendersMarkdownPreview;
 use App\Models\Addon;
 use App\Models\Comment;
-use App\Models\CommentReaction;
 use App\Models\CommentVersion;
 use App\Models\Mod;
 use App\Models\User;
 use App\Rules\DoesNotContainLogFile;
 use App\Support\BatchPermissions;
+use App\Traits\Livewire\HandlesReactions;
 use Flux\Flux;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -37,6 +36,7 @@ use Spatie\Honeypot\Http\Livewire\Concerns\UsesSpamProtection;
  */
 new class extends Component
 {
+    use HandlesReactions;
     use RendersMarkdownPreview;
     use UsesSpamProtection;
     use WithPagination;
@@ -64,6 +64,7 @@ new class extends Component
         'checkForSpam',
         'showOwnerPinAction',
         'viewVersionHistory',
+        'react',
     ];
 
     /**
@@ -245,38 +246,19 @@ new class extends Component
     }
 
     /**
-     * Get user reactions for visible comments.
-     *
-     * @return array<int>
+     * @return class-string<Comment>
      */
-    #[Computed]
-    public function userReactionIds(): array
+    protected function reactableClass(): string
     {
-        if (! Auth::check()) {
-            return [];
-        }
+        return Comment::class;
+    }
 
-        $user = Auth::user();
-        if (! $user) {
-            return [];
-        }
-
-        // Get reactions for comments that will actually be displayed.
-        $reactionQuery = $user->commentReactions()
-            ->join('comments', 'comment_reactions.comment_id', '=', 'comments.id')
-            ->where('comments.commentable_type', $this->commentable::class)
-            ->where('comments.commentable_id', $this->getCommentableId());
-
-        // Normal authenticated users see reactions for clean comments and their own comments.
-        if (! $user->isModOrAdmin()) {
-            $reactionQuery->where(function (Builder $q) use ($user): void {
-                $q->where('comments.spam_status', SpamStatus::CLEAN->value)
-                    ->orWhere('comments.user_id', $user->id);
-            });
-        }
-
-        /** @var array<int> */
-        return $reactionQuery->pluck('comment_reactions.comment_id')->toArray();
+    /**
+     * The bar beneath a comment, which staff restrict separately from writing :shortcode: in the comment itself.
+     */
+    protected function reactionSurface(): EmojiSurface
+    {
+        return EmojiSurface::CommentReactions;
     }
 
     /**
@@ -512,37 +494,26 @@ new class extends Component
     }
 
     /**
-     * Toggle reaction on a comment.
+     * Confirm a reaction target really belongs to the commentable this component is rendering. Without it the shared
+     * trait would accept any comment id on the site.
      */
-    public function toggleReaction(Comment $comment): void
+    protected function guardReactable(Model $reactable): void
     {
-        $this->validateCommentBelongsToCommentable($comment);
-        $this->authorize('react', $comment);
+        if ($reactable instanceof Comment) {
+            $this->validateCommentBelongsToCommentable($reactable);
+        }
+    }
 
-        /** @var User $user */
-        $user = Auth::user();
-
-        /** @var ?CommentReaction $reaction */
-        $reaction = $user->commentReactions()
-            ->where('comment_id', $comment->id)
-            ->first();
-
-        if ($reaction) {
-            $reaction->delete();
-            Track::event(TrackingEventType::COMMENT_UNLIKE, $comment);
-        } else {
-            $user->commentReactions()->create(['comment_id' => $comment->id]);
-            Track::event(TrackingEventType::COMMENT_LIKE, $comment);
+    protected function afterReactionToggled(Model $reactable): void
+    {
+        if (! $reactable instanceof Comment) {
+            return;
         }
 
-        // Get the updated reactions_count.
-        $comment->loadCount('reactions');
+        $reactable->loadCount('reactions');
+        $this->updateCachedDescendant($reactable);
 
-        // Update the cached descendant.
-        $this->updateCachedDescendant($comment);
-
-        // Clear computed property.
-        unset($this->userReactionIds);
+        unset($this->reactionSummary);
     }
 
     /**
@@ -1202,19 +1173,6 @@ new class extends Component
     }
 
     /**
-     * Check if a user has reacted to a comment.
-     */
-    public function hasReacted(int $commentId): bool
-    {
-        if (! Auth::check()) {
-            return false;
-        }
-
-        // For performance, check the eager-loaded reactions.
-        return in_array($commentId, $this->userReactionIds());
-    }
-
-    /**
      * Get the hash ID for a comment without loading the commentable.
      */
     public function getCommentHashId(int $commentId): string
@@ -1342,6 +1300,9 @@ new class extends Component
         // Batch compute permissions for all visible comments (root + descendants)
         $permissions = $this->computePermissionsForVisibleComments($visibleRootComments);
 
+        $this->renderedReactableIds = $this->collectRenderedCommentIds($visibleRootComments);
+        unset($this->reactionSummary);
+
         return [
             'rootComments' => $rootComments,
             'visibleRootComments' => $visibleRootComments,
@@ -1349,6 +1310,27 @@ new class extends Component
             'showDescendants' => $this->showDescendants,
             'loadedDescendants' => $this->loadedDescendants,
         ];
+    }
+
+    /**
+     * Every comment id on screen: the paginated roots plus any descendants already loaded for them.
+     *
+     * @param  Collection<int, Comment>  $rootComments
+     * @return list<int>
+     */
+    protected function collectRenderedCommentIds(Collection $rootComments): array
+    {
+        $ids = [];
+
+        foreach ($rootComments as $rootComment) {
+            $ids[] = $rootComment->id;
+
+            foreach ($this->loadedDescendants[$rootComment->id] ?? [] as $descendant) {
+                $ids[] = $descendant->id;
+            }
+        }
+
+        return array_values(array_unique($ids));
     }
 
     /**

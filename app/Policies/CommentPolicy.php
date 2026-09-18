@@ -263,6 +263,13 @@ final class CommentPolicy
      */
     public function react(User $user, Comment $comment): bool
     {
+        // The interactive reaction UI was previously gated on @verified in the blade only, which left a crafted
+        // request from an unverified account passing this policy. Enforced here so the rule holds everywhere, and so
+        // comments match ModPolicy::react().
+        if (! $user->hasVerifiedEmail()) {
+            return false;
+        }
+
         // The user must not be the author of the comment.
         if ($user->id === $comment->user_id) {
             return false;

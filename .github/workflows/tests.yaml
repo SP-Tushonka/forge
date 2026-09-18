@@ -51,6 +51,15 @@ jobs:
           path: public/build
           retention-days: 1
 
+      # Published as its own artifact rather than a second path on build-assets: upload-artifact roots a multi-path
+      # artifact at the least common ancestor, which would move where build-assets unpacks and break the Vite manifest.
+      - name: Upload Twemoji Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: twemoji-assets
+          path: public/vendor/twemoji
+          retention-days: 1
+
   # The lightweight feature/unit shards. These never touch a browser, so they skip Playwright, Chromium, Reverb,
   # and Node entirely: they only need PHP, Composer, a database, and the prebuilt asset manifest. Every shard runs
   # twice, once against PostgreSQL (production) and once against SQLite (local development).
@@ -105,6 +114,12 @@ jobs:
         with:
           name: build-assets
           path: public/build
+
+      - name: Download Twemoji Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: twemoji-assets
+          path: public/vendor/twemoji
 
       - name: Prepare Laravel Environment
         run: |
@@ -182,6 +197,12 @@ jobs:
         with:
           name: build-assets
           path: public/build
+
+      - name: Download Twemoji Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: twemoji-assets
+          path: public/vendor/twemoji
 
       - name: Cache Playwright Browsers
         id: playwright-cache

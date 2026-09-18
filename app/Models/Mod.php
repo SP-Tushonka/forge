@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Contracts\Commentable;
+use App\Contracts\Reactable;
 use App\Contracts\Reportable;
 use App\Contracts\Trackable;
+use App\Enums\EmojiSurface;
 use App\Enums\FikaCompatibility;
 use App\Models\Scopes\PublishedScope;
 use App\Observers\ModObserver;
+use App\Support\Markdown\EmojiRenderContext;
 use App\Support\WordCensor;
 use App\Traits\HasComments;
+use App\Traits\HasReactions;
 use App\Traits\HasReports;
 use Carbon\CarbonImmutable;
 use Database\Factories\ModFactory;
@@ -82,6 +86,7 @@ use Stevebauman\Purify\Facades\Purify;
  * @property-read Collection<int, Addon> $addons
  * @property-read ModVersion|null $latestVersion
  * @property-read ModVersion|null $latestUpdatedVersion
+ * @property-read Collection<int, Reaction> $reactions
  *
  * @implements Commentable<self>
  */
@@ -90,13 +95,16 @@ use Stevebauman\Purify\Facades\Purify;
 #[Appends([
     'detail_url',
 ])]
-final class Mod extends Model implements Commentable, Reportable, Trackable
+final class Mod extends Model implements Commentable, Reactable, Reportable, Trackable
 {
     /** @use HasComments<self> */
     use HasComments;
 
     /** @use HasFactory<ModFactory> */
     use HasFactory;
+
+    /** @use HasReactions<self> */
+    use HasReactions;
 
     /** @use HasReports<Mod> */
     use HasReports;
@@ -250,6 +258,16 @@ final class Mod extends Model implements Commentable, Reportable, Trackable
     public function endorsements(): HasMany
     {
         return $this->hasMany(ModEndorsement::class);
+    }
+
+    /**
+     * A mod takes reactions only while it is enabled and published. Deliberately derived from instance attributes
+     * alone rather than publiclyVisibleWithoutQuery(), which returns null whenever the visibility flags were not
+     * selected and would therefore block reactions on most queries.
+     */
+    public function canReceiveReactions(): bool
+    {
+        return ! $this->disabled && $this->isPublished();
     }
 
     /**
@@ -958,7 +976,10 @@ final class Mod extends Model implements Commentable, Reportable, Trackable
 
                 /** @var string $clean */
                 $clean = Purify::config('description')->clean(
-                    Markdown::convert($this->description)->getContent()
+                    EmojiRenderContext::scoped(
+                        EmojiSurface::ModDescription,
+                        fn (): string => Markdown::convert($this->description)->getContent(),
+                    )
                 );
 
                 return $clean;

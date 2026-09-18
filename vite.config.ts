@@ -1,4 +1,4 @@
-import { globSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, globSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 import laravel from 'laravel-vite-plugin';
@@ -54,6 +54,43 @@ function copyStaticJson() {
     };
 }
 
+/**
+ * Copies the Twemoji SVG set out of @discordapp/twemoji into public/vendor/twemoji/svg. The app:upload-assets command
+ * uploads all of public/vendor to Cloudflare R2, so the emoji reach forge-static.sp-mod.com without a deploy change.
+ * The directory is generated and gitignored, the same arrangement public/vendor/horizon already uses.
+ */
+function copyTwemoji() {
+    const sourceDir = resolve('node_modules/@discordapp/twemoji/dist/svg');
+    const targetDir = resolve('public/vendor/twemoji/svg');
+    let logger;
+
+    const writeAll = () => {
+        mkdirSync(targetDir, { recursive: true });
+        let count = 0;
+        for (const name of readdirSync(sourceDir)) {
+            if (!name.endsWith('.svg')) {
+                continue;
+            }
+            copyFileSync(join(sourceDir, name), join(targetDir, name));
+            count++;
+        }
+        logger?.info(`[copy-twemoji] copied ${count} svg files`, { timestamp: true });
+    };
+
+    return {
+        name: 'forge:copy-twemoji',
+        configResolved(config) {
+            logger = config.logger;
+        },
+        buildStart() {
+            writeAll();
+        },
+        configureServer() {
+            writeAll();
+        },
+    };
+}
+
 export default defineConfig({
     fmt: {
         printWidth: 120,
@@ -79,5 +116,6 @@ export default defineConfig({
         }),
         tailwindcss(),
         copyStaticJson(),
+        copyTwemoji(),
     ],
 });

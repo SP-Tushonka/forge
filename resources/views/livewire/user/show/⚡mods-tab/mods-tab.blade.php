@@ -53,6 +53,8 @@
                         :version="$mod->latestVersion"
                         :endorsements-count="$mod->endorsements_count"
                         placeholder-bg="bg-gray-900"
+                        :reaction-counts="$this->reactionSummary->countsFor($mod->id)"
+                        :reaction-whitelist="$this->reactionWhitelist"
                     />
                 </div>
             @endforeach

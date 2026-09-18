@@ -259,6 +259,8 @@
                                     :endorsements-count="$mod->endorsements_count"
                                     section="featured"
                                     homepage-featured
+                                    :reaction-counts="$this->reactionSummary->countsFor($mod->id)"
+                                    :reaction-whitelist="$this->reactionWhitelist"
                                 />
                             </div>
                         @endforeach
@@ -279,6 +281,8 @@
                                     :version="$mod->latestVersion"
                                     :endorsements-count="$mod->endorsements_count"
                                     section="newest"
+                                    :reaction-counts="$this->reactionSummary->countsFor($mod->id)"
+                                    :reaction-whitelist="$this->reactionWhitelist"
                                 />
                             </div>
                         @endforeach
@@ -297,6 +301,8 @@
                                     :version="$mod->latestUpdatedVersion"
                                     :endorsements-count="$mod->endorsements_count"
                                     section="updated"
+                                    :reaction-counts="$this->reactionSummary->countsFor($mod->id)"
+                                    :reaction-whitelist="$this->reactionWhitelist"
                                 />
                             </div>
                         @endforeach

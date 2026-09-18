@@ -173,6 +173,19 @@
                         <p title="{{ __('Exactly') }} {{ $mod->endorsements_count }}">
                             {{ Number::format($mod->endorsements_count) }}
                             {{ __(Str::plural('Endorsement', $mod->endorsements_count)) }}</p>
+
+                        {{-- Must live inside <main>: the layout hoists the header slot out of the Livewire component
+                             root, where wire:click binds to nothing. --}}
+                        <div class="mt-3">
+                            <x-reaction-bar
+                                reactable-type="mod"
+                                :reactable-id="$mod->id"
+                                :counts="$this->reactionSummary->countsFor($mod->id)"
+                                :mine="$this->reactionSummary->mineFor($mod->id)"
+                                :whitelist="$this->reactionWhitelist"
+                                :can-react="auth()->check() && Gate::allows('react', $mod)"
+                            />
+                        </div>
                         <p class="mt-2 flex flex-wrap items-center gap-2">
                             @if ($displayVersion?->latestSptVersion)
                                 <span

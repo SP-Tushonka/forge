@@ -2,6 +2,7 @@
 import './registerEcho';
 import './registerViteAssets';
 import './registerAlpineLivewire';
+import './registerEmojiAutocomplete';
 // App
 import './userTabsets';
 import './highlight';

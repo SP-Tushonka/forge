@@ -160,6 +160,8 @@
                         <x-mod.card
                             :mod="$mod"
                             :version="$mod->latestVersion"
+                            :reaction-counts="$this->reactionSummary->countsFor($mod->id)"
+                            :reaction-whitelist="$this->reactionWhitelist"
                         />
                     </div>
                 @endforeach

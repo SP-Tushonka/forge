@@ -134,6 +134,26 @@ final class ModPolicy
     }
 
     /**
+     * Determine whether the user can react to the mod.
+     *
+     * Mirrors endorse() on verification and self-reaction, but deliberately omits the account-age gate: an endorsement
+     * is a quality signal worth protecting, whereas a reaction is lightweight expression already covered by the rate
+     * limit. Self-reaction is blocked for consistency with CommentPolicy::react().
+     */
+    public function react(User $user, Mod $mod): Response
+    {
+        if (! $user->hasVerifiedEmail()) {
+            return Response::deny(__('You must verify your email address before reacting.'));
+        }
+
+        if ($mod->isAuthorOrOwner($user)) {
+            return Response::deny(__('You cannot react to your own mod.'));
+        }
+
+        return Response::allow();
+    }
+
+    /**
      * Determine whether the user can permanently delete the model.
      */
     public function forceDelete(User $user, Mod $mod): bool

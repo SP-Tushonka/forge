@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\Mod;
 use App\Support\Api\V0\PublicViewpoint;
 use App\Support\HomepageSectionCache;
+use App\Traits\Livewire\ProvidesReactionSummary;
 use App\Traits\Livewire\ModeratesMod;
 use App\Traits\Livewire\RendersModSections;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,6 +16,7 @@ use Livewire\Component;
 
 new class extends Component
 {
+    use ProvidesReactionSummary;
     use ModeratesMod;
     use RendersModSections;
 
@@ -55,9 +57,12 @@ new class extends Component
     {
         $counts = $this->endorsementCounts();
         $ids = array_keys($counts);
+        $mods = $this->pickMods($this->hydrateMods($ids, $this->viewDisabled()), $ids);
+
+        $this->rememberReactableIds($mods);
 
         return [
-            'mods' => $this->pickMods($this->hydrateMods($ids, $this->viewDisabled()), $ids),
+            'mods' => $mods,
             'endorsementCounts' => $counts,
         ];
     }
