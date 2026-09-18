@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\EmojiSurface;
 use App\Support\DataTransferObjects\CommentTranslationResult;
+use App\Support\Markdown\EmojiRenderContext;
 use App\Support\WordCensor;
 use Carbon\CarbonImmutable;
 use Database\Factories\CommentVersionFactory;
@@ -122,7 +124,10 @@ final class CommentVersion extends Model
             get: function (): string {
                 /** @var string $clean */
                 $clean = Purify::config('comments')->clean(
-                    Markdown::convert($this->body)->getContent()
+                    EmojiRenderContext::scoped(
+                        EmojiSurface::Comments,
+                        fn (): string => Markdown::convert($this->body)->getContent(),
+                    )
                 );
 
                 return $clean;
@@ -145,7 +150,10 @@ final class CommentVersion extends Model
 
                 /** @var string $clean */
                 $clean = Purify::config('comments')->clean(
-                    Markdown::convert($this->translated_body)->getContent()
+                    EmojiRenderContext::scoped(
+                        EmojiSurface::Comments,
+                        fn (): string => Markdown::convert($this->translated_body)->getContent(),
+                    )
                 );
 
                 return $clean;

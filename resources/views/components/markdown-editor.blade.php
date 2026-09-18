@@ -10,6 +10,22 @@
     'showUpdateRequestWarning' => false,
 ])
 
+@php
+    // Only what a comment will actually render. Suggesting a shortcode that would come out as literal text would be
+    // worse than not suggesting it at all.
+    $emojiChoices = resolve(App\Services\ReactionSummaryService::class)
+        ->whitelistFor(App\Enums\EmojiSurface::Comments)
+        ->map(
+            fn(App\Models\Emoji $emoji): array => [
+                'shortcode' => $emoji->shortcode,
+                'label' => $emoji->label,
+                'url' => $emoji->image_url,
+            ],
+        )
+        ->values()
+        ->all();
+@endphp
+
 <div
     x-data="{
         activeTab: 'write',
@@ -117,13 +133,60 @@
             role="tabpanel"
             :aria-hidden="activeTab !== 'write'"
         >
-            <flux:textarea
-                name="{{ $name }}"
-                wire:model="{{ $wireModel }}"
-                placeholder="{{ $placeholder }}"
-                style="field-sizing: content; min-height: 100px;"
-                {{ $attributes }}
-            />
+            <div
+                class="relative"
+                x-data="emojiAutocomplete(@js($emojiChoices))"
+                x-on:click.outside="close()"
+            >
+                <flux:textarea
+                    name="{{ $name }}"
+                    wire:model="{{ $wireModel }}"
+                    placeholder="{{ $placeholder }}"
+                    style="field-sizing: content; min-height: 100px;"
+                    x-ref="editorInput"
+                    x-on:input="input()"
+                    x-on:keydown="keydown($event)"
+                    x-on:blur="close()"
+                    {{ $attributes }}
+                />
+
+                {{-- Anchored under the field rather than at the caret: with a short curated list this reads clearly
+                     and avoids measuring caret coordinates in a resizing textarea. --}}
+                <div
+                    x-show="open"
+                    x-cloak
+                    class="absolute left-0 top-full z-30 mt-1 w-max min-w-56 overflow-hidden rounded-lg border border-gray-700 bg-gray-900 py-1 shadow-lg shadow-gray-950"
+                    data-test="emoji-autocomplete"
+                >
+                    <template
+                        x-for="(choice, index) in matches"
+                        :key="choice.shortcode"
+                    >
+                        <button
+                            type="button"
+                            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition"
+                            :class="index === activeIndex ? 'bg-cyan-950/60 text-cyan-200' : 'text-gray-300 hover:bg-gray-800'"
+                            x-on:mousedown.prevent="choose(index)"
+                            x-on:mouseenter="activeIndex = index"
+                            :data-test="'emoji-autocomplete-option-' + choice.shortcode"
+                        >
+                            <img
+                                :src="choice.url"
+                                :alt="choice.label"
+                                class="size-5"
+                            />
+                            <span
+                                class="font-mono text-xs"
+                                x-text="':' + choice.shortcode + ':'"
+                            ></span>
+                            <span
+                                class="ml-auto text-xs text-gray-400"
+                                x-text="choice.label"
+                            ></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
         </div>
 
         {{-- Preview Tab --}}

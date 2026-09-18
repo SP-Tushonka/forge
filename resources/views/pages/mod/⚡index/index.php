@@ -8,6 +8,7 @@ use App\Models\ModCategory;
 use App\Models\ModVersion;
 use App\Models\SptVersion;
 use App\Support\DataTransferObjects\ActiveFilterChip;
+use App\Traits\Livewire\ProvidesReactionSummary;
 use App\Traits\Livewire\ModeratesMod;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -23,6 +24,7 @@ use Livewire\WithPagination;
 
 new #[Layout('layouts::base')] class extends Component
 {
+    use ProvidesReactionSummary;
     use ModeratesMod;
     use WithPagination;
 
@@ -361,6 +363,8 @@ new #[Layout('layouts::base')] class extends Component
         $modCollection->loadMissing($relations);
 
         $this->redirectOutOfBoundsPage($paginatedMods);
+
+        $this->rememberReactableIds($paginatedMods->items());
 
         return ['mods' => $paginatedMods, 'includeLegacy' => $includeLegacy];
     }

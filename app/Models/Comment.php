@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Contracts\Commentable;
+use App\Contracts\Reactable;
 use App\Contracts\Reportable;
 use App\Contracts\Trackable;
+use App\Enums\EmojiSurface;
 use App\Enums\SpamStatus;
 use App\Observers\CommentObserver;
 use App\Support\Akismet\SpamCheckResult;
+use App\Support\Markdown\EmojiRenderContext;
+use App\Traits\HasReactions;
 use App\Traits\HasReports;
 use Carbon\CarbonImmutable;
 use Database\Factories\CommentFactory;
@@ -64,7 +68,7 @@ use Stevebauman\Purify\Facades\Purify;
  * @property-read Collection<int, Comment> $replies
  * @property-read int $replies_count
  * @property-read Comment|null $parent
- * @property-read Collection<int, CommentReaction> $reactions
+ * @property-read Collection<int, Reaction> $reactions
  * @property-read int $reactions_count
  * @property-read Collection<int, Comment> $descendants
  * @property-read int $descendants_count
@@ -78,10 +82,13 @@ use Stevebauman\Purify\Facades\Purify;
  * @property-read CommentVersion|null $latestVersion
  */
 #[ObservedBy([CommentObserver::class])]
-final class Comment extends Model implements Reportable, Trackable
+final class Comment extends Model implements Reactable, Reportable, Trackable
 {
     /** @use HasFactory<CommentFactory> */
     use HasFactory;
+
+    /** @use HasReactions<self> */
+    use HasReactions;
 
     /** @use HasReports<Comment> */
     use HasReports;
@@ -156,13 +163,11 @@ final class Comment extends Model implements Reportable, Trackable
     }
 
     /**
-     * The relationship between a comment and its reactions.
-     *
-     * @return HasMany<CommentReaction, $this>
+     * A deleted comment keeps its reaction counts visible but takes no new ones.
      */
-    public function reactions(): HasMany
+    public function canReceiveReactions(): bool
     {
-        return $this->hasMany(CommentReaction::class);
+        return ! $this->isDeleted();
     }
 
     /**
@@ -496,7 +501,10 @@ final class Comment extends Model implements Reportable, Trackable
             get: function (): string {
                 /** @var string $clean */
                 $clean = Purify::config('comments')->clean(
-                    Markdown::convert($this->body)->getContent()
+                    EmojiRenderContext::scoped(
+                        EmojiSurface::Comments,
+                        fn (): string => Markdown::convert($this->body)->getContent(),
+                    )
                 );
 
                 return $clean;

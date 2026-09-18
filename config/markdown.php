@@ -6,6 +6,7 @@ use App\Markdown\Extension\LazyImage\LazyImageExtension;
 use App\Markdown\Extension\StyledBlockquote\StyledBlockquoteExtension;
 use App\Markdown\Extension\Tabset\TabsetExtension;
 use App\Markdown\Extension\YouTube\YouTubeExtension;
+use App\Support\Markdown\WhitelistEmojiExtension;
 use ElGigi\CommonMarkEmoji\EmojiExtension;
 use League\CommonMark\Extension\Autolink\AutolinkExtension;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
@@ -63,6 +64,7 @@ return [
         StrikethroughExtension::class,
         FootnoteExtension::class,
         TableExtension::class,
+        WhitelistEmojiExtension::class,
         EmojiExtension::class,
         SmartPunctExtension::class,
     ],

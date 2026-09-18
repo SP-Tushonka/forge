@@ -231,7 +231,7 @@ describe('Deletion', function (): void {
 });
 
 describe('Reactions', function (): void {
-    it('toggles a reaction on and off updating the like count', function (): void {
+    it('adds an emoji reaction from the picker and removes it again', function (): void {
         $author = User::factory()->create();
         $reactor = User::factory()->create();
         $mod = Mod::factory()->create();
@@ -240,20 +240,22 @@ describe('Reactions', function (): void {
             'commentable_id' => $mod->id,
             'commentable_type' => Mod::class,
             'user_id' => $author->id,
-            'body' => 'This comment should allow toggling likes.',
+            'body' => 'This comment should allow toggling reactions.',
         ]);
 
         $this->actingAs($reactor);
 
         $page = visit($mod->detail_url.'#comments')
             ->on()->desktop()
-            ->waitForText('0 Likes');
+            ->waitForText('This comment should allow toggling reactions.');
 
-        $page->assertSee('0 Likes')
-            ->click('@reaction-button-'.$comment->id)
-            ->assertSee('1 Like')
-            ->click('@reaction-button-'.$comment->id)
-            ->assertSee('0 Likes')
+        // Nothing has been reacted to yet, so no chip is rendered - only the picker.
+        $page->assertNotPresent('@reaction-chip-'.$comment->id.'-heart')
+            ->click('@reaction-add-'.$comment->id)
+            ->click('@reaction-pick-'.$comment->id.'-heart')
+            ->assertPresent('@reaction-chip-'.$comment->id.'-heart')
+            ->click('@reaction-chip-'.$comment->id.'-heart')
+            ->assertNotPresent('@reaction-chip-'.$comment->id.'-heart')
             ->assertNoJavaScriptErrors();
     });
 });
@@ -354,7 +356,7 @@ describe('Pinning', function (): void {
 
         $page->assertSee($commentToPin->body)
             ->assertDontSeeIn('.comment-container-'.$commentToPin->id, 'Pinned')
-            ->click('.comment-container-'.$commentToPin->id.' [data-flux-dropdown] button[data-flux-button]')
+            ->click('@comment-actions-'.$commentToPin->id)
             ->assertSeeIn('.comment-container-'.$commentToPin->id, 'Pin Comment')
             ->click('.comment-container-'.$commentToPin->id.' .action-pin')
             ->click('@confirm-pin-comment')

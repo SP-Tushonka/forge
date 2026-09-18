@@ -10,6 +10,8 @@
     'eager' => false,
     'favouritesCount' => null,
     'endorsementsCount' => null,
+    'reactionCounts' => [],
+    'reactionWhitelist' => null,
 ])
 
 <div {{ $attributes->merge(['class' => 'mod-list-component relative isolate mx-auto max-w-2xl h-full w-full']) }}>
@@ -126,6 +128,11 @@
                             </div>
                         @endif
                         <div class="ml-auto flex shrink-0 items-center justify-end gap-3">
+                            <x-reaction-summary
+                                :reactable-id="$mod->id"
+                                :counts="$reactionCounts"
+                                :whitelist="$reactionWhitelist"
+                            />
                             @if ($endorsementsCount !== null)
                                 <div
                                     class="flex items-center gap-1"

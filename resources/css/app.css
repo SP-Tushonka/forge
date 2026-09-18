@@ -632,6 +632,15 @@ textarea[data-com-onepassword-filled='light'] {
     padding: 1rem !important;
 }
 
+/* Custom reaction emoji, rendered inline by the markdown parser. Sized in em so it tracks the surrounding text
+   rather than sitting at the pixel fallback carried on the tag itself. */
+.emoji {
+    display: inline-block;
+    width: 1.375em;
+    height: 1.375em;
+    vertical-align: -0.25em;
+}
+
 /* YouTube Lite Embed - Facade pattern for performance */
 .youtube-lite {
     position: relative;

@@ -7,6 +7,7 @@ use App\Models\Mod;
 use App\Models\User;
 use App\Support\Api\V0\PublicViewpoint;
 use App\Support\HomepageSectionCache;
+use App\Traits\Livewire\ProvidesReactionSummary;
 use App\Traits\Livewire\ModeratesMod;
 use App\Traits\Livewire\RendersModSections;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,6 +20,7 @@ use Livewire\Component;
 
 new #[Layout('layouts::base')] class extends Component
 {
+    use ProvidesReactionSummary;
     use ModeratesMod;
     use RendersModSections;
 
@@ -29,16 +31,26 @@ new #[Layout('layouts::base')] class extends Component
      */
     public function with(): array
     {
-        if ($this->viewDisabled()) {
-            return [
+        $sections = $this->viewDisabled()
+            ? [
                 'featured' => $this->featured(),
                 'newest' => $this->newest(),
                 'updated' => $this->updated(),
                 'recentComments' => $this->recentComments(),
-            ];
-        }
+            ]
+            : $this->publicSections();
 
-        return $this->publicSections();
+        // One summary covers all three card sections, so the page pays a single query pair rather than three.
+        /** @var list<Mod> $cardMods */
+        $cardMods = [
+            ...($sections['featured'] ?? []),
+            ...($sections['newest'] ?? []),
+            ...($sections['updated'] ?? []),
+        ];
+
+        $this->rememberReactableIds($cardMods);
+
+        return $sections;
     }
 
     /**

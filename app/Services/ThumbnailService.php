@@ -34,6 +34,12 @@ final class ThumbnailService
     public const array COVER_WIDTHS = [1280, 2560];
 
     /**
+     * The square pixel width uploaded emoji are stored at, matching what Discord serves. Reaction bars render these
+     * at roughly 22px, so nothing larger is ever needed and no responsive variants are generated.
+     */
+    public const int EMOJI_WIDTH = 128;
+
+    /**
      * The maximum frame count processed as an animation. Sources above it are flattened to their first frame.
      */
     public const int MAX_ANIMATION_FRAMES = 120;
@@ -137,6 +143,34 @@ final class ThumbnailService
         foreach ($frames as $frame) {
             $frame->cropImage($rect->width, $rect->height, $rect->x, $rect->y);
             $frame->setImagePage($rect->width, $rect->height, 0, 0);
+        }
+
+        $encoded = $this->encodeWebp($frames, 90);
+        $frames->clear();
+
+        return $encoded;
+    }
+
+    /**
+     * Crop every frame to a centred square, scale it to EMOJI_WIDTH and re-encode as WebP, preserving animation
+     * within the animation caps. Returns null when the blob cannot be decoded safely.
+     */
+    public function normalizeEmoji(string $blob): ?string
+    {
+        $frames = $this->readFrames($blob, true);
+
+        if (! $frames instanceof Imagick) {
+            return null;
+        }
+
+        $frames->setIteratorIndex(0);
+
+        // Never upscale: a 48px drawing stays 48px rather than being blown up into a blurry 128.
+        $width = min(self::EMOJI_WIDTH, $frames->getImageWidth(), $frames->getImageHeight());
+
+        foreach ($frames as $frame) {
+            ImageVariantFit::SquareCrop->apply($frame, $width);
+            $frame->setImagePage($frame->getImageWidth(), $frame->getImageHeight(), 0, 0);
         }
 
         $encoded = $this->encodeWebp($frames, 90);

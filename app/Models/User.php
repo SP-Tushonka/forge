@@ -751,13 +751,14 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
     }
 
     /**
-     * The relationship between a user and their comment reactions.
+     * Every reaction this user has given, across comments and mods. Users are not themselves reactable, so this is
+     * always "reactions given", never "reactions received".
      *
-     * @return HasMany<CommentReaction, $this>
+     * @return HasMany<Reaction, $this>
      */
-    public function commentReactions(): HasMany
+    public function reactions(): HasMany
     {
-        return $this->hasMany(CommentReaction::class);
+        return $this->hasMany(Reaction::class);
     }
 
     /**

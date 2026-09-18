@@ -622,6 +622,8 @@
                                 :eager="$loop->index < 4"
                                 :favourites-count="$order === 'favourited' ? $mod->favourites_count : null"
                                 :endorsements-count="$mod->endorsements_count"
+                                :reaction-counts="$this->reactionSummary->countsFor($mod->id)"
+                                :reaction-whitelist="$this->reactionWhitelist"
                             />
                         </div>
                     @endforeach

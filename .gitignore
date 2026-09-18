@@ -33,6 +33,7 @@ Homestead.yaml
 /public/hot
 /public/storage
 /public/vendor/horizon
+/public/vendor/twemoji
 /storage/*.key
 /storage/app/private/livewire-tmp
 !/storage/app/private/livewire-tmp/.gitkeep

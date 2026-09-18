@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Enums\EmojiSurface;
 use App\Enums\ListPopularityTier;
 use App\Models\Mod;
 use App\Models\ModVersion;
+use App\Traits\Livewire\HandlesReactions;
 use App\Traits\Livewire\ModeratesAddon;
 use App\Traits\Livewire\ModeratesMod;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,8 +19,17 @@ use Livewire\Component;
 
 new #[Layout('layouts::base')] class extends Component
 {
+    use HandlesReactions;
     use ModeratesAddon;
     use ModeratesMod;
+
+    /**
+     * Reacting to the mod itself. Distinct from the summarised figure on mod cards, which staff restrict separately.
+     */
+    protected function reactionSurface(): EmojiSurface
+    {
+        return EmojiSurface::ModReactions;
+    }
 
     /**
      * The mod being shown.
@@ -71,6 +82,16 @@ new #[Layout('layouts::base')] class extends Component
         if ($fresh instanceof Mod) {
             $this->mod->endorsements_count = $fresh->endorsements_count;
         }
+    }
+
+    /**
+     * Only the one mod on this page carries a bar.
+     *
+     * @return list<int>
+     */
+    protected function reactableIds(): array
+    {
+        return [$this->mod->id];
     }
 
     /**
