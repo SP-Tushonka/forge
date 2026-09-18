@@ -7,6 +7,7 @@ use App\Actions\Staff\TransferModOwnership;
 use App\Enums\TrackingEventType;
 use App\Exceptions\StaffActionException;
 use App\Facades\Track;
+use App\Livewire\Concerns\RendersMarkdownPreview;
 use App\Models\License;
 use App\Models\Mod;
 use App\Models\ModCategory;
@@ -26,6 +27,7 @@ new class extends Component
 {
     use EditsMod;
     use ModeratesModVersion;
+    use RendersMarkdownPreview;
     use WithFileUploads;
 
     /** Free text search: name, slug, GUID, mod id or owner name. */

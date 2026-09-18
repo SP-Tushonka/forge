@@ -482,3 +482,12 @@ describe('versions panel', function (): void {
             ->and($event->reason)->toBe('Malware in the archive');
     });
 });
+
+it('renders a markdown preview for the description editor', function (): void {
+    $staff = User::factory()->admin()->create();
+
+    $component = Livewire::actingAs($staff)->test('admin.staff-tools.mod-tool');
+
+    expect($component->instance()->previewMarkdown('**Bold** text', 'description'))
+        ->toContain('<strong>Bold</strong>');
+});

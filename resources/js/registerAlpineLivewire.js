@@ -8,6 +8,6 @@ Alpine.plugin(collapse);
 // Register Alpine components before Livewire starts
 import './registerGuidInput';
 import './registerImageCropper';
-import './registerEmojiAutocomplete';
+import './registerMarkdownEditor';
 
 Livewire.start();

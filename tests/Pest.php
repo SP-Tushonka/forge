@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Sleep;
 use Illuminate\Support\Str;
+use Pest\Browser\Api\AwaitableWebpage;
 use Pest\Browser\Playwright\Playwright;
 use Tests\TestCase;
 
@@ -31,3 +32,16 @@ pest()->extend(TestCase::class)
 // Tag every test under tests/Browser with the "browser" group so the suite can be filtered locally with
 // `--group=browser` or `--exclude-group=browser`, mirroring the dedicated browser job in CI.
 pest()->group('browser')->in('Browser');
+
+/**
+ * Waits for a browser action's write to reach the database. It waits through the page, which hands control back to the
+ * in-process server; a plain sleep would block the very request being waited on.
+ */
+function waitForWrite(AwaitableWebpage $page, Closure $landed, float $seconds = 10): void
+{
+    $deadline = microtime(true) + $seconds;
+
+    while (! $landed() && microtime(true) < $deadline) {
+        $page->wait(0.1);
+    }
+}

@@ -45,11 +45,14 @@ describe('Creation', function (): void {
             ->assertSeeIn('#comments', $commentText)
             ->assertValue('@new-comment-body', '');
 
-        // A second comment immediately afterward is rate limited and never appears.
+        // A second comment immediately afterward is rate limited. The editor draws its text on the page, so whether it
+        // was posted is checked in the database, once the refusal is on screen.
         $page->type('@new-comment-body', $secondCommentText)
             ->press('Post Comment')
-            ->assertDontSee($secondCommentText)
+            ->assertSee('Too many comment attempts')
             ->assertNoJavaScriptErrors();
+
+        expect(Comment::query()->get()->pluck('body')->all())->toBe([$commentText]);
     });
 
     it('allows administrators to bypass rate limiting', function (): void {
@@ -65,12 +68,15 @@ describe('Creation', function (): void {
             ->on()->desktop()
             ->waitForText('Post Comment');
 
+        // The editor draws typed text on the page, so the form emptying is what shows each post landed.
         $page->assertPresent('@new-comment-body')
             ->type('@new-comment-body', $commentText1)
             ->press('Post Comment')
+            ->assertValue('@new-comment-body', '')
             ->assertSee($commentText1)
             ->type('@new-comment-body', $commentText2)
             ->press('Post Comment')
+            ->assertValue('@new-comment-body', '')
             ->assertSee($commentText2)
             ->assertNoJavaScriptErrors();
     });
@@ -91,9 +97,11 @@ describe('Creation', function (): void {
         $page->assertPresent('@new-comment-body')
             ->type('@new-comment-body', $commentText1)
             ->press('Post Comment')
+            ->assertValue('@new-comment-body', '')
             ->assertSee($commentText1)
             ->type('@new-comment-body', $commentText2)
             ->press('Post Comment')
+            ->assertValue('@new-comment-body', '')
             ->assertSee($commentText2)
             ->assertNoJavaScriptErrors();
     });
