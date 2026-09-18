@@ -76,10 +76,14 @@ describe('EmojiTool editing', function (): void {
     });
 
     it('adds an emoji from a shortcode', function (): void {
-        Livewire::actingAs($this->staff)
+        $component = Livewire::actingAs($this->staff)
             ->test('admin.staff-tools.emoji-tool')
             ->call('addEmoji', 'rocket')
             ->assertSuccessful();
+
+        // Asserted here rather than in the browser: dispatch is deterministic at this layer, whereas the rendered
+        // toast has gone missing entirely under CI load without the action itself ever failing.
+        expectToastHeading($component, 'Saved');
 
         $added = Emoji::query()->where('shortcode', 'rocket')->sole();
 
@@ -158,9 +162,11 @@ describe('EmojiTool editing', function (): void {
     it('updates the shortcode, label and sort order', function (): void {
         $fire = Emoji::query()->where('shortcode', 'fire')->sole();
 
-        Livewire::actingAs($this->staff)
+        $component = Livewire::actingAs($this->staff)
             ->test('admin.staff-tools.emoji-tool')
             ->call('updateEmoji', $fire->id, 'blazing', 'Blazing', 9);
+
+        expectToastHeading($component, 'Saved');
 
         $fire->refresh();
 
@@ -210,9 +216,13 @@ describe('EmojiTool editing', function (): void {
     it('refuses a shortcode already used by another emoji', function (): void {
         $fire = Emoji::query()->where('shortcode', 'fire')->sole();
 
-        Livewire::actingAs($this->staff)
+        $component = Livewire::actingAs($this->staff)
             ->test('admin.staff-tools.emoji-tool')
             ->call('updateEmoji', $fire->id, 'heart', 'Fire', 4);
+
+        // The browser cannot cover this: a refused rename leaves the page byte-identical, so the toast was its only
+        // observable - and that made the test hostage to a toast that intermittently never rendered.
+        expectToastHeading($component, 'Shortcode in use');
 
         expect($fire->fresh()->shortcode)->toBe('fire');
     });
@@ -317,11 +327,13 @@ describe('EmojiTool deletion', function (): void {
         $mod = Mod::factory()->create();
         $mod->reactions()->create(['user_id' => User::factory()->create()->id, 'emoji_id' => $fire->id]);
 
-        Livewire::actingAs($this->staff)
+        $component = Livewire::actingAs($this->staff)
             ->test('admin.staff-tools.emoji-tool')
             ->call('confirmDelete', $fire->id)
             ->call('deleteEmoji', 'delete')
             ->assertSuccessful();
+
+        expectToastHeading($component, 'Emoji deleted');
 
         // reactions.emoji_id is restrictOnDelete, so this only passes if the rows went inside the transaction.
         expect(Emoji::query()->whereKey($fire->id)->exists())->toBeFalse()
@@ -678,10 +690,12 @@ describe('EmojiTool surface restrictions', function (): void {
     it('switches a single surface off without touching the others', function (): void {
         $fire = Emoji::query()->where('shortcode', 'fire')->sole();
 
-        Livewire::actingAs($this->staff)
+        $component = Livewire::actingAs($this->staff)
             ->test('admin.staff-tools.emoji-tool')
             ->call('toggleSurface', $fire->id, App\Enums\EmojiSurface::Comments->value)
             ->assertSuccessful();
+
+        expectToastHeading($component, 'Saved');
 
         $fire->refresh();
 

@@ -51,7 +51,10 @@ describe('Staff emoji catalogue', function (): void {
             ->waitForText('Add an emoji')
             ->type('@emoji-search', 'rocket')
             ->click('@emoji-add-rocket')
-            ->waitForText('Saved')
+            // The new row, not the toast: a toast is transient and has proven able to go missing entirely under CI
+            // load, while the row it announces is what staff are actually left with. The heading itself is asserted
+            // in tests/Feature/Livewire/Admin/StaffToolsEmojiToolTest.php, where dispatch is deterministic.
+            ->assertPresent('@emoji-delete-rocket')
             ->assertNoJavaScriptErrors();
 
         $added = Emoji::query()->where('shortcode', 'rocket')->sole();

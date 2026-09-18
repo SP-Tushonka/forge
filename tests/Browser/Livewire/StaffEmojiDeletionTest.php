@@ -98,7 +98,6 @@ describe('Staff emoji deletion', function (): void {
             ->waitForText('Delete this emoji?')
             ->type('@emoji-delete-confirmation', 'delete')
             ->click('@emoji-delete-confirm')
-            ->waitForText('Emoji deleted')
             ->assertMissing('@emoji-delete-fire')
             ->assertNoJavaScriptErrors();
 
