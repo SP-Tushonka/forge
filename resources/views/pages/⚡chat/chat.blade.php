@@ -534,7 +534,6 @@
                         x-data="{
                             message: $wire.entangle('messageText'),
                             maxLength: 500,
-                            buttonHeight: '46px',
                             typingTimer: null,
                             typingDebounce: 1500,
                             get charCount() { return this.message.length; },
@@ -557,78 +556,52 @@
                                     this.typingTimer = null;
                                 }, this.typingDebounce);
                             },
-                            resizeTextarea() {
-                                const textarea = this.$refs.messageInput;
-                                if (textarea) {
-                                    textarea.style.height = 'auto';
-                                    const newHeight = Math.min(Math.max(textarea.scrollHeight, 46), 120);
-                                    textarea.style.height = newHeight + 'px';
-                                    this.buttonHeight = newHeight + 'px';
-                                }
-                            },
-                            resetHeight() {
-                                const textarea = this.$refs.messageInput;
-                                if (textarea) {
-                                    textarea.style.height = '46px';
-                                    this.buttonHeight = '46px';
-                                }
-                            },
-                            handleKeydown(event) {
-                                if (event.key === 'Enter' && !event.shiftKey) {
-                                    event.preventDefault();
-                                    if (this.message.trim() && this.$refs.sendForm) {
-                                        // Clear typing timer when sending
-                                        if (this.typingTimer) {
-                                            clearTimeout(this.typingTimer);
-                                            this.typingTimer = null;
-                                        }
-                                        this.$refs.sendForm.requestSubmit();
+                            send() {
+                                if (this.message.trim() && this.$refs.sendForm) {
+                                    // Clear typing timer when sending
+                                    if (this.typingTimer) {
+                                        clearTimeout(this.typingTimer);
+                                        this.typingTimer = null;
                                     }
+                                    this.$refs.sendForm.requestSubmit();
                                 }
                             },
                             init() {
-                                $watch('message', (value) => {
-                                    if (!value) {
-                                        this.resetHeight();
-                                    }
-                                });
-                                this.$nextTick(() => {
-                                    if (this.$refs.messageInput) {
-                                        this.$refs.messageInput.focus();
-                                    }
-                                });
                                 Livewire.on('messages-updated', () => {
-                                    this.$nextTick(() => {
-                                        if (this.$refs.messageInput) {
-                                            this.$refs.messageInput.focus();
-                                        }
-                                    });
+                                    this.$nextTick(() => this.$el.querySelector('.overtype-input')?.focus());
                                 });
                             }
                         }"
                     >
                         <form
                             wire:submit="sendMessage"
-                            class="flex gap-2"
+                            class="flex items-end gap-2"
                             x-ref="sendForm"
                         >
-                            <flux:textarea
-                                wire:model="messageText"
-                                x-ref="messageInput"
-                                x-on:input="resizeTextarea(); handleTyping()"
-                                x-on:keydown="handleKeydown"
-                                placeholder="{{ __('Type a message...') }}"
-                                rows="1"
-                                class="min-h-[46px] flex-1 resize-none"
-                                maxlength="500"
-                                autofocus
-                            />
+                            <div
+                                class="min-w-0 flex-1"
+                                x-data="markdownEditor({
+                                    model: 'messageText',
+                                    preset: 'chat',
+                                    placeholder: @js(__('Type a message...')),
+                                    textareaProps: { maxlength: 500, 'data-test': 'chat-message-input' },
+                                })"
+                                x-on:input="handleTyping()"
+                                x-on:markdown-editor-submit="send()"
+                            >
+                                <div class="markdown-editor-frame">
+                                    <div
+                                        wire:ignore
+                                        x-ref="host"
+                                    ></div>
+                                </div>
+                            </div>
                             <flux:button
                                 type="submit"
                                 variant="primary"
                                 square
                                 class="shadow-sm transition-shadow duration-200 hover:shadow-md"
-                                x-bind:style="'height: ' + buttonHeight"
+                                style="height: 46px"
                             >
                                 <flux:icon.paper-airplane class="size-5" />
                             </flux:button>

@@ -98,7 +98,13 @@
             <flux:input wire:model="name" :label="__('Name')" />
             <flux:input wire:model="guid" :label="__('GUID')" />
             <flux:input wire:model="teaser" :label="__('Summary')" />
-            <flux:textarea wire:model="description" :label="__('Description')" rows="10" />
+            <x-markdown-editor
+                wire-model="description"
+                name="description"
+                :label="__('Description')"
+                rows="10"
+                purify-config="description"
+            />
 
             <flux:select wire:model="category" :label="__('Category')">
                 @foreach ($this->categories as $category)
@@ -141,6 +147,7 @@
 
             <flux:textarea
                 wire:model="reason"
+                data-test="mod-tool-reason"
                 :label="__('Reason for this edit')"
                 :description="__('Recorded on the moderation log. Required.')"
                 rows="2"

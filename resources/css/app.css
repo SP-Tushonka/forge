@@ -696,3 +696,17 @@ textarea[data-com-onepassword-filled='light'] {
     height: 100%;
     border: 0;
 }
+
+/* The markdown editor's frame, matching a dark flux:textarea. OverType itself is transparent. */
+.markdown-editor-frame {
+    @apply rounded-lg border border-white/10 bg-white/10 shadow-xs focus-within:ring-2 focus-within:ring-accent;
+
+    &.markdown-editor-frame-invalid {
+        @apply border-red-500;
+    }
+
+    /* @tailwindcss/forms rings every focused textarea, and the frame already shows focus. */
+    .overtype-input:focus {
+        box-shadow: none;
+    }
+}
