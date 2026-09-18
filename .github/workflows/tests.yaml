@@ -245,7 +245,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: screenshots
-          path: tests/Browser/screenshots
+          # Capital S: Pest writes to tests/Browser/Screenshots, and on the Linux runner the lowercase
+          # placeholder directory is a different, always-empty path.
+          path: tests/Browser/Screenshots
 
       - name: Display Laravel Log
         if: failure()
