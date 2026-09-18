@@ -41,7 +41,7 @@
             <img
                 src="{{ $item->image_url }}"
                 alt="{{ $item->alt_text }}"
-                class="size-4"
+                class="size-5"
                 loading="lazy"
             />
             <span class="text-xs tabular-nums">{{ $counts[$item->id] }}</span>
@@ -94,7 +94,7 @@
                         <img
                             src="{{ $item->image_url }}"
                             alt="{{ $item->alt_text }}"
-                            class="size-5"
+                            class="size-6"
                             loading="lazy"
                         />
                     </button>
