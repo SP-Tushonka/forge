@@ -7,6 +7,9 @@ import { emojiAutocomplete } from './emojiAutocomplete';
 // Tailwind's font-mono stack. OverType needs a monospace font to keep its overlay aligned with the caret.
 const FONT_MONO = "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
 
+const FONT_SIZE = 14;
+const PADDING = 12;
+
 const WHITE_10 = 'rgb(255 255 255 / 0.1)';
 
 // Tailwind palette values written out, because Tailwind only emits the colour variables a page uses. Keys left out
@@ -41,7 +44,10 @@ const PRESETS = {
     full: {
         toolbar: true,
         smartLists: true,
-        minHeight: '100px',
+        // The frame's CSS sets the height, from the rows the caller asked for. Letting the editor size itself to its
+        // text would open a long description hundreds of lines tall.
+        autoResize: false,
+        minHeight: null,
         maxHeight: null,
         emoji: true,
         sendOnEnter: false,
@@ -50,6 +56,7 @@ const PRESETS = {
     chat: {
         toolbar: false,
         smartLists: false,
+        autoResize: true,
         minHeight: '46px',
         maxHeight: '120px',
         emoji: false,
@@ -102,11 +109,11 @@ Alpine.data('markdownEditor', ({ model, preset = 'full', placeholder = '', texta
                 value: stored(),
                 placeholder,
                 fontFamily: FONT_MONO,
-                fontSize: '14px',
-                padding: '12px',
+                fontSize: `${FONT_SIZE}px`,
+                padding: `${PADDING}px`,
                 // iOS zooms the page into any field under 16px.
                 mobile: { fontSize: '16px' },
-                autoResize: true,
+                autoResize: settings.autoResize,
                 minHeight: settings.minHeight,
                 maxHeight: settings.maxHeight,
                 toolbar: settings.toolbar,
@@ -122,6 +129,12 @@ Alpine.data('markdownEditor', ({ model, preset = 'full', placeholder = '', texta
                     }
                 },
             });
+
+            if (settings.autoResize) {
+                // Its first measurement lands before the browser has laid the text out, so a composer opened with a
+                // draft would sit at its minimum. Re-setting the same text measures it again.
+                requestAnimationFrame(() => editor?.setValue(editor.getValue()));
+            }
 
             unwatch = this.$wire.$watch(model, (value) => {
                 // A change queued as the form closed can still arrive after destroy().

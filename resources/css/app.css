@@ -726,3 +726,24 @@ textarea[data-com-onepassword-filled='light'] {
         box-shadow: none;
     }
 }
+
+/* The editor pins its textarea to fill the box, so the grip the old textarea had goes on the frame instead. Until it is
+   dragged the frame has no set height and still grows with the text; afterwards it keeps the chosen height. */
+.markdown-editor-frame-resizable {
+    @apply flex resize-y flex-col overflow-hidden;
+
+    /* The editor sits inside a wire:ignore host, so the host and the editor both have to stretch for the writable area
+       to fill a frame that has been dragged taller. */
+    > *,
+    .overtype-container {
+        @apply flex min-h-0 flex-auto flex-col;
+    }
+
+    /* The writable area opens at the height the caller asked for and scrolls past it; dragging the frame stretches it,
+       because growing to fit would open a long description hundreds of lines tall. */
+    .overtype-wrapper {
+        height: var(--markdown-editor-height, 158px) !important;
+        min-height: 0 !important;
+        flex: 1 1 auto !important;
+    }
+}
