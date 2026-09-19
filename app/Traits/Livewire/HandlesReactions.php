@@ -11,6 +11,7 @@ use App\Facades\Track;
 use App\Models\Comment;
 use App\Models\Emoji;
 use App\Models\Mod;
+use App\Models\ModIssue;
 use App\Models\Reaction;
 use App\Models\User;
 use App\Services\ReactionSummaryService;
@@ -111,19 +112,20 @@ trait HandlesReactions
     {
         return match ($key) {
             'comment' => Comment::class,
+            'issue' => ModIssue::class,
             'mod' => Mod::class,
             default => null,
         };
     }
 
     /**
-     * The surface a reaction is being left on. Only the two interactive surfaces can be reached here; the summarised
-     * figure on mod cards is read-only and has no toggle endpoint at all.
+     * The surface a reaction is being left on. Only the three interactive surfaces can be reached here; the summarised
+     * figure on mod cards is read-only and has no toggle endpoint at all. Issues share the comment surface.
      */
     private function resolveReactableSurface(string $key): EmojiSurface
     {
         return match ($key) {
-            'comment' => EmojiSurface::CommentReactions,
+            'comment', 'issue' => EmojiSurface::CommentReactions,
             default => EmojiSurface::ModReactions,
         };
     }
@@ -165,6 +167,10 @@ trait HandlesReactions
     {
         if ($reactable instanceof Comment) {
             return $removed ? TrackingEventType::COMMENT_UNLIKE : TrackingEventType::COMMENT_LIKE;
+        }
+
+        if ($reactable instanceof ModIssue) {
+            return $removed ? TrackingEventType::ISSUE_UNREACT : TrackingEventType::ISSUE_REACT;
         }
 
         return $removed ? TrackingEventType::MOD_UNREACT : TrackingEventType::MOD_REACT;

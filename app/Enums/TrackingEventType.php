@@ -8,6 +8,7 @@ use App\Models\Addon;
 use App\Models\AddonVersion;
 use App\Models\Comment;
 use App\Models\Mod;
+use App\Models\ModIssue;
 use App\Models\ModList;
 use App\Models\ModVersion;
 use App\Models\User;
@@ -111,6 +112,25 @@ enum TrackingEventType: string
     case COMMENT_UNLIKE = 'comment_unlike';
 
     case COMMENT_REPORT = 'comment_report';
+
+    /** Issue events */
+    case ISSUE_CREATE = 'issue_create';
+
+    case ISSUE_EDIT = 'issue_edit';
+
+    case ISSUE_DELETE = 'issue_delete';
+
+    case ISSUE_RESTORE = 'issue_restore';
+
+    case ISSUE_REPORT = 'issue_report';
+
+    case ISSUE_REACT = 'issue_react';
+
+    case ISSUE_UNREACT = 'issue_unreact';
+
+    case ISSUE_BAN = 'issue_ban';
+
+    case ISSUE_UNBAN = 'issue_unban';
 
     /** Account management events */
     case ACCOUNT_DELETE = 'account_delete';
@@ -250,6 +270,15 @@ enum TrackingEventType: string
             self::COMMENT_LIKE => 'Liked comment',
             self::COMMENT_UNLIKE => 'Unliked comment',
             self::COMMENT_REPORT => 'Reported comment',
+            self::ISSUE_CREATE => 'Opened issue',
+            self::ISSUE_EDIT => 'Edited issue',
+            self::ISSUE_DELETE => 'Deleted issue',
+            self::ISSUE_RESTORE => 'Restored issue',
+            self::ISSUE_REPORT => 'Reported issue',
+            self::ISSUE_REACT => 'Reacted to issue',
+            self::ISSUE_UNREACT => 'Removed issue reaction',
+            self::ISSUE_BAN => 'Banned user from issues',
+            self::ISSUE_UNBAN => 'Lifted issue ban',
             self::MOD_REPORT => 'Reported mod',
             self::MOD_REACT => 'Reacted to mod',
             self::MOD_UNREACT => 'Removed mod reaction',
@@ -339,6 +368,15 @@ enum TrackingEventType: string
             self::COMMENT_LIKE => 'User liked a comment',
             self::COMMENT_UNLIKE => 'User unliked a comment',
             self::COMMENT_REPORT => 'User reported a comment',
+            self::ISSUE_CREATE => 'User opened an issue on a mod',
+            self::ISSUE_EDIT => 'User edited an issue',
+            self::ISSUE_DELETE => 'User deleted an issue',
+            self::ISSUE_RESTORE => 'User restored a deleted issue',
+            self::ISSUE_REPORT => 'User reported an issue',
+            self::ISSUE_REACT => 'User reacted to an issue',
+            self::ISSUE_UNREACT => 'User removed their reaction from an issue',
+            self::ISSUE_BAN => "User banned a member from a mod's issues",
+            self::ISSUE_UNBAN => "User lifted a member's issue ban",
             self::MOD_REPORT => 'User reported a mod',
             self::MOD_REACT => 'User reacted to a mod',
             self::MOD_UNREACT => 'User removed their reaction from a mod',
@@ -398,6 +436,8 @@ enum TrackingEventType: string
             self::USER_PASSWORD_INVALIDATE, self::USER_MFA_REMOVE, self::USER_DISCORD_UNLINK,
             self::USER_ACCOUNT_LOCK, self::USER_PHOTO_REMOVE => User::class,
             self::MOD_LIST_DISABLE, self::MOD_LIST_ENABLE, self::MOD_LIST_DELETE => ModList::class,
+            self::ISSUE_CREATE, self::ISSUE_EDIT, self::ISSUE_DELETE, self::ISSUE_RESTORE, self::ISSUE_REPORT, self::ISSUE_REACT, self::ISSUE_UNREACT => ModIssue::class,
+            self::ISSUE_BAN, self::ISSUE_UNBAN => Mod::class,
             default => null,
         };
     }
@@ -464,6 +504,14 @@ enum TrackingEventType: string
             self::COMMENT_LIKE => 'heart',
             self::COMMENT_UNLIKE => 'heart',
             self::COMMENT_REPORT => 'exclamation-triangle',
+            self::ISSUE_CREATE => 'bug-ant',
+            self::ISSUE_EDIT => 'pencil',
+            self::ISSUE_DELETE => 'trash',
+            self::ISSUE_RESTORE => 'arrow-path',
+            self::ISSUE_REPORT => 'flag',
+            self::ISSUE_REACT, self::ISSUE_UNREACT => 'face-smile',
+            self::ISSUE_BAN => 'no-symbol',
+            self::ISSUE_UNBAN => 'shield-check',
             self::ACCOUNT_DELETE => 'user-minus',
             self::USER_BAN => 'no-symbol',
             self::USER_UNBAN => 'check-circle',
@@ -562,6 +610,15 @@ enum TrackingEventType: string
             self::COMMENT_LIKE => 'pink',
             self::COMMENT_UNLIKE => 'zinc',
             self::COMMENT_REPORT => 'orange',
+            self::ISSUE_CREATE => 'teal',
+            self::ISSUE_EDIT => 'indigo',
+            self::ISSUE_DELETE => 'red',
+            self::ISSUE_RESTORE => 'green',
+            self::ISSUE_REPORT => 'orange',
+            self::ISSUE_REACT => 'pink',
+            self::ISSUE_UNREACT => 'gray',
+            self::ISSUE_BAN => 'red',
+            self::ISSUE_UNBAN => 'green',
 
             // Account management - Rose theme
             self::ACCOUNT_DELETE => 'rose',
@@ -630,7 +687,8 @@ enum TrackingEventType: string
     {
         return match ($this) {
             self::COMMENT_CREATE, self::COMMENT_EDIT, self::COMMENT_SOFT_DELETE, self::COMMENT_LIKE, self::COMMENT_UNLIKE,
-            self::MOD_REACT, self::MOD_UNREACT => false,
+            self::MOD_REACT, self::MOD_UNREACT,
+            self::ISSUE_CREATE, self::ISSUE_EDIT, self::ISSUE_REACT, self::ISSUE_UNREACT => false,
             default => true,
         };
     }

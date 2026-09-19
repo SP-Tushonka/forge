@@ -291,6 +291,10 @@
                                 <flux:select.option value="comments">{{ $commentCount }}
                                     {{ __(Str::plural('Comment', $commentCount)) }}</flux:select.option>
                             @endif
+                            @if ($showIssuesTab)
+                                <flux:select.option value="issues">{{ $issueCount }}
+                                    {{ __(Str::plural('Issue', $issueCount)) }}</flux:select.option>
+                            @endif
                         </flux:select>
                     </div>
 
@@ -318,6 +322,14 @@
                                     name="Comments"
                                     value="comments"
                                     :label="$commentCount . ' ' . Str::plural('Comment', $commentCount)"
+                                />
+                            @endif
+                            @if ($showIssuesTab)
+                                <x-tab-button
+                                    name="Issues"
+                                    value="issues"
+                                    :label="$issueCount . ' ' . Str::plural('Issue', $issueCount)"
+                                    data-test="issues-tab"
                                 />
                             @endif
                         </nav>
@@ -361,6 +373,19 @@
                     >
                         <livewire:mod.show.comments-tab
                             wire:key="comments-tab-{{ $mod->id }}"
+                            :mod-id="$mod->id"
+                        />
+                    </div>
+                @endif
+
+                {{-- Issues --}}
+                @if ($showIssuesTab)
+                    <div
+                        x-show="selectedTab === 'issues'"
+                        x-cloak
+                    >
+                        <livewire:mod.show.issues-tab
+                            wire:key="issues-tab-{{ $mod->id }}"
                             :mod-id="$mod->id"
                         />
                     </div>

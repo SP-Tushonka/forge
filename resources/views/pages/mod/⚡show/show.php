@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Enums\EmojiSurface;
 use App\Enums\ListPopularityTier;
 use App\Models\Mod;
+use App\Models\ModIssue;
 use App\Models\ModVersion;
 use App\Traits\Livewire\HandlesReactions;
 use App\Traits\Livewire\ModeratesAddon;
@@ -214,6 +215,14 @@ new #[Layout('layouts::base')] class extends Component
     }
 
     /**
+     * Get the number of open issues, which is what the tab label counts.
+     */
+    public function getIssueCount(): int
+    {
+        return $this->mod->issues()->open()->count();
+    }
+
+    /**
      * Check if the mod should display a profile binding notice.
      */
     public function requiresProfileBindingNotice(): bool
@@ -266,6 +275,8 @@ new #[Layout('layouts::base')] class extends Component
             'versionCount' => $this->getVersionCount(),
             'commentCount' => $this->getCommentCount(),
             'addonCount' => $this->getAddonCount(),
+            'issueCount' => $this->getIssueCount(),
+            'showIssuesTab' => Gate::allows('viewAny', [ModIssue::class, $this->mod]),
             'fikaStatus' => $this->mod->getOverallFikaCompatibility(),
             'presenceSummary' => $this->getPresenceSummary(),
         ];

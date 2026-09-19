@@ -7,6 +7,7 @@ namespace App\Jobs;
 use App\Contracts\Commentable;
 use App\Enums\NotificationType;
 use App\Models\Comment;
+use App\Models\ModIssue;
 use App\Models\NotificationLog;
 use App\Models\User;
 use App\Models\UserBlock;
@@ -133,6 +134,12 @@ final class ProcessCommentNotification implements ShouldQueue
 
         // Don't notify when the parent author has a block relationship with the comment author
         if (in_array($parentAuthor->id, $this->blockedCounterpartIds, true)) {
+            return;
+        }
+
+        // Issue mutes and the issue notification setting cover direct replies too
+        $commentable = $comment->commentable;
+        if ($commentable instanceof ModIssue && ! $commentable->allowsNotificationTo($parentAuthor)) {
             return;
         }
 

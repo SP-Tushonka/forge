@@ -8,6 +8,7 @@ use App\Contracts\Commentable;
 use App\Contracts\Presentable;
 use App\Enums\NotificationColorRole;
 use App\Models\Comment;
+use App\Models\ModIssue;
 use App\Models\User;
 use App\Notifications\Messages\NotificationMailMessage;
 use App\Support\DataTransferObjects\HeadlineSegment;
@@ -69,6 +70,11 @@ final class CommentReplyNotification extends Notification implements Presentable
 
         if ($notifiable instanceof User && $notifiable->email_reply_notifications_enabled) {
             $channels[] = 'mail';
+        }
+
+        // Issue threads also answer to the issue notification setting
+        if ($notifiable instanceof User && $this->comment->commentable instanceof ModIssue) {
+            return array_values(array_intersect($channels, $notifiable->issueNotificationLevel()->channels()));
         }
 
         return $channels;
