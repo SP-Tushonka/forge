@@ -6,6 +6,7 @@ use App\Actions\ModIssues\ChangeModIssueStatus;
 use App\Actions\ModIssues\EditModIssue;
 use App\Enums\EmojiSurface;
 use App\Enums\ModIssueStatus;
+use App\Livewire\Concerns\RendersMarkdownPreview;
 use App\Models\Mod;
 use App\Models\ModIssue;
 use App\Models\ModIssueEvent;
@@ -24,6 +25,7 @@ use Livewire\Component;
 new #[Layout('layouts::base')] class extends Component
 {
     use HandlesReactions;
+    use RendersMarkdownPreview;
 
     #[Locked]
     public ModIssue $issue;
