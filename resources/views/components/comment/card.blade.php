@@ -59,7 +59,8 @@
             </div>
         </div>
         @isset($headerTrailing)
-            <div class="flex items-center">
+            {{-- Pinned to the top at the gear's height so trailing items centre on the absolutely positioned gear. --}}
+            <div class="flex min-h-8 items-center self-start">
                 {{ $headerTrailing }}
             </div>
         @endisset

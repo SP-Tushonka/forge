@@ -8,10 +8,14 @@ use App\Contracts\Commentable;
 use App\Contracts\Reactable;
 use App\Contracts\Reportable;
 use App\Contracts\Trackable;
+use App\Contracts\VersionedCommentable;
 use App\Enums\EmojiSurface;
 use App\Enums\FikaCompatibility;
+use App\Enums\VersionChange;
+use App\Enums\VersionTagColor;
 use App\Models\Scopes\PublishedScope;
 use App\Observers\ModObserver;
+use App\Support\Api\V0\PublicViewpoint;
 use App\Support\Markdown\EmojiRenderContext;
 use App\Support\WordCensor;
 use App\Traits\HasComments;
@@ -63,6 +67,7 @@ use Stevebauman\Purify\Facades\Purify;
  * @property bool $contains_ads
  * @property bool $disabled
  * @property bool $comments_disabled
+ * @property array<string, string>|null $comment_version_colors
  * @property bool $addons_disabled
  * @property bool $lists_disabled
  * @property bool $profile_binding_notice_disabled
@@ -95,7 +100,7 @@ use Stevebauman\Purify\Facades\Purify;
 #[Appends([
     'detail_url',
 ])]
-final class Mod extends Model implements Commentable, Reactable, Reportable, Trackable
+final class Mod extends Model implements Commentable, Reactable, Reportable, Trackable, VersionedCommentable
 {
     /** @use HasComments<self> */
     use HasComments;
@@ -599,6 +604,26 @@ final class Mod extends Model implements Commentable, Reactable, Reportable, Tra
     }
 
     /**
+     * Falls back to legacy versions the same way the mod page does when there are no SPT tagged ones. Resolved from the
+     * public viewpoint, because staff would otherwise count versions tied to unreleased SPT versions.
+     */
+    public function getCommentableVersion(): ?string
+    {
+        $version = PublicViewpoint::run(fn (): mixed => $this->versions()->publiclyVisible()->value('version')
+            ?? $this->versions()->legacyPubliclyVisible()->value('version'));
+
+        return is_string($version) ? $version : null;
+    }
+
+    /**
+     * The owner's chosen colour for this kind of change, or the site default when they have not picked one.
+     */
+    public function getCommentVersionTagColor(VersionChange $change): VersionTagColor
+    {
+        return VersionTagColor::tryFrom($this->comment_version_colors[$change->value] ?? '') ?? $change->defaultTagColor();
+    }
+
+    /**
      * Get a human-readable display name for the reportable model.
      */
     public function getReportableDisplayName(): string
@@ -887,6 +912,7 @@ final class Mod extends Model implements Commentable, Reactable, Reportable, Tra
             'contains_ads' => 'boolean',
             'disabled' => 'boolean',
             'comments_disabled' => 'boolean',
+            'comment_version_colors' => 'array',
             'addons_disabled' => 'boolean',
             'lists_disabled' => 'boolean',
             'profile_binding_notice_disabled' => 'boolean',

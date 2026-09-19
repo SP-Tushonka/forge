@@ -3,8 +3,11 @@
 declare(strict_types=1);
 
 use App\Contracts\Commentable;
+use App\Contracts\VersionedCommentable;
 use App\Enums\EmojiSurface;
 use App\Enums\TrackingEventType;
+use App\Enums\VersionChange;
+use App\Enums\VersionTagColor;
 use App\Facades\CachedGate;
 use App\Facades\Track;
 use App\Jobs\CheckCommentForSpam;
@@ -243,6 +246,32 @@ new class extends Component
         return $this->commentable->comments()
             ->visibleToUser($user)
             ->count();
+    }
+
+    /**
+     * The version new comments are stamped with, and that existing stamps are compared against.
+     */
+    #[Computed]
+    public function latestCommentableVersion(): ?string
+    {
+        return $this->commentable instanceof VersionedCommentable
+            ? $this->commentable->getCommentableVersion()
+            : null;
+    }
+
+    /**
+     * The tag colour for a comment stamped with the given version. A comment on the current version is always green;
+     * with no public version left to compare against it stays neutral.
+     */
+    public function commentVersionTagColor(string $version): VersionTagColor
+    {
+        if ($this->latestCommentableVersion === null || ! $this->commentable instanceof VersionedCommentable) {
+            return VersionTagColor::Neutral;
+        }
+
+        $change = VersionChange::between($version, $this->latestCommentableVersion);
+
+        return $change === null ? VersionTagColor::Green : $this->commentable->getCommentVersionTagColor($change);
     }
 
     /**
@@ -1558,6 +1587,7 @@ new class extends Component
         $comment = $this->commentable->comments()->create([
             'user_id' => Auth::id(),
             'parent_id' => $parentId,
+            'commentable_version' => $this->latestCommentableVersion,
             'user_ip' => request()->ip() ?? '',
             'user_agent' => request()->userAgent() ?? '',
             'referrer' => request()->header('referer') ?? '',
