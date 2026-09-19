@@ -62,6 +62,33 @@ describe('Staff emoji catalogue', function (): void {
         expect($added->codepoints)->toBe('1f680');
     });
 
+    it('fetches only the artwork in view, and keeps it across a round trip', function (): void {
+        // loading="lazy" still fetched every SVG in the scroller, and decoding ~1,500 of them stalled the page long
+        // enough under CI load for Livewire responses to land after the assertion window.
+        $thumbsup = Emoji::query()->where('shortcode', 'thumbsup')->sole();
+
+        $this->actingAs($this->staff);
+
+        $someArtworkFetched = <<<'JS'
+            (() => {
+                const images = document.querySelectorAll('[data-test="emoji-catalogue"] img');
+                const fetched = [...images].filter((image) => image.getAttribute('src')).length;
+
+                return fetched > 0 && fetched < images.length / 2;
+            })()
+            JS;
+
+        visit(route('admin.staff-tools').'#reactions')
+            ->on()->desktop()
+            ->waitForText('Add an emoji')
+            ->assertScript($someArtworkFetched, true)
+            ->type('@emoji-shortcode-'.$thumbsup->id, '+1')
+            ->click('@emoji-save-thumbsup')
+            ->assertNotPresent('@emoji-save-thumbsup')
+            ->assertScript($someArtworkFetched, true)
+            ->assertNoJavaScriptErrors();
+    });
+
     it('lays the grid out evenly, with every cell the same size', function (): void {
         $this->actingAs($this->staff);
 
