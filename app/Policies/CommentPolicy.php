@@ -8,6 +8,7 @@ use App\Contracts\Commentable;
 use App\Models\Addon;
 use App\Models\Comment;
 use App\Models\Mod;
+use App\Models\ModIssue;
 use App\Models\ModList;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -33,6 +34,7 @@ final class CommentPolicy
         'confirmSpam',
         'checkForSpam',
         'report',
+        'banFromIssues',
     ];
 
     /**
@@ -106,6 +108,15 @@ final class CommentPolicy
             }
         }
 
+        // Issue comments are only as visible as the issue they sit on
+        if ($comment->commentable_type === ModIssue::class) {
+            $issue = $comment->commentable;
+
+            if (! $issue instanceof ModIssue || ! resolve(ModIssuePolicy::class)->view($user, $issue)) {
+                return false;
+            }
+        }
+
         // Clean comments are visible to everyone
         if ($comment->isSpamClean()) {
             return true;
@@ -133,7 +144,7 @@ final class CommentPolicy
      * - Must have verified email address.
      * - The commentable must allow comments.
      *
-     * @param  Commentable<Mod|ModList|Addon|User>|null  $commentable
+     * @param  Commentable<Mod|ModList|Addon|User|ModIssue>|null  $commentable
      */
     public function create(User $user, ?Commentable $commentable = null, ?Comment $parentComment = null): bool
     {
@@ -177,6 +188,10 @@ final class CommentPolicy
             if ($owner !== null && $user->isBlockedMutually($owner)) {
                 return false;
             }
+        }
+
+        if ($commentable instanceof ModIssue) {
+            return $this->canCommentOnIssue($user, $commentable);
         }
 
         // Check if the commentable can receive comments
@@ -384,6 +399,10 @@ final class CommentPolicy
             }
         }
 
+        if ($this->managesIssueComment($user, $comment)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -474,6 +493,10 @@ final class CommentPolicy
             }
         }
 
+        if ($this->managesIssueComment($user, $comment)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -552,6 +575,10 @@ final class CommentPolicy
             if ($modList->owner_id === $user->id) {
                 return true;
             }
+        }
+
+        if ($this->managesIssueComment($user, $comment)) {
+            return true;
         }
 
         return false;
@@ -715,6 +742,10 @@ final class CommentPolicy
             }
         }
 
+        if ($this->managesIssueComment($user, $comment)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -759,7 +790,30 @@ final class CommentPolicy
             }
         }
 
+        if ($this->managesIssueComment($user, $comment)) {
+            return true;
+        }
+
         return false;
+    }
+
+    /**
+     * Whether the user can bar this comment's author from the issues of the mod the comment sits under.
+     */
+    public function banFromIssues(User $user, Comment $comment): bool
+    {
+        if ($comment->commentable_type !== ModIssue::class) {
+            return false;
+        }
+
+        $issue = $comment->commentable;
+
+        if (! $issue instanceof ModIssue) {
+            return false;
+        }
+
+        return resolve(ModIssuePolicy::class)->ban($user, $issue->mod, $comment->user)
+            && ! $issue->mod->isIssueBanned($comment->user);
     }
 
     /**
@@ -784,6 +838,43 @@ final class CommentPolicy
 
         // User cannot report the same item more than once.
         return ! $reportable->hasBeenReportedBy($user->id);
+    }
+
+    /**
+     * Managers and staff get past a lock or issues being switched off. Nobody comments on a deleted issue.
+     */
+    private function canCommentOnIssue(User $user, ModIssue $issue): bool
+    {
+        if ($issue->trashed()) {
+            return false;
+        }
+
+        if ($issue->canBeManagedBy($user)) {
+            return true;
+        }
+
+        if ($issue->mod->isIssueBanned($user)) {
+            return false;
+        }
+
+        $owner = $issue->mod->owner;
+
+        if ($owner instanceof User && $user->isBlockedMutually($owner)) {
+            return false;
+        }
+
+        return $issue->canReceiveComments();
+    }
+
+    private function managesIssueComment(User $user, Comment $comment): bool
+    {
+        if ($comment->commentable_type !== ModIssue::class) {
+            return false;
+        }
+
+        $issue = $comment->commentable;
+
+        return $issue instanceof ModIssue && $issue->mod->isAuthorOrOwner($user);
     }
 
     /**

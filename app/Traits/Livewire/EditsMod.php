@@ -71,6 +71,8 @@ trait EditsMod
 
     public bool $listsDisabled = false;
 
+    public bool $issuesEnabled = false;
+
     /**
      * Add a new source code link input.
      */
@@ -144,6 +146,7 @@ trait EditsMod
         $this->cheatNotice = (bool) $mod->cheat_notice;
         $this->addonsDisabled = (bool) $mod->addons_disabled;
         $this->listsDisabled = (bool) $mod->lists_disabled;
+        $this->issuesEnabled = (bool) $mod->issues_enabled;
 
         /** @var array<int> $authorIds */
         $authorIds = $mod->additionalAuthors->pluck('id')->toArray();
@@ -189,6 +192,7 @@ trait EditsMod
             'cheatNotice' => 'boolean',
             'addonsDisabled' => 'boolean',
             'listsDisabled' => 'boolean',
+            'issuesEnabled' => 'boolean',
         ];
     }
 
@@ -304,6 +308,7 @@ trait EditsMod
         $mod->cheat_notice = $this->cheatNotice;
         $mod->addons_disabled = $this->addonsDisabled;
         $mod->lists_disabled = $this->listsDisabled;
+        $mod->issues_enabled = $this->issuesEnabled;
         $mod->published_at = $this->publishedAtValue($timezone);
 
         if ($this->thumbnail instanceof UploadedFile) {

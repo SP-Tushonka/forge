@@ -69,6 +69,10 @@ Route::middleware('auth.banned')->group(function (): void {
         ->where(['modId' => '[0-9]+', 'slug' => '(?!edit)[a-z0-9-]+'])
         ->name('mod.show');
 
+    Route::livewire('/mod/{modId}/{slug}/issues/{number}', 'pages::mod-issue.show')
+        ->where(['modId' => '[0-9]+', 'slug' => '[a-z0-9-]+', 'number' => '[0-9]+'])
+        ->name('mod.issue.show');
+
     Route::get('/mod/download/{mod}/{slug}/{version}', [ModVersionController::class, 'show'])
         ->where(['mod' => '[0-9]+', 'slug' => '[a-z0-9-]+'])
         ->name('mod.version.download');
@@ -171,6 +175,10 @@ Route::middleware('auth.banned')->group(function (): void {
         Route::livewire('/mod/{modId}/{slug}/stats', 'pages::mod.stats')
             ->where(['modId' => '[0-9]+'])
             ->name('mod.stats');
+
+        Route::livewire('/mod/{modId}/{slug}/issues/create', 'pages::mod-issue.create')
+            ->where(['modId' => '[0-9]+', 'slug' => '[a-z0-9-]+'])
+            ->name('mod.issue.create');
 
         Route::livewire('/mod/{mod}/version/create', 'pages::mod-version.create')
             ->where(['mod' => '[0-9]+'])

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\IssueNotificationLevel;
 use App\Models\User;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
@@ -19,6 +20,8 @@ new class extends Component
 
     public bool $emailModerationNotificationsEnabled = true;
 
+    public string $issueNotifications = 'all';
+
     public function mount(): void
     {
         $user = Auth::user();
@@ -27,6 +30,12 @@ new class extends Component
         $this->emailReplyNotificationsEnabled = $user->email_reply_notifications_enabled ?? true;
         $this->emailChatNotificationsEnabled = $user->email_chat_notifications_enabled ?? true;
         $this->emailModerationNotificationsEnabled = $user->email_moderation_notifications_enabled ?? true;
+        $this->issueNotifications = $user?->issueNotificationLevel()->value ?? IssueNotificationLevel::All->value;
+    }
+
+    public function updatedIssueNotifications(): void
+    {
+        $this->updateNotificationPreferences();
     }
 
     public function updateNotificationPreferences(): void
@@ -39,6 +48,7 @@ new class extends Component
             'email_comment_notifications_enabled' => $this->emailCommentNotificationsEnabled,
             'email_reply_notifications_enabled' => $this->emailReplyNotificationsEnabled,
             'email_chat_notifications_enabled' => $this->emailChatNotificationsEnabled,
+            'issue_notifications' => IssueNotificationLevel::tryFrom($this->issueNotifications) ?? IssueNotificationLevel::All,
         ];
 
         if ($user->isModOrAdmin()) {

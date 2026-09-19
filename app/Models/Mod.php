@@ -38,6 +38,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -70,6 +71,8 @@ use Stevebauman\Purify\Facades\Purify;
  * @property array<string, string>|null $comment_version_colors
  * @property bool $addons_disabled
  * @property bool $lists_disabled
+ * @property bool $issues_enabled
+ * @property int $last_issue_number
  * @property bool $profile_binding_notice_disabled
  * @property bool $cheat_notice
  * @property CarbonImmutable|null $created_at
@@ -263,6 +266,38 @@ final class Mod extends Model implements Commentable, Reactable, Reportable, Tra
     public function endorsements(): HasMany
     {
         return $this->hasMany(ModEndorsement::class);
+    }
+
+    /**
+     * @return HasMany<ModIssue, $this>
+     */
+    public function issues(): HasMany
+    {
+        return $this->hasMany(ModIssue::class);
+    }
+
+    /**
+     * @return HasMany<ModIssueBan, $this>
+     */
+    public function issueBans(): HasMany
+    {
+        return $this->hasMany(ModIssueBan::class);
+    }
+
+    public function isIssueBanned(User $user): bool
+    {
+        return $this->issueBans()->where('user_id', $user->id)->active()->exists();
+    }
+
+    /**
+     * The owner and co-authors, who triage this mod's issues.
+     *
+     * @return SupportCollection<int, User>
+     */
+    public function managers(): SupportCollection
+    {
+        /** @var SupportCollection<int, User> */
+        return collect([$this->owner])->merge($this->additionalAuthors)->filter()->unique('id')->values();
     }
 
     /**
@@ -915,6 +950,8 @@ final class Mod extends Model implements Commentable, Reactable, Reportable, Tra
             'comment_version_colors' => 'array',
             'addons_disabled' => 'boolean',
             'lists_disabled' => 'boolean',
+            'issues_enabled' => 'boolean',
+            'last_issue_number' => 'integer',
             'profile_binding_notice_disabled' => 'boolean',
             'cheat_notice' => 'boolean',
             'discord_notification_sent' => 'boolean',

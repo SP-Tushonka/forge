@@ -141,6 +141,7 @@
                 <flux:checkbox wire:model="commentsDisabled" :label="__('Comments disabled')" />
                 <flux:checkbox wire:model="addonsDisabled" :label="__('Addons disabled')" />
                 <flux:checkbox wire:model="listsDisabled" :label="__('Lists disabled')" />
+                <flux:checkbox wire:model="issuesEnabled" :label="__('Issues enabled')" />
                 <flux:checkbox wire:model="cheatNotice" :label="__('Show cheat notice')" />
                 <flux:checkbox wire:model="disableProfileBindingNotice" :label="__('Hide profile binding notice')" />
             </div>

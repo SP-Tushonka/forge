@@ -17,6 +17,7 @@ use App\Models\Addon;
 use App\Models\Comment;
 use App\Models\CommentVersion;
 use App\Models\Mod;
+use App\Models\ModIssue;
 use App\Models\User;
 use App\Rules\DoesNotContainLogFile;
 use App\Support\BatchPermissions;
@@ -68,6 +69,7 @@ new class extends Component
         'showOwnerPinAction',
         'viewVersionHistory',
         'react',
+        'banFromIssues',
     ];
 
     /**
@@ -231,6 +233,11 @@ new class extends Component
         $commentable = $this->commentable;
 
         if (($commentable instanceof Mod || $commentable instanceof Addon) && $commentable->disabled) {
+            CachedGate::authorize('view', $commentable);
+        }
+
+        // An issue can be deleted, or its mod unpublished, while the thread is open
+        if ($commentable instanceof ModIssue) {
             CachedGate::authorize('view', $commentable);
         }
     }
@@ -1407,6 +1414,11 @@ new class extends Component
         // Eager-load additionalAuthors if this is a Mod to prevent N+1 in policy checks
         if ($commentable instanceof Mod && ! $commentable->relationLoaded('additionalAuthors')) {
             $commentable->load('additionalAuthors');
+        }
+
+        // Issue comment policies walk issue -> mod -> owner/authors for every comment
+        if ($commentable instanceof ModIssue) {
+            $commentable->loadMissing(['mod.owner', 'mod.additionalAuthors']);
         }
 
         // Set the commentable relation on each comment

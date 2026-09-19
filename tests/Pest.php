@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Models\Mod;
+use App\Models\ModVersion;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
@@ -44,4 +46,24 @@ function waitForWrite(AwaitableWebpage $page, Closure $landed, float $seconds = 
     while (! $landed() && microtime(true) < $deadline) {
         $page->wait(0.1);
     }
+}
+
+/**
+ * A publicly visible mod with issues switched on. The legacy version (empty SPT constraint) keeps it visible to guests
+ * without seeding SPT versions.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function modWithIssues(array $attributes = []): Mod
+{
+    $mod = Mod::factory()->create(['issues_enabled' => true, 'published_at' => now()->subDay(), ...$attributes]);
+
+    ModVersion::factory()->recycle($mod)->create([
+        'version' => '1.0.0',
+        'spt_version_constraint' => '',
+        'published_at' => now()->subDay(),
+        'disabled' => false,
+    ]);
+
+    return $mod;
 }

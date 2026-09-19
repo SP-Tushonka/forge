@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
+use App\Models\ModIssue;
 use App\Models\User;
 use App\Services\ModListService;
 use App\Services\ThumbnailService;
@@ -46,5 +47,10 @@ final readonly class UserObserver
 
         $this->thumbnailService->deleteVariants($disk, $user->profile_photo_variants);
         $this->thumbnailService->deleteVariants($disk, $user->cover_photo_variants);
+
+        // The mod_issues cascade would skip ModIssue's forceDeleting hook and orphan the discussion on their issues.
+        ModIssue::withTrashed()->where('user_id', $user->id)->each(function (ModIssue $issue): void {
+            $issue->forceDelete();
+        });
     }
 }

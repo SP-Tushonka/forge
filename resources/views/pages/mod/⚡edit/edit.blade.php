@@ -405,6 +405,18 @@
                                 </flux:checkbox.group>
                             </flux:field>
 
+                            <flux:field class="col-span-6">
+                                <flux:checkbox.group label="Issues">
+                                    <flux:checkbox
+                                        value="true"
+                                        wire:model.blur="issuesEnabled"
+                                        label="Enable Issues"
+                                        description="Adds an Issues tab where users can report bugs and request features. You and your co-authors can triage, close and lock issues. Turning this off hides existing issues from everyone except you, your co-authors and staff."
+                                    />
+                                </flux:checkbox.group>
+                                <x-mod-issue.beta-notice class="mt-3" />
+                            </flux:field>
+
                             <div class="col-span-6">
                                 <flux:heading>Comment Version Tags</flux:heading>
                                 <flux:text class="mt-1">
@@ -464,6 +476,20 @@
                         >{{ __('Update Mod') }}</flux:button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <div class="mt-10 md:grid md:grid-cols-3 md:gap-6">
+            <div class="px-4 sm:px-0 md:col-span-1">
+                <h3 class="text-lg font-medium text-gray-100">{{ __('Issue Bans') }}</h3>
+                <p class="my-2 text-sm text-gray-400">
+                    {{ __('Members barred from opening or commenting on this mod\'s issues.') }}</p>
+            </div>
+            <div class="mt-5 md:col-span-2 md:mt-0">
+                <livewire:mod.issue-bans
+                    wire:key="mod-issue-bans-{{ $mod->id }}"
+                    :mod-id="$mod->id"
+                />
             </div>
         </div>
     </div>

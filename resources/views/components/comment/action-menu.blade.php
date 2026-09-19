@@ -35,7 +35,10 @@
             data-test="comment-actions-{{ $comment->id }}"
         />
         <flux:menu class="action-comments">
-            @if ($permissions->can($comment->id, 'modOwnerSoftDelete') || $permissions->can($comment->id, 'modOwnerRestore') || $permissions->can($comment->id, 'showOwnerPinAction'))
+            @if ($permissions->can($comment->id, 'modOwnerSoftDelete') ||
+                    $permissions->can($comment->id, 'modOwnerRestore') ||
+                    $permissions->can($comment->id, 'showOwnerPinAction') ||
+                    $permissions->can($comment->id, 'banFromIssues'))
                 <flux:menu.group heading="Author Actions">
                     @if ($permissions->can($comment->id, 'showOwnerPinAction'))
                         @if ($comment->isPinned())
@@ -77,6 +80,16 @@
                                 Soft Delete
                             </flux:menu.item>
                         @endif
+                    @endif
+
+                    @if ($permissions->can($comment->id, 'banFromIssues'))
+                        <flux:menu.item
+                            x-on:click="$dispatch('ban-from-issues', { userId: {{ $comment->user_id }} })"
+                            icon:trailing="no-symbol"
+                            data-test="ban-from-issues-{{ $comment->id }}"
+                        >
+                            {{ __('Ban from issues') }}
+                        </flux:menu.item>
                     @endif
                 </flux:menu.group>
             @endif

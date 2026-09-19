@@ -44,5 +44,19 @@
                 @endif
             </flux:checkbox.group>
         </flux:field>
+
+        <flux:radio.group
+            wire:model.live="issueNotifications"
+            :label="__('Issue Notifications')"
+            :description="__('New issues on your mods, and status changes, comments and released fixes on issues you follow. You can also mute one issue, or a whole mod, from its page.')"
+            class="mt-6"
+        >
+            @foreach (App\Enums\IssueNotificationLevel::cases() as $level)
+                <flux:radio
+                    value="{{ $level->value }}"
+                    :label="$level->label()"
+                />
+            @endforeach
+        </flux:radio.group>
     </x-slot>
 </x-action-section>

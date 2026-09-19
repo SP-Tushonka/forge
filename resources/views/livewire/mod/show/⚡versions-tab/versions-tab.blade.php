@@ -34,6 +34,7 @@
                 <x-mod.version-card
                     :version="$version"
                     :latest-version-id="$this->latestVersionId"
+                    :fixed-issues="$this->fixedIssues[$version->version] ?? []"
                 />
             </div>
         @endcachedCan

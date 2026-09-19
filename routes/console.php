@@ -16,6 +16,7 @@ use App\Jobs\CleanupVerificationArtifactsJob;
 use App\Jobs\ExpireStaleModClaimsJob;
 use App\Jobs\FetchCloudflareApiAnalyticsJob;
 use App\Jobs\FetchCloudflareVisitorStatsJob;
+use App\Jobs\NotifyReleasedIssueFixes;
 use App\Jobs\ProcessPinnedModVersionPublishDates;
 use App\Jobs\PruneModStatsJob;
 use App\Jobs\SearchSyncJob;
@@ -32,6 +33,7 @@ Schedule::command(EnsureFavouritesLists::class)->daily()->onOneServer();
 Schedule::job(new UpdateFavouritesJob)->hourly()->onOneServer()->withoutOverlapping();
 Schedule::job(new UpdateEndorsementsJob)->hourly()->onOneServer()->withoutOverlapping();
 Schedule::job(new ExpireStaleModClaimsJob)->hourly()->onOneServer()->withoutOverlapping();
+Schedule::job(new NotifyReleasedIssueFixes)->everyTenMinutes()->onOneServer()->withoutOverlapping();
 Schedule::job(new AuditCustomLicensedModsJob)->daily()->at('01:00')->onOneServer()->withoutOverlapping();
 
 // Mod stats dashboard: reconcile today and yesterday every 15 minutes, re-check the rest of Cloudflare's 30-day window

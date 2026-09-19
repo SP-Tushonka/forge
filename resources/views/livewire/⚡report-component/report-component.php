@@ -8,6 +8,7 @@ use App\Enums\TrackingEventType;
 use App\Facades\Track;
 use App\Models\Comment;
 use App\Models\Mod;
+use App\Models\ModIssue;
 use App\Models\ModList;
 use App\Models\Report;
 use App\Models\User;
@@ -82,6 +83,7 @@ new class extends Component
         return match ($this->reportableType) {
             Mod::class => __('Report Mod'),
             ModList::class => __('Report List'),
+            ModIssue::class => __('Report Issue'),
             default => __('Report'),
         };
     }
@@ -136,6 +138,11 @@ new class extends Component
             $mod = Mod::query()->find($this->reportableId);
             if ($mod) {
                 Track::event(TrackingEventType::MOD_REPORT, $mod);
+            }
+        } elseif ($this->reportableType === ModIssue::class) {
+            $issue = ModIssue::query()->find($this->reportableId);
+            if ($issue) {
+                Track::event(TrackingEventType::ISSUE_REPORT, $issue);
             }
         }
 
