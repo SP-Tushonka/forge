@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\ModStats;
+namespace App\Support\ModStats;
 
 use App\Models\Dependency;
 use App\Models\Mod;

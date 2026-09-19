@@ -8,7 +8,7 @@ use App\Models\ModCountryDailyDownload;
 use App\Models\ModDailyStat;
 use App\Models\ModVersion;
 use App\Models\ModVersionDailyDownload;
-use App\Services\ModStats\ModStatsWriter;
+use App\Support\ModStats\ModStatsWriter;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Queue;
 

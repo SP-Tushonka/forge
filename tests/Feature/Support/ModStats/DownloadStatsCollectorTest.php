@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Enums\TrackingEventType;
 use App\Models\Mod;
 use App\Models\ModVersion;
-use App\Services\ModStats\DownloadStatsCollector;
+use App\Support\ModStats\DownloadStatsCollector;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;

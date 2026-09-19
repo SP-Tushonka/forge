@@ -11,9 +11,9 @@ use App\Models\ModVersion;
 use App\Models\ModVersionDailyDownload;
 use App\Models\SptVersion;
 use App\Models\User;
-use App\Services\ModStats\ModStatsService;
-use App\Services\ModStats\ModStatsState;
+use App\Services\ModStatsService;
 use App\Support\DataTransferObjects\StatsRange;
+use App\Support\ModStats\ModStatsState;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Queue;
 

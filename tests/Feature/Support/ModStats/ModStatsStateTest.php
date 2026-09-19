@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\ModStatsSource;
 use App\Models\ModDailyStat;
-use App\Services\ModStats\ModStatsState;
+use App\Support\ModStats\ModStatsState;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Queue;
 

@@ -8,7 +8,7 @@ use App\Models\Mod;
 use App\Models\ModEndorsement;
 use App\Models\ModListItem;
 use App\Models\Reaction;
-use App\Services\ModStats\EngagementStatsQuery;
+use App\Support\ModStats\EngagementStatsQuery;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Queue;
 

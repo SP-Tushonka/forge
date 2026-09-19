@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Mod;
 use App\Models\Scopes\PublishedScope;
-use App\Services\ModStats\ModStatsService;
+use App\Services\ModStatsService;
 use App\Support\DataTransferObjects\StatsRange;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;

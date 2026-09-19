@@ -6,7 +6,7 @@ use App\Models\Dependency;
 use App\Models\Mod;
 use App\Models\ModVersion;
 use App\Models\SptVersion;
-use App\Services\ModStats\DownstreamModsQuery;
+use App\Support\ModStats\DownstreamModsQuery;
 use Illuminate\Support\Facades\Queue;
 
 beforeEach(function (): void {

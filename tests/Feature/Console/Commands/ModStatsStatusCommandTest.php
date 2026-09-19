@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\ModStatsSource;
-use App\Services\ModStats\ModStatsState;
+use App\Support\ModStats\ModStatsState;
 use Carbon\CarbonImmutable;
 
 beforeEach(function (): void {

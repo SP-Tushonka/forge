@@ -6,7 +6,7 @@ use App\Enums\ModStatsSource;
 use App\Jobs\SyncModStatsForDayJob;
 use App\Models\ModDailyStat;
 use App\Models\ModVersion;
-use App\Services\ModStats\ModStatsState;
+use App\Support\ModStats\ModStatsState;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;

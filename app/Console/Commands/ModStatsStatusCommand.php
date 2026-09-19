@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Enums\ModStatsSource;
-use App\Services\ModStats\ModStatsState;
+use App\Support\ModStats\ModStatsState;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;

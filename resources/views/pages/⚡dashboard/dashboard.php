@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
-use App\Services\ModStats\ModStatsService;
+use App\Services\ModStatsService;
 use App\Support\DataTransferObjects\StatsRange;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;

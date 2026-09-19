@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\ModStats;
+namespace App\Support\ModStats;
 
 use App\Enums\TrackingEventType;
 use App\Models\ModVersion;

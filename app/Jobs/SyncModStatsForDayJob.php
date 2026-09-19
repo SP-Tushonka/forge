@@ -6,9 +6,9 @@ namespace App\Jobs;
 
 use App\Enums\ModStatsSource;
 use App\Services\CloudflareAnalyticsService;
-use App\Services\ModStats\DownloadStatsCollector;
-use App\Services\ModStats\ModStatsState;
-use App\Services\ModStats\ModStatsWriter;
+use App\Support\ModStats\DownloadStatsCollector;
+use App\Support\ModStats\ModStatsState;
+use App\Support\ModStats\ModStatsWriter;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;

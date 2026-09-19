@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\ModStats;
+namespace App\Services;
 
 use App\Enums\ModStatsSource;
 use App\Models\Mod;
@@ -12,6 +12,10 @@ use App\Models\ModVersion;
 use App\Models\ModVersionDailyDownload;
 use App\Models\User;
 use App\Support\DataTransferObjects\StatsRange;
+use App\Support\ModStats\DownloadStatsCollector;
+use App\Support\ModStats\DownstreamModsQuery;
+use App\Support\ModStats\EngagementStatsQuery;
+use App\Support\ModStats\ModStatsState;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
