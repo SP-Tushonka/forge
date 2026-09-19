@@ -92,11 +92,19 @@ describe('update', function (): void {
             ->and($this->policy->update($this->user, $this->issue))->toBeFalse();
     });
 
-    it('stops the reporter editing a closed issue, but not the managers', function (): void {
+    it('stops the reporter editing a closed issue, but not staff', function (): void {
         $this->issue->update(['status' => ModIssueStatus::Completed]);
 
         expect($this->policy->update($this->reporter, $this->issue))->toBeFalse()
-            ->and($this->policy->update($this->author, $this->issue))->toBeTrue();
+            ->and($this->policy->update($this->author, $this->issue))->toBeFalse()
+            ->and($this->policy->update($this->moderator, $this->issue))->toBeTrue();
+    });
+
+    // Rewriting the text belongs to whoever wrote it. A mod's managers moderate issues instead, which is `manage`.
+    it('keeps a mod author and owner out of an open issue', function (): void {
+        expect($this->policy->update($this->author, $this->issue))->toBeFalse()
+            ->and($this->policy->update($this->owner, $this->issue))->toBeFalse()
+            ->and($this->policy->manage($this->owner, $this->issue))->toBeTrue();
     });
 });
 
