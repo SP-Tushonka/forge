@@ -7,16 +7,28 @@
     :anchor-id="$manager->getCommentHashId($comment->id)"
 >
     <x-slot:headerTrailing>
-        @if ($comment->parent_id && $comment->parent)
-            <a
-                href="#{{ $manager->getCommentHashId($comment->parent_id) }}"
-                @class([
-                    'ml-2 text-xs text-slate-400 underline [&_span]:underline hover:text-cyan-400',
-                    'mr-10' => $permissions->can($comment->id, 'viewActions'),
-                ])
-            >
-                {{ __('Replying to') }} @<x-user-name :user="$comment->parent->user" />
-            </a>
+        @if (($comment->parent_id && $comment->parent) || $comment->commentable_version !== null)
+            {{-- The action menu is absolutely positioned, so mr-10 keeps these clear of the gear. --}}
+            <div @class([
+                'ml-2 flex min-w-0 flex-wrap items-center justify-end gap-2',
+                'mr-10' => $permissions->can($comment->id, 'viewActions'),
+            ])>
+                @if ($comment->parent_id && $comment->parent)
+                    <a
+                        href="#{{ $manager->getCommentHashId($comment->parent_id) }}"
+                        class="text-xs text-slate-400 underline hover:text-cyan-400 [&_span]:underline"
+                    >
+                        {{ __('Replying to') }} @<x-user-name :user="$comment->parent->user" />
+                    </a>
+                @endif
+                @if ($comment->commentable_version !== null)
+                    <x-comment.version-tag
+                        :comment="$comment"
+                        :latest="$manager->latestCommentableVersion"
+                        :color="$manager->commentVersionTagColor($comment->commentable_version)"
+                    />
+                @endif
+            </div>
         @endif
         @if ($permissions->can($comment->id, 'viewActions'))
             <x-comment.action-menu

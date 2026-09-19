@@ -7,8 +7,12 @@ namespace App\Models;
 use App\Contracts\Commentable;
 use App\Contracts\Reportable;
 use App\Contracts\Trackable;
+use App\Contracts\VersionedCommentable;
+use App\Enums\VersionChange;
+use App\Enums\VersionTagColor;
 use App\Models\Scopes\PublishedScope;
 use App\Observers\AddonObserver;
+use App\Support\Api\V0\PublicViewpoint;
 use App\Traits\HasComments;
 use App\Traits\HasReports;
 use Carbon\CarbonImmutable;
@@ -78,7 +82,7 @@ use Stevebauman\Purify\Facades\Purify;
 #[Appends([
     'detail_url',
 ])]
-final class Addon extends Model implements Commentable, Reportable, Trackable
+final class Addon extends Model implements Commentable, Reportable, Trackable, VersionedCommentable
 {
     /** @use HasComments<self> */
     use HasComments;
@@ -386,6 +390,25 @@ final class Addon extends Model implements Commentable, Reportable, Trackable
     public function getCommentTabHash(): string
     {
         return 'comments';
+    }
+
+    public function getCommentableVersion(): ?string
+    {
+        $version = PublicViewpoint::run(fn (): mixed => $this->versions()
+            ->where('disabled', false)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now())
+            ->value('version'));
+
+        return is_string($version) ? $version : null;
+    }
+
+    /**
+     * Addons have no colour setting of their own, so they always use the site defaults.
+     */
+    public function getCommentVersionTagColor(VersionChange $change): VersionTagColor
+    {
+        return $change->defaultTagColor();
     }
 
     /**

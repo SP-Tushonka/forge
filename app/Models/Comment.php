@@ -42,6 +42,7 @@ use Stevebauman\Purify\Facades\Purify;
  * @property int $user_id
  * @property int $commentable_id
  * @property string $commentable_type
+ * @property string|null $commentable_version
  * @property string $user_ip
  * @property string $user_agent
  * @property string $referrer

@@ -405,6 +405,29 @@
                                 </flux:checkbox.group>
                             </flux:field>
 
+                            <div class="col-span-6">
+                                <flux:heading>Comment Version Tags</flux:heading>
+                                <flux:text class="mt-1">
+                                    Each comment is tagged with the version that was the latest when it was written.
+                                    Comments on the current version are always green. Choose how strongly to highlight
+                                    comments written for a different version.
+                                </flux:text>
+                                <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                    @foreach (App\Enums\VersionChange::cases() as $change)
+                                        <flux:select
+                                            wire:model.blur="commentVersionColors.{{ $change->value }}"
+                                            :label="$change->label()"
+                                        >
+                                            @foreach (App\Enums\VersionTagColor::cases() as $color)
+                                                <flux:select.option value="{{ $color->value }}">{{ $color->label() }}
+                                                </flux:select.option>
+                                            @endforeach
+                                        </flux:select>
+                                    @endforeach
+                                </div>
+                                <flux:error name="commentVersionColors" />
+                            </div>
+
                             <flux:field class="col-span-6">
                                 <flux:checkbox.group label="Add-ons">
                                     <flux:checkbox

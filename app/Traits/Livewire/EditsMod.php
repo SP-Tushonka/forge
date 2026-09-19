@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Traits\Livewire;
 
+use App\Enums\VersionChange;
+use App\Enums\VersionTagColor;
 use App\Jobs\GenerateThumbnailVariants;
 use App\Models\Mod;
 use App\Models\SourceCodeLink;
@@ -17,6 +19,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 /**
  * The mod detail field set, shared by the public mod edit page and the staff Mod tool.
@@ -53,6 +56,9 @@ trait EditsMod
     public bool $containsAds = false;
 
     public bool $commentsDisabled = false;
+
+    /** @var array<string, string> */
+    public array $commentVersionColors = [];
 
     /** @var array<int> */
     public array $authorIds = [];
@@ -131,6 +137,9 @@ trait EditsMod
 
         $this->containsAds = (bool) $mod->contains_ads;
         $this->commentsDisabled = (bool) $mod->comments_disabled;
+        foreach (VersionChange::cases() as $change) {
+            $this->commentVersionColors[$change->value] = $mod->getCommentVersionTagColor($change)->value;
+        }
         $this->disableProfileBindingNotice = (bool) $mod->profile_binding_notice_disabled;
         $this->cheatNotice = (bool) $mod->cheat_notice;
         $this->addonsDisabled = (bool) $mod->addons_disabled;
@@ -172,6 +181,8 @@ trait EditsMod
             'publishedAtTime' => 'nullable|date_format:H:i',
             'containsAds' => 'boolean',
             'commentsDisabled' => 'boolean',
+            'commentVersionColors' => 'required|array:'.implode(',', array_keys(VersionChange::defaultTagColors())),
+            'commentVersionColors.*' => ['required', Rule::enum(VersionTagColor::class)],
             'authorIds' => 'array|max:10',
             'authorIds.*' => ['exists:users,id', 'distinct', new NoBlockRelationship($mod->owner, $this->existingAuthorIds($mod))],
             'disableProfileBindingNotice' => 'boolean',
@@ -286,6 +297,9 @@ trait EditsMod
         $mod->category_id = (int) $this->category;
         $mod->contains_ads = $this->containsAds;
         $mod->comments_disabled = $this->commentsDisabled;
+        // Only overrides are stored, so a mod left on the defaults follows any later change to them.
+        $colorOverrides = array_diff_assoc($this->commentVersionColors, VersionChange::defaultTagColors());
+        $mod->comment_version_colors = $colorOverrides === [] ? null : $colorOverrides;
         $mod->profile_binding_notice_disabled = $this->disableProfileBindingNotice;
         $mod->cheat_notice = $this->cheatNotice;
         $mod->addons_disabled = $this->addonsDisabled;

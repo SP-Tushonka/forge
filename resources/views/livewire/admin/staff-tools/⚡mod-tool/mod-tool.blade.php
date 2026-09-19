@@ -145,6 +145,20 @@
                 <flux:checkbox wire:model="disableProfileBindingNotice" :label="__('Hide profile binding notice')" />
             </div>
 
+            <div>
+                <flux:heading size="sm">{{ __('Comment version tag colours') }}</flux:heading>
+                <div class="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    @foreach (App\Enums\VersionChange::cases() as $change)
+                        <flux:select wire:model="commentVersionColors.{{ $change->value }}" :label="$change->label()">
+                            @foreach (App\Enums\VersionTagColor::cases() as $color)
+                                <flux:select.option value="{{ $color->value }}">{{ $color->label() }}</flux:select.option>
+                            @endforeach
+                        </flux:select>
+                    @endforeach
+                </div>
+                <flux:error name="commentVersionColors" />
+            </div>
+
             <flux:textarea
                 wire:model="reason"
                 data-test="mod-tool-reason"
