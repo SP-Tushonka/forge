@@ -139,19 +139,24 @@
         </flux:text>
 
         {{-- The catalogue is rendered once and filtered in the browser: a server-side filter meant a round trip per
-             keystroke, which is why this list used to be capped at 120. Artwork is lazy, so only what scrolls into
-             view is fetched. --}}
-        <div x-data="{
-            term: '',
-            hovered: '',
-            all: @js($this->candidates),
-            base: '{{ asset('vendor/twemoji/svg') }}',
-            get filtered() {
-                const term = this.term.trim().toLowerCase();
-        
-                return term === '' ? this.all : this.all.filter((item) => item.shortcode.includes(term));
-            },
-        }">
+             keystroke, which is why this list used to be capped at 120. Artwork is fetched by x-intersect because
+             loading="lazy" applies its viewport-sized margin inside scrollers too, so it fetched and decoded all
+             ~1,500 SVGs on every visit, stalling the page for seconds. wire:ignore keeps morphs from re-cloning the
+             whole x-for on each request and from stripping the src attributes that x-intersect set. --}}
+        <div
+            wire:ignore
+            x-data="{
+                term: '',
+                hovered: '',
+                all: @js($this->candidates),
+                base: '{{ asset('vendor/twemoji/svg') }}',
+                get filtered() {
+                    const term = this.term.trim().toLowerCase();
+            
+                    return term === '' ? this.all : this.all.filter((item) => item.shortcode.includes(term));
+                },
+            }"
+        >
             <div class="mb-4 flex items-center gap-3">
                 <flux:input
                     x-model="term"
@@ -195,10 +200,9 @@
                             :aria-label="':' + item.shortcode + ':'"
                         >
                             <img
-                                :src="base + '/' + item.codepoints + '.svg'"
+                                x-intersect.once="$el.src = base + '/' + item.codepoints + '.svg'"
                                 :alt="':' + item.shortcode + ':'"
                                 class="size-6"
-                                loading="lazy"
                             />
                         </button>
                     </template>
