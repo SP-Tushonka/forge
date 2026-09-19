@@ -82,6 +82,39 @@ it('lets the reporter edit and marks the issue edited', function (): void {
         ->and($fresh?->edited_at)->not->toBeNull();
 });
 
+it('stops the mod owner rewriting a reporter issue', function (): void {
+    Livewire::actingAs($this->mod->owner)
+        ->test('pages::mod-issue.show', $this->params)
+        ->call('startEditing')
+        ->assertForbidden();
+
+    expect($this->mod->owner->can('update', $this->issue))->toBeFalse()
+        // The owner still moderates the issue; only rewriting its text is off limits.
+        ->and($this->mod->owner->can('manage', $this->issue))->toBeTrue();
+});
+
+it('lets a moderator edit any issue', function (): void {
+    $moderator = User::factory()->moderator()->create();
+
+    Livewire::actingAs($moderator)
+        ->test('pages::mod-issue.show', $this->params)
+        ->call('startEditing')
+        ->set('editTitle', 'Crash on raid start, moderated')
+        ->call('saveEdit')
+        ->assertHasNoErrors();
+
+    expect($this->issue->fresh()?->title)->toBe('Crash on raid start, moderated');
+});
+
+// The edit form's markdown editor calls this on whatever component renders it; without it, Preview threw
+// MethodNotFoundException.
+it('renders a markdown preview for the edit form', function (): void {
+    $component = Livewire::actingAs($this->reporter)->test('pages::mod-issue.show', $this->params);
+
+    expect($component->instance()->previewMarkdown('**Bold** text', 'comments'))
+        ->toContain('<strong>Bold</strong>');
+});
+
 it('mutes the issue when a follower unsubscribes', function (): void {
     $follower = User::factory()->create();
     $this->issue->subscribeUser($follower);

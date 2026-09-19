@@ -75,13 +75,17 @@ final class ModIssuePolicy
         return Response::allow();
     }
 
+    /**
+     * Rewriting the text belongs to whoever wrote it. Mod authors and owners moderate issues - status, lock, delete -
+     * but do not put words in a reporter's mouth, so this ability deliberately skips manages().
+     */
     public function update(User $user, ModIssue $issue): bool
     {
         if (! $user->hasVerifiedEmail() || $issue->trashed()) {
             return false;
         }
 
-        if ($this->manages($user, $issue->mod)) {
+        if ($user->isModOrAdmin()) {
             return true;
         }
 

@@ -81,6 +81,60 @@ describe('Markdown editor', function (): void {
         expect($mod->fresh()->description)->toBe('**make me bold**');
     });
 
+    it('opens at the rows asked for however long the text is, and stretches when dragged', function (): void {
+        $mod = editableMod(implode("\n\n", array_fill(0, 12, 'A paragraph of the description that wraps onto its own line.')));
+        $field = 'textarea[name="description"]';
+
+        $this->actingAs($mod->owner);
+
+        $page = visit(route('mod.edit', ['modId' => $mod->id]))->assertPresent($field);
+
+        // The mod form asks for six rows: six lines of 14px text at 1.6, plus 12px padding top and bottom. A long
+        // description scrolls inside that rather than opening hundreds of lines tall.
+        $page->assertScript(
+            "(() => {
+                const input = document.querySelector('{$field}');
+
+                return Math.abs(input.getBoundingClientRect().height - 158) <= 2 && input.scrollHeight > 400;
+            })()",
+            true,
+        );
+
+        // Scrolling has to carry the overlay with it, since that is the layer the text is painted on.
+        $page->assertScript(
+            "(() => {
+                const input = document.querySelector('{$field}');
+                input.scrollTop = 200;
+                input.dispatchEvent(new Event('scroll', { bubbles: true }));
+
+                return input.scrollTop === 200 && document.querySelector('.overtype-preview').scrollTop === 200;
+            })()",
+            true,
+        );
+
+        // OverType pins its own textarea, so the frame carries the grip the old textarea had.
+        $page->assertScript(
+            "getComputedStyle(document.querySelector('.markdown-editor-frame-resizable')).resize",
+            'vertical',
+        );
+
+        // Dragging the grip writes a height on the frame. The textarea and the overlay that paints its text both follow,
+        // or anything typed past the overlay would be invisible.
+        $page->script("document.querySelector('.markdown-editor-frame-resizable').style.height = '600px'");
+
+        $page->assertScript(
+            "(() => {
+                const input = document.querySelector('{$field}').getBoundingClientRect().height;
+                const overlay = document.querySelector('.overtype-preview').getBoundingClientRect().height;
+
+                return input > 500 && Math.abs(input - overlay) < 1;
+            })()",
+            true,
+        );
+
+        $page->assertNoJavaScriptErrors();
+    });
+
     it('lets the emoji menu take Enter on a list line without continuing the list', function (): void {
         $mod = Mod::factory()->create(['published_at' => now()->subHour()]);
         ModVersion::factory()->recycle($mod)->create(['spt_version_constraint' => '1.0.0']);

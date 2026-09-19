@@ -9,6 +9,8 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use League\Flysystem\FileAttributes;
+use Throwable;
 
 #[Description('Uploads assets to Cloudflare R2')]
 #[Signature('app:upload-assets')]
@@ -20,37 +22,73 @@ final class UploadAssetsCommand extends Command
      */
     public function handle(): void
     {
-        $this->publishBuildAssets();
-        $this->publishVendorAssets();
+        $this->publishDirectory('build');
+        $this->publishDirectory('vendor');
         $this->publishStaticFiles();
     }
 
-    private function publishBuildAssets(): void
+    /**
+     * Mirrors a public directory to R2, skipping files whose content is already there. vendor/ alone holds thousands of
+     * Twemoji SVGs that only change with the package version, so one listing replaces thousands of redundant uploads.
+     */
+    private function publishDirectory(string $directory): void
     {
-        $this->info('Publishing build assets...');
+        $this->info(sprintf('Publishing %s assets...', $directory));
 
-        $assets = File::allFiles(public_path('/build'));
-        foreach ($assets as $asset) {
-            $buildDir = 'build/'.$asset->getRelativePathname();
-            $this->info('Uploading asset to: '.$buildDir);
-            Storage::disk('r2')->put($buildDir, $asset->getContents());
+        $remote = $this->remoteChecksums($directory);
+        $uploaded = 0;
+        $unchanged = 0;
+
+        foreach (File::allFiles(public_path($directory)) as $asset) {
+            $path = $directory.'/'.str_replace('\\', '/', $asset->getRelativePathname());
+
+            if (($remote[$path] ?? null) === md5_file($asset->getPathname())) {
+                $unchanged++;
+
+                continue;
+            }
+
+            $this->info('Uploading asset to: '.$path);
+            Storage::disk('r2')->put($path, $asset->getContents());
+            $uploaded++;
         }
 
-        $this->info('Build assets published successfully');
+        $this->info(sprintf('%s: %d uploaded, %d unchanged', $directory, $uploaded, $unchanged));
     }
 
-    private function publishVendorAssets(): void
+    /**
+     * The MD5 of every file already on R2 under the directory, keyed by path. R2 reports a single-part upload's ETag as
+     * the MD5 of its content; a multipart ETag contains a dash, never matches, and that file is simply uploaded again.
+     * Disks whose listing carries no ETag (the local fake in tests) are asked for the checksum instead. A failed listing
+     * returns nothing, so everything is uploaded as before rather than the deploy failing.
+     *
+     * @return array<string, string>
+     */
+    private function remoteChecksums(string $directory): array
     {
-        $this->info('Publishing vendor assets...');
+        $disk = Storage::disk('r2');
+        $checksums = [];
 
-        $assets = File::allFiles(public_path('/vendor'));
-        foreach ($assets as $asset) {
-            $buildDir = 'vendor/'.$asset->getRelativePathname();
-            $this->info('Uploading asset to: '.$buildDir);
-            Storage::disk('r2')->put($buildDir, $asset->getContents());
+        try {
+            foreach ($disk->getDriver()->listContents($directory, true) as $item) {
+                if (! $item instanceof FileAttributes) {
+                    continue;
+                }
+
+                $etag = $item->extraMetadata()['ETag'] ?? null;
+                $checksum = is_string($etag) ? mb_trim($etag, '"') : $disk->checksum($item->path());
+
+                if (is_string($checksum)) {
+                    $checksums[$item->path()] = $checksum;
+                }
+            }
+        } catch (Throwable $throwable) {
+            $this->warn(sprintf('Could not list %s on R2 (%s); uploading everything.', $directory, $throwable->getMessage()));
+
+            return [];
         }
 
-        $this->info('Build assets published successfully');
+        return $checksums;
     }
 
     /**

@@ -27,6 +27,11 @@
 
     // Whatever the caller passes (maxlength, data-test) belongs on the textarea the user types into.
     $textareaProps = ['name' => $name, ...$attributes->getAttributes()];
+
+    // The height the editor opens at: the caller's rows of 14px text at 1.6, plus its 12px padding, never under the
+    // 100px the textarea this replaced used as its floor. Rendered here rather than set from JS so that a Livewire
+    // re-render cannot wipe it, and so a drag (which writes an inline height) still wins over it.
+    $editorHeight = max(100, (int) round($rows * 14 * 1.6) + 24);
 @endphp
 
 <div
@@ -151,10 +156,14 @@
                 x-on:click.outside="close()"
             >
                 {{-- The frame stays outside wire:ignore so its error border still follows validation. --}}
-                <div @class([
-                    'markdown-editor-frame',
-                    'markdown-editor-frame-invalid' => $errors->has($errorName ?? $name),
-                ])>
+                <div
+                    style="--markdown-editor-height: {{ $editorHeight }}px"
+                    @class([
+                        'markdown-editor-frame',
+                        'markdown-editor-frame-resizable',
+                        'markdown-editor-frame-invalid' => $errors->has($errorName ?? $name),
+                    ])
+                >
                     <div
                         wire:ignore
                         x-ref="host"
