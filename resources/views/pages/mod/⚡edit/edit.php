@@ -65,24 +65,6 @@ new #[Layout('layouts::base')] class extends Component
     }
 
     /**
-     * Whether the current user can lock or unlock the AI content flag.
-     */
-    #[Computed]
-    public function canLockAiContent(): bool
-    {
-        return auth()->user()?->can('lockAiContent', $this->mod) ?? false;
-    }
-
-    /**
-     * Whether the AI content flag is currently locked and the user cannot change it.
-     */
-    #[Computed]
-    public function aiContentLockedForUser(): bool
-    {
-        return $this->mod->contains_ai_content_locked && ! $this->canLockAiContent;
-    }
-
-    /**
      * Check if the selected category shows profile binding notice by default.
      */
     public function shouldShowProfileBindingField(): bool
@@ -165,7 +147,7 @@ new #[Layout('layouts::base')] class extends Component
             }
         }
 
-        $this->applyModFields($this->mod, $this->canLockAiContent, $timezone);
+        $this->applyModFields($this->mod, $timezone);
 
         // A staff member editing content they do not own is a moderation action and belongs in
         // the moderation log. This page has no reason field, so staff edits made here record a

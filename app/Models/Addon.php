@@ -7,8 +7,12 @@ namespace App\Models;
 use App\Contracts\Commentable;
 use App\Contracts\Reportable;
 use App\Contracts\Trackable;
+use App\Contracts\VersionedCommentable;
+use App\Enums\VersionChange;
+use App\Enums\VersionTagColor;
 use App\Models\Scopes\PublishedScope;
 use App\Observers\AddonObserver;
+use App\Support\Api\V0\PublicViewpoint;
 use App\Traits\HasComments;
 use App\Traits\HasReports;
 use Carbon\CarbonImmutable;
@@ -50,9 +54,6 @@ use Stevebauman\Purify\Facades\Purify;
  * @property int|null $license_id
  * @property int $downloads
  * @property bool $disabled
- * @property bool $contains_ai_content
- * @property bool $contains_ai_content_locked
- * @property string|null $custom_ai_disclosure
  * @property bool $contains_ads
  * @property bool $comments_disabled
  * @property CarbonImmutable|null $detached_at
@@ -63,7 +64,6 @@ use Stevebauman\Purify\Facades\Purify;
  * @property CarbonImmutable|null $updated_at
  * @property-read string $detail_url
  * @property-read string $description_html
- * @property-read string $custom_ai_disclosure_html
  * @property-read string|null $thumbnailUrl
  * @property-read string $thumbnailSrcset
  * @property-read Mod|null $mod
@@ -82,7 +82,7 @@ use Stevebauman\Purify\Facades\Purify;
 #[Appends([
     'detail_url',
 ])]
-final class Addon extends Model implements Commentable, Reportable, Trackable
+final class Addon extends Model implements Commentable, Reportable, Trackable, VersionedCommentable
 {
     /** @use HasComments<self> */
     use HasComments;
@@ -392,6 +392,25 @@ final class Addon extends Model implements Commentable, Reportable, Trackable
         return 'comments';
     }
 
+    public function getCommentableVersion(): ?string
+    {
+        $version = PublicViewpoint::run(fn (): mixed => $this->versions()
+            ->where('disabled', false)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now())
+            ->value('version'));
+
+        return is_string($version) ? $version : null;
+    }
+
+    /**
+     * Addons have no colour setting of their own, so they always use the site defaults.
+     */
+    public function getCommentVersionTagColor(VersionChange $change): VersionTagColor
+    {
+        return $change->defaultTagColor();
+    }
+
     /**
      * Get a human-readable display name for the reportable model.
      */
@@ -541,29 +560,6 @@ final class Addon extends Model implements Commentable, Reportable, Trackable
     }
 
     /**
-     * Generate the cleaned HTML version of the custom AI disclosure.
-     *
-     * @return Attribute<string, never>
-     */
-    protected function customAiDisclosureHtml(): Attribute
-    {
-        return Attribute::make(
-            get: function (): string {
-                if (! $this->custom_ai_disclosure) {
-                    return '';
-                }
-
-                /** @var string $clean */
-                $clean = Purify::config('description')->clean(
-                    Markdown::convert($this->custom_ai_disclosure)->getContent()
-                );
-
-                return $clean;
-            },
-        )->shouldCache();
-    }
-
-    /**
      * Get the fully qualified URL of the addon.
      *
      * @return Attribute<string, never>
@@ -614,8 +610,6 @@ final class Addon extends Model implements Commentable, Reportable, Trackable
         return [
             'thumbnail_variants' => 'array',
             'disabled' => 'boolean',
-            'contains_ai_content' => 'boolean',
-            'contains_ai_content_locked' => 'boolean',
             'contains_ads' => 'boolean',
             'comments_disabled' => 'boolean',
             'discord_notification_sent' => 'boolean',

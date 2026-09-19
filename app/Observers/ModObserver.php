@@ -7,6 +7,7 @@ namespace App\Observers;
 use App\Contracts\DependencyResolver;
 use App\Jobs\TombstoneModInListsJob;
 use App\Models\Mod;
+use App\Models\ModIssue;
 use App\Models\ModListItem;
 use App\Models\SptVersion;
 use App\Services\ThumbnailService;
@@ -79,6 +80,11 @@ final readonly class ModObserver
             ->where('listable_type', Mod::class)
             ->where('listable_id', $mod->id)
             ->delete();
+
+        // The mod_issues cascade would skip ModIssue's forceDeleting hook and orphan the issues' comments.
+        ModIssue::withTrashed()->where('mod_id', $mod->id)->each(function (ModIssue $issue): void {
+            $issue->forceDelete();
+        });
     }
 
     /**

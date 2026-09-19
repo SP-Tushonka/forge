@@ -5,13 +5,21 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Contracts\Commentable;
+use App\Contracts\Reactable;
 use App\Contracts\Reportable;
 use App\Contracts\Trackable;
+use App\Contracts\VersionedCommentable;
+use App\Enums\EmojiSurface;
 use App\Enums\FikaCompatibility;
+use App\Enums\VersionChange;
+use App\Enums\VersionTagColor;
 use App\Models\Scopes\PublishedScope;
 use App\Observers\ModObserver;
+use App\Support\Api\V0\PublicViewpoint;
+use App\Support\Markdown\EmojiRenderContext;
 use App\Support\WordCensor;
 use App\Traits\HasComments;
+use App\Traits\HasReactions;
 use App\Traits\HasReports;
 use Carbon\CarbonImmutable;
 use Database\Factories\ModFactory;
@@ -30,6 +38,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -56,14 +65,14 @@ use Stevebauman\Purify\Facades\Purify;
  * @property int $favourites_count
  * @property int $endorsements_count
  * @property bool $featured
- * @property bool $contains_ai_content
- * @property bool $contains_ai_content_locked
- * @property string|null $custom_ai_disclosure
  * @property bool $contains_ads
  * @property bool $disabled
  * @property bool $comments_disabled
+ * @property array<string, string>|null $comment_version_colors
  * @property bool $addons_disabled
  * @property bool $lists_disabled
+ * @property bool $issues_enabled
+ * @property int $last_issue_number
  * @property bool $profile_binding_notice_disabled
  * @property bool $cheat_notice
  * @property CarbonImmutable|null $created_at
@@ -72,7 +81,6 @@ use Stevebauman\Purify\Facades\Purify;
  * @property-read string $detail_url
  * @property-read string $thumbnailSrcset
  * @property-read string $description_html
- * @property-read string $custom_ai_disclosure_html
  * @property-read bool $addons_enabled
  * @property-read bool $lists_enabled
  * @property-read bool $fika_compatibility
@@ -86,6 +94,7 @@ use Stevebauman\Purify\Facades\Purify;
  * @property-read Collection<int, Addon> $addons
  * @property-read ModVersion|null $latestVersion
  * @property-read ModVersion|null $latestUpdatedVersion
+ * @property-read Collection<int, Reaction> $reactions
  *
  * @implements Commentable<self>
  */
@@ -94,13 +103,16 @@ use Stevebauman\Purify\Facades\Purify;
 #[Appends([
     'detail_url',
 ])]
-final class Mod extends Model implements Commentable, Reportable, Trackable
+final class Mod extends Model implements Commentable, Reactable, Reportable, Trackable, VersionedCommentable
 {
     /** @use HasComments<self> */
     use HasComments;
 
     /** @use HasFactory<ModFactory> */
     use HasFactory;
+
+    /** @use HasReactions<self> */
+    use HasReactions;
 
     /** @use HasReports<Mod> */
     use HasReports;
@@ -254,6 +266,48 @@ final class Mod extends Model implements Commentable, Reportable, Trackable
     public function endorsements(): HasMany
     {
         return $this->hasMany(ModEndorsement::class);
+    }
+
+    /**
+     * @return HasMany<ModIssue, $this>
+     */
+    public function issues(): HasMany
+    {
+        return $this->hasMany(ModIssue::class);
+    }
+
+    /**
+     * @return HasMany<ModIssueBan, $this>
+     */
+    public function issueBans(): HasMany
+    {
+        return $this->hasMany(ModIssueBan::class);
+    }
+
+    public function isIssueBanned(User $user): bool
+    {
+        return $this->issueBans()->where('user_id', $user->id)->active()->exists();
+    }
+
+    /**
+     * The owner and co-authors, who triage this mod's issues.
+     *
+     * @return SupportCollection<int, User>
+     */
+    public function managers(): SupportCollection
+    {
+        /** @var SupportCollection<int, User> */
+        return collect([$this->owner])->merge($this->additionalAuthors)->filter()->unique('id')->values();
+    }
+
+    /**
+     * A mod takes reactions only while it is enabled and published. Deliberately derived from instance attributes
+     * alone rather than publiclyVisibleWithoutQuery(), which returns null whenever the visibility flags were not
+     * selected and would therefore block reactions on most queries.
+     */
+    public function canReceiveReactions(): bool
+    {
+        return ! $this->disabled && $this->isPublished();
     }
 
     /**
@@ -585,6 +639,26 @@ final class Mod extends Model implements Commentable, Reportable, Trackable
     }
 
     /**
+     * Falls back to legacy versions the same way the mod page does when there are no SPT tagged ones. Resolved from the
+     * public viewpoint, because staff would otherwise count versions tied to unreleased SPT versions.
+     */
+    public function getCommentableVersion(): ?string
+    {
+        $version = PublicViewpoint::run(fn (): mixed => $this->versions()->publiclyVisible()->value('version')
+            ?? $this->versions()->legacyPubliclyVisible()->value('version'));
+
+        return is_string($version) ? $version : null;
+    }
+
+    /**
+     * The owner's chosen colour for this kind of change, or the site default when they have not picked one.
+     */
+    public function getCommentVersionTagColor(VersionChange $change): VersionTagColor
+    {
+        return VersionTagColor::tryFrom($this->comment_version_colors[$change->value] ?? '') ?? $change->defaultTagColor();
+    }
+
+    /**
      * Get a human-readable display name for the reportable model.
      */
     public function getReportableDisplayName(): string
@@ -870,13 +944,14 @@ final class Mod extends Model implements Commentable, Reportable, Trackable
             'endorsements_count' => 'integer',
             'thumbnail_variants' => 'array',
             'featured' => 'boolean',
-            'contains_ai_content' => 'boolean',
-            'contains_ai_content_locked' => 'boolean',
             'contains_ads' => 'boolean',
             'disabled' => 'boolean',
             'comments_disabled' => 'boolean',
+            'comment_version_colors' => 'array',
             'addons_disabled' => 'boolean',
             'lists_disabled' => 'boolean',
+            'issues_enabled' => 'boolean',
+            'last_issue_number' => 'integer',
             'profile_binding_notice_disabled' => 'boolean',
             'cheat_notice' => 'boolean',
             'discord_notification_sent' => 'boolean',
@@ -964,30 +1039,10 @@ final class Mod extends Model implements Commentable, Reportable, Trackable
 
                 /** @var string $clean */
                 $clean = Purify::config('description')->clean(
-                    Markdown::convert($this->description)->getContent()
-                );
-
-                return $clean;
-            }
-        )->shouldCache();
-    }
-
-    /**
-     * Generate the cleaned HTML version of the custom AI disclosure.
-     *
-     * @return Attribute<string, never>
-     */
-    protected function customAiDisclosureHtml(): Attribute
-    {
-        return Attribute::make(
-            get: function (): string {
-                if (! $this->custom_ai_disclosure) {
-                    return '';
-                }
-
-                /** @var string $clean */
-                $clean = Purify::config('description')->clean(
-                    Markdown::convert($this->custom_ai_disclosure)->getContent()
+                    EmojiRenderContext::scoped(
+                        EmojiSurface::ModDescription,
+                        fn (): string => Markdown::convert($this->description)->getContent(),
+                    )
                 );
 
                 return $clean;

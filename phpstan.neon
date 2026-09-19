@@ -32,3 +32,9 @@ parameters:
         -
             identifier: generics.notSubtype
             path: app/Contracts/Commentable.php
+        -
+            identifier: return.type
+            path: app/Traits/HasReactions.php
+        -
+            identifier: generics.notSubtype
+            path: app/Contracts/Reactable.php

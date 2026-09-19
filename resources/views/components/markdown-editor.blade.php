@@ -10,12 +10,31 @@
     'showUpdateRequestWarning' => false,
 ])
 
+@php
+    // Only what a comment will actually render. Suggesting a shortcode that would come out as literal text would be
+    // worse than not suggesting it at all.
+    $emojiChoices = resolve(App\Services\ReactionSummaryService::class)
+        ->whitelistFor(App\Enums\EmojiSurface::Comments)
+        ->map(
+            fn(App\Models\Emoji $emoji): array => [
+                'shortcode' => $emoji->shortcode,
+                'label' => $emoji->label,
+                'url' => $emoji->image_url,
+            ],
+        )
+        ->values()
+        ->all();
+
+    // Whatever the caller passes (maxlength, data-test) belongs on the textarea the user types into.
+    $textareaProps = ['name' => $name, ...$attributes->getAttributes()];
+@endphp
+
 <div
     x-data="{
         activeTab: 'write',
         previewHtml: '',
         isLoadingPreview: false,
-        content: $wire.entangle('{{ $wireModel }}').live,
+        unwatch: null,
         containsLogFile: false,
         logFilePattern: null,
         containsUpdateRequest: false,
@@ -23,20 +42,24 @@
         init() {
             this.logFilePattern = new RegExp('(?:\\[(?:Message|Info|Warning|Error)\\s*:\\s+[^\\]]+\\]|\\[\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\]\\[(?:Info|Debug|Warning|Error)\\]\\[|\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\s+[+\\-]\\d{2}:\\d{2}\\|\\d+\\.\\d+\\.\\d+\\.\\d+\\.\\d+\\||&quot;_(?:id|tpl)&quot;:\\s*&quot;[0-9a-f]{24}&quot;)');
             this.updateRequestPattern = new RegExp('(?:when\\s+(?:will|can|are|is)(?:\\s+(?:this|the))?(?:\\s+mod)?(?:\\s+be)?|can\\s+(?:you|u|it)|please|pls|plz|any\\s+(?:plans|eta|chance)(?:\\s+to)?|will\\s+there\\s+be|(?:is\\s+this\\s+)?gonna\\s+be|does\\s+(?:this\\s+)?(?:mod\\s+)?(?:work|support))\\s+(?:you\\s+)?(?:update(?:d)?|port(?:ed)?|support(?:ed)?|make\\s+(?:it\\s+)?(?:work|compatible)|new\\s+versions?)(?:\\s+(?:this|it|the\\s+mod|to|for|with))?|(?:update|port|support)(?:d)?\\s+(?:this|it|the\\s+mod|for|to)(?:\\s+(?:ver(?:sion)?|spt|latest|new|newer|\\d+\\.\\d+(?:\\.\\d+)?(?:\\.\\w+)?))?|(?:work|working|compatible)(?:ing)?\\s+(?:with|on|for)(?:\\s+(?:older\\s+)?(?:ver(?:sion)?(?:\\s+of)?|spt|latest|new|newer|\\d+\\.\\d+(?:\\.\\d+)?(?:\\.\\w+)?))?|waiting\\s+for\\s+(?:update|port)|(?:still|not)\\s+(?:working|updated|supported)', 'i');
-            this.$watch('content', () => {
-                this.checkForLogFile();
-                this.checkForUpdateRequest();
+            // The editor writes straight to Livewire, so the warnings follow the property itself.
+            this.unwatch = $wire.$watch('{{ $wireModel }}', (content) => {
+                this.checkForLogFile(content);
+                this.checkForUpdateRequest(content);
             });
         },
-        checkForLogFile() {
-            const hasLogFile = this.logFilePattern.test(this.content || '');
+        destroy() {
+            this.unwatch?.();
+        },
+        checkForLogFile(content) {
+            const hasLogFile = this.logFilePattern.test(content || '');
             if (this.containsLogFile !== hasLogFile) {
                 this.containsLogFile = hasLogFile;
                 this.$dispatch('log-file-detected', { containsLogFile: hasLogFile });
             }
         },
-        checkForUpdateRequest() {
-            const hasUpdateRequest = this.updateRequestPattern.test(this.content || '');
+        checkForUpdateRequest(content) {
+            const hasUpdateRequest = this.updateRequestPattern.test(content || '');
             if (this.containsUpdateRequest !== hasUpdateRequest) {
                 this.containsUpdateRequest = hasUpdateRequest;
                 this.$dispatch('update-request-detected', { containsUpdateRequest: hasUpdateRequest });
@@ -46,7 +69,7 @@
             this.activeTab = 'preview';
             this.isLoadingPreview = true;
             try {
-                this.previewHtml = await $wire.previewMarkdown(this.content, '{{ $purifyConfig }}');
+                this.previewHtml = await $wire.previewMarkdown($wire.$get('{{ $wireModel }}') ?? '', '{{ $purifyConfig }}');
                 // Wait for DOM to update, then initialize tabs
                 await this.$nextTick();
                 // Dispatch event to initialize tabsets
@@ -117,13 +140,64 @@
             role="tabpanel"
             :aria-hidden="activeTab !== 'write'"
         >
-            <flux:textarea
-                name="{{ $name }}"
-                wire:model="{{ $wireModel }}"
-                placeholder="{{ $placeholder }}"
-                style="field-sizing: content; min-height: 100px;"
-                {{ $attributes }}
-            />
+            <div
+                class="relative"
+                x-data="markdownEditor({
+                    model: @js($wireModel),
+                    placeholder: @js($placeholder),
+                    textareaProps: @js($textareaProps),
+                    emoji: @js($emojiChoices),
+                })"
+                x-on:click.outside="close()"
+            >
+                {{-- The frame stays outside wire:ignore so its error border still follows validation. --}}
+                <div @class([
+                    'markdown-editor-frame',
+                    'markdown-editor-frame-invalid' => $errors->has($errorName ?? $name),
+                ])>
+                    <div
+                        wire:ignore
+                        x-ref="host"
+                    ></div>
+                </div>
+
+                {{-- Anchored under the field rather than at the caret: with a short curated list this reads clearly
+                     and avoids measuring caret coordinates in a resizing textarea. --}}
+                <div
+                    x-show="open"
+                    x-cloak
+                    class="absolute left-0 top-full z-30 mt-1 w-max min-w-56 overflow-hidden rounded-lg border border-gray-700 bg-gray-900 py-1 shadow-lg shadow-gray-950"
+                    data-test="emoji-autocomplete"
+                >
+                    <template
+                        x-for="(choice, index) in matches"
+                        :key="choice.shortcode"
+                    >
+                        <button
+                            type="button"
+                            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition"
+                            :class="index === activeIndex ? 'bg-cyan-950/60 text-cyan-200' : 'text-gray-300 hover:bg-gray-800'"
+                            x-on:mousedown.prevent="choose(index)"
+                            x-on:mouseenter="activeIndex = index"
+                            :data-test="'emoji-autocomplete-option-' + choice.shortcode"
+                        >
+                            <img
+                                :src="choice.url"
+                                :alt="choice.label"
+                                class="size-5"
+                            />
+                            <span
+                                class="font-mono text-xs"
+                                x-text="':' + choice.shortcode + ':'"
+                            ></span>
+                            <span
+                                class="ml-auto text-xs text-gray-400"
+                                x-text="choice.label"
+                            ></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
         </div>
 
         {{-- Preview Tab --}}

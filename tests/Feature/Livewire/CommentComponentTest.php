@@ -8,10 +8,12 @@ use App\Jobs\CheckCommentForSpam;
 use App\Jobs\TranslateComment;
 use App\Models\Comment;
 use App\Models\CommentVersion;
+use App\Models\Emoji;
 use App\Models\License;
 use App\Models\Mod;
 use App\Models\ModCategory;
 use App\Models\ModVersion;
+use App\Models\Reaction;
 use App\Models\SptVersion;
 use App\Models\TrackingEvent;
 use App\Models\User;
@@ -3033,137 +3035,149 @@ describe('Deletion', function (): void {
 });
 
 describe('Reactions', function (): void {
-    describe('permissions', function (): void {
-        it('should not allow users to react to their own comments', function (): void {
-            $user = User::factory()->create();
-            $mod = Mod::factory()->create();
-            $comment = Comment::factory()->create([
-                'user_id' => $user->id,
-                'commentable_id' => $mod->id,
-                'commentable_type' => $mod::class,
-            ]);
+    it('should not allow guests to react', function (): void {
+        $mod = Mod::factory()->create();
+        $comment = Comment::factory()->create([
+            'commentable_id' => $mod->id,
+            'commentable_type' => $mod::class,
+        ]);
+        $heart = Emoji::query()->where('shortcode', 'heart')->sole();
 
-            Livewire::actingAs($user)
-                ->test('comment-component', ['commentable' => $mod])
-                ->call('toggleReaction', $comment)
-                ->assertForbidden();
+        Livewire::test('comment-component', ['commentable' => $mod])
+            ->call('toggleReaction', 'comment', $comment->id, $heart->id);
 
-            // Verify no reaction was created
-            expect($user->commentReactions()->where('comment_id', $comment->id)->exists())->toBeFalse();
-        });
-
-        it('should not allow guests to react to comments', function (): void {
-            $mod = Mod::factory()->create();
-            $comment = Comment::factory()->create([
-                'commentable_id' => $mod->id,
-                'commentable_type' => $mod::class,
-            ]);
-
-            Livewire::test('comment-component', ['commentable' => $mod])
-                ->call('toggleReaction', $comment)
-                ->assertForbidden();
-        });
-
-        it('should not allow unverified users to react to comments', function (): void {
-            $user = User::factory()->unverified()->create();
-            $otherUser = User::factory()->create();
-            $mod = Mod::factory()->create();
-            $comment = Comment::factory()->create([
-                'user_id' => $otherUser->id,
-                'commentable_id' => $mod->id,
-                'commentable_type' => $mod::class,
-            ]);
-
-            Livewire::actingAs($user)
-                ->test('comment-component', ['commentable' => $mod])
-                ->call('toggleReaction', $comment)
-                ->assertForbidden();
-
-            // Verify no reaction was created
-            expect($user->commentReactions()->where('comment_id', $comment->id)->exists())->toBeFalse();
-        });
+        expect(Reaction::query()->count())->toBe(0);
     });
 
-    describe('guest visibility', function (): void {
-        it('should show reaction count to guests without interaction', function (): void {
-            $mod = Mod::factory()->create();
-            $comment = Comment::factory()->create([
-                'commentable_id' => $mod->id,
-                'commentable_type' => $mod::class,
-                'body' => 'Test comment',
-            ]);
+    it('should not allow a user to react to their own comment', function (): void {
+        $user = User::factory()->create();
+        $mod = Mod::factory()->create();
+        $comment = Comment::factory()->create([
+            'user_id' => $user->id,
+            'commentable_id' => $mod->id,
+            'commentable_type' => $mod::class,
+        ]);
+        $heart = Emoji::query()->where('shortcode', 'heart')->sole();
 
-            // Add some reactions from other users
-            $users = User::factory()->count(3)->create();
-            foreach ($users as $user) {
-                $user->commentReactions()->create(['comment_id' => $comment->id]);
-            }
+        Livewire::actingAs($user)
+            ->test('comment-component', ['commentable' => $mod])
+            ->call('toggleReaction', 'comment', $comment->id, $heart->id);
 
-            $component = Livewire::test('comment-component', ['commentable' => $mod])
-                ->assertSee('Test comment')
-                ->assertDontSee('wire:click="toggleReaction"', false);
-
-            // Check for reaction count - normalize whitespace
-            $html = preg_replace('/\s+/', ' ', (string) $component->html());
-            expect($html)->toContain('3 Likes');
-        });
+        expect(Reaction::query()->count())->toBe(0);
     });
 
-    describe('toggling', function (): void {
-        it('should allow toggling reactions on and off', function (): void {
-            $user = User::factory()->create();
-            $otherUser = User::factory()->create();
-            $mod = Mod::factory()->create();
-            $comment = Comment::factory()->create([
-                'user_id' => $otherUser->id,
-                'commentable_id' => $mod->id,
-                'commentable_type' => $mod::class,
-            ]);
+    it('should not allow unverified users to react', function (): void {
+        $user = User::factory()->unverified()->create();
+        $mod = Mod::factory()->create();
+        $comment = Comment::factory()->create([
+            'user_id' => User::factory()->create()->id,
+            'commentable_id' => $mod->id,
+            'commentable_type' => $mod::class,
+        ]);
+        $heart = Emoji::query()->where('shortcode', 'heart')->sole();
 
-            $component = Livewire::actingAs($user)
-                ->test('comment-component', ['commentable' => $mod]);
+        Livewire::actingAs($user)
+            ->test('comment-component', ['commentable' => $mod])
+            ->call('toggleReaction', 'comment', $comment->id, $heart->id);
 
-            // Add reaction
-            $component->call('toggleReaction', $comment)
-                ->assertHasNoErrors();
+        expect(Reaction::query()->count())->toBe(0);
+    });
 
-            expect($user->commentReactions()->where('comment_id', $comment->id)->exists())->toBeTrue()
-                ->and($component->get('userReactionIds'))->toContain($comment->id);
+    it('should show reaction counts to guests without interaction', function (): void {
+        $mod = Mod::factory()->create();
+        $comment = Comment::factory()->create([
+            'commentable_id' => $mod->id,
+            'commentable_type' => $mod::class,
+            'body' => 'Test comment',
+        ]);
+        $heart = Emoji::query()->where('shortcode', 'heart')->sole();
 
-            // Remove reaction
-            $component->call('toggleReaction', $comment)
-                ->assertHasNoErrors();
+        foreach (User::factory()->count(3)->create() as $reactor) {
+            $comment->reactions()->create(['user_id' => $reactor->id, 'emoji_id' => $heart->id]);
+        }
 
-            expect($user->commentReactions()->where('comment_id', $comment->id)->exists())->toBeFalse()
-                ->and($component->get('userReactionIds'))->not->toContain($comment->id);
-        });
+        Livewire::test('comment-component', ['commentable' => $mod])
+            ->assertSee('Test comment')
+            ->assertSee('reaction-chip-'.$comment->id.'-heart', false)
+            ->assertDontSee('reaction-add-'.$comment->id, false);
+    });
 
-        it('should not allow multiple reactions from same user through rapid clicking', function (): void {
-            $user = User::factory()->create();
-            $otherUser = User::factory()->create();
-            $mod = Mod::factory()->create();
+    it('should allow toggling a reaction on and off', function (): void {
+        $user = User::factory()->create();
+        $mod = Mod::factory()->create();
+        $comment = Comment::factory()->create([
+            'user_id' => User::factory()->create()->id,
+            'commentable_id' => $mod->id,
+            'commentable_type' => $mod::class,
+        ]);
+        $heart = Emoji::query()->where('shortcode', 'heart')->sole();
 
-            $comment = Comment::factory()->create([
-                'user_id' => $otherUser->id,
-                'commentable_id' => $mod->id,
-                'commentable_type' => $mod::class,
-            ]);
+        $component = Livewire::actingAs($user)->test('comment-component', ['commentable' => $mod]);
 
-            $component = Livewire::actingAs($user)
-                ->test('comment-component', ['commentable' => $mod]);
+        $component->call('toggleReaction', 'comment', $comment->id, $heart->id)->assertHasNoErrors();
+        expect($component->get('reactionSummary')->mineFor($comment->id))->toBe([$heart->id]);
 
-            // Try to create multiple reactions rapidly
-            $component->call('toggleReaction', $comment);
-            $component->call('toggleReaction', $comment);
-            $component->call('toggleReaction', $comment);
+        $component->call('toggleReaction', 'comment', $comment->id, $heart->id)->assertHasNoErrors();
+        expect($component->get('reactionSummary')->mineFor($comment->id))->toBe([]);
+    });
 
-            // Should still only have 1 reaction (or 0 if toggled an odd number of times)
-            $reactionCount = $user->commentReactions()
-                ->where('comment_id', $comment->id)
-                ->count();
+    it('should replace the existing reaction when a different emoji is picked', function (): void {
+        $user = User::factory()->create();
+        $mod = Mod::factory()->create();
+        $comment = Comment::factory()->create([
+            'user_id' => User::factory()->create()->id,
+            'commentable_id' => $mod->id,
+            'commentable_type' => $mod::class,
+        ]);
 
-            expect($reactionCount)->toBeLessThanOrEqual(1);
-        });
+        $component = Livewire::actingAs($user)->test('comment-component', ['commentable' => $mod]);
+
+        $last = null;
+        foreach (['heart', 'fire', 'tada'] as $shortcode) {
+            $last = Emoji::query()->where('shortcode', $shortcode)->sole()->id;
+            $component->call('toggleReaction', 'comment', $comment->id, $last);
+        }
+
+        // Only the final pick survives: a user holds one reaction per comment.
+        expect($component->get('reactionSummary')->mineFor($comment->id))->toBe([$last])
+            ->and(Reaction::query()->where('user_id', $user->id)->count())->toBe(1);
+    });
+
+    it('should not create duplicates through rapid clicking of the same emoji', function (): void {
+        $user = User::factory()->create();
+        $mod = Mod::factory()->create();
+        $comment = Comment::factory()->create([
+            'user_id' => User::factory()->create()->id,
+            'commentable_id' => $mod->id,
+            'commentable_type' => $mod::class,
+        ]);
+        $heart = Emoji::query()->where('shortcode', 'heart')->sole();
+
+        $component = Livewire::actingAs($user)->test('comment-component', ['commentable' => $mod]);
+
+        $component->call('toggleReaction', 'comment', $comment->id, $heart->id);
+        $component->call('toggleReaction', 'comment', $comment->id, $heart->id);
+        $component->call('toggleReaction', 'comment', $comment->id, $heart->id);
+
+        expect(Reaction::query()->where('user_id', $user->id)->count())->toBeLessThanOrEqual(1);
+    });
+
+    it('should refuse a reaction on a comment belonging to a different commentable', function (): void {
+        $user = User::factory()->create();
+        $mod = Mod::factory()->create();
+        $otherMod = Mod::factory()->create();
+        $foreign = Comment::factory()->create([
+            'user_id' => User::factory()->create()->id,
+            'commentable_id' => $otherMod->id,
+            'commentable_type' => $otherMod::class,
+        ]);
+        $heart = Emoji::query()->where('shortcode', 'heart')->sole();
+
+        Livewire::actingAs($user)
+            ->test('comment-component', ['commentable' => $mod])
+            ->call('toggleReaction', 'comment', $foreign->id, $heart->id);
+
+        expect(Reaction::query()->count())->toBe(0);
     });
 });
 
@@ -4550,7 +4564,6 @@ describe('Disabled', function (): void {
                 ->set('category', (string) $category->id)
                 ->set('sourceCodeLinks.0.url', 'https://github.com/test/mod')
                 ->set('sourceCodeLinks.0.label', '')
-                ->set('containsAiContent', false)
                 ->set('containsAds', false)
                 ->set('commentsDisabled', true)
                 ->call('save')
@@ -4582,7 +4595,6 @@ describe('Disabled', function (): void {
                 ->set('category', (string) $category->id)
                 ->set('sourceCodeLinks.0.url', 'https://github.com/test/mod2')
                 ->set('sourceCodeLinks.0.label', '')
-                ->set('containsAiContent', false)
                 ->set('containsAds', false)
                 ->call('save')
                 ->assertHasNoErrors()

@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Contracts\Trackable;
+use App\Enums\EmojiSurface;
 use App\Enums\FikaCompatibility;
 use App\Enums\VerificationStatus;
 use App\Exceptions\InvalidVersionNumberException;
 use App\Models\Scopes\PublishedScope;
 use App\Models\Scopes\PublishedSptVersionScope;
 use App\Observers\ModVersionObserver;
+use App\Support\Markdown\EmojiRenderContext;
 use App\Support\Version;
 use App\Support\VersionMatcher;
 use Carbon\CarbonImmutable;
@@ -501,7 +503,10 @@ final class ModVersion extends Model implements Trackable
             get: function (): string {
                 /** @var string $clean */
                 $clean = Purify::config('description')->clean(
-                    Markdown::convert($this->description)->getContent()
+                    EmojiRenderContext::scoped(
+                        EmojiSurface::ModDescription,
+                        fn (): string => Markdown::convert($this->description)->getContent(),
+                    )
                 );
 
                 return $clean;

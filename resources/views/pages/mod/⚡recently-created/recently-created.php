@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Mod;
+use App\Traits\Livewire\ProvidesReactionSummary;
 use App\Traits\Livewire\ModeratesMod;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,6 +23,7 @@ use Livewire\WithPagination;
 
 new #[Layout('layouts::base')] class extends Component
 {
+    use ProvidesReactionSummary;
     use ModeratesMod;
     use WithPagination;
 
@@ -116,6 +118,8 @@ new #[Layout('layouts::base')] class extends Component
             ->paginate($this->perPage);
 
         $this->redirectOutOfBoundsPage($mods);
+
+        $this->rememberReactableIds($mods->items());
 
         return ['mods' => $mods];
     }

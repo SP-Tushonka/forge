@@ -28,7 +28,7 @@ final class AddonController extends Controller
      * Retrieves a paginated list of addons, allowing filtering, sorting, and relationship inclusion.
      *
      * Fields available:<br /><code>name, slug, teaser, thumbnail, downloads, detail_url,
-     * contains_ai_content, contains_ads, mod_id, published_at, created_at, updated_at</code>
+     * contains_ads, mod_id, published_at, created_at, updated_at</code>
      *
      * <aside class="notice">This endpoint only offers limited version information. Only the latest 6 versions will be
      * included. For additional version information, use the <code>addon/{id}/versions</code> endpoint.</aside>
@@ -59,7 +59,6 @@ final class AddonController extends Controller
      *              "source_code_links": [],
      *              "detail_url": "https://forge.sp-mod.com/addon/1/ultimate-music-pack",
      *              "contains_ads": false,
-     *              "contains_ai_content": false,
      *              "mod_id": 5,
      *              "is_detached": false,
      *              "published_at": "2025-01-09T17:48:53.000000Z",
@@ -114,7 +113,6 @@ final class AddonController extends Controller
     #[QueryParam('filter[teaser]', description: 'Filter by teaser text (fuzzy filter).', required: false, example: 'important')]
     #[QueryParam('filter[mod_id]', description: 'Filter by comma-separated mod IDs (parent mod).', required: false, example: '1,2,3')]
     #[QueryParam('filter[contains_ads]', description: 'Filter by contains_ads status (1, true, 0, false).', required: false, example: 'false')]
-    #[QueryParam('filter[contains_ai_content]', description: 'Filter by contains_ai_content status (1, true, 0, false).', required: false, example: 'false')]
     #[QueryParam('filter[is_detached]', description: 'Filter by detached status (1, true, 0, false).', required: false, example: 'false')]
     #[QueryParam('filter[created_between]', description: 'Filter by creation date range (YYYY-MM-DD,YYYY-MM-DD).', required: false, example: '2025-01-01,2025-03-31')]
     #[QueryParam('filter[updated_between]', description: 'Filter by update date range (YYYY-MM-DD,YYYY-MM-DD).', required: false, example: '2025-01-01,2025-03-31')]
@@ -147,7 +145,7 @@ final class AddonController extends Controller
      * Retrieves details for a single addon, allowing relationship inclusion.
      *
      * Fields available:<br /><code>name, slug, teaser, description, thumbnail, downloads, source_code_links,
-     * detail_url, contains_ai_content, custom_ai_disclosure, contains_ads, mod_id, is_detached, published_at,
+     * detail_url, contains_ads, mod_id, is_detached, published_at,
      * created_at, updated_at</code>
      *
      * <aside class="notice">This endpoint only offers limited version information. Only the latest 6 versions will be
@@ -179,8 +177,6 @@ final class AddonController extends Controller
      *          "source_code_links": [],
      *          "detail_url": "https://forge.sp-mod.com/addon/1/ultimate-music-pack",
      *          "contains_ads": false,
-     *          "contains_ai_content": false,
-     *          "custom_ai_disclosure": "<p>AI tools were used to generate placeholder music tracks.</p>",
      *          "mod_id": 5,
      *          "is_detached": false,
      *          "published_at": "2025-01-09T17:48:53.000000Z",

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Mod;
 use App\Models\User;
+use App\Traits\Livewire\ProvidesReactionSummary;
 use App\Traits\Livewire\ModeratesMod;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -14,6 +15,7 @@ use Livewire\WithPagination;
 
 new #[Lazy] class extends Component
 {
+    use ProvidesReactionSummary;
     use ModeratesMod;
     use WithPagination;
 
@@ -37,6 +39,20 @@ new #[Lazy] class extends Component
     public function user(): User
     {
         return User::query()->findOrFail($this->userId);
+    }
+
+    /**
+     * @return list<int>
+     */
+    protected function reactableIds(): array
+    {
+        $ids = [];
+
+        foreach ($this->mods->items() as $mod) {
+            $ids[] = $mod->id;
+        }
+
+        return $ids;
     }
 
     /**

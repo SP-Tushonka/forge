@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Contracts\Commentable;
 use App\Contracts\Reportable;
 use App\Contracts\Trackable;
+use App\Enums\IssueNotificationLevel;
 use App\Notifications\ResetPassword;
 use App\Notifications\VerifyEmail;
 use App\Observers\UserObserver;
@@ -28,6 +29,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -80,6 +82,7 @@ use Stevebauman\Purify\Facades\Purify;
  * @property bool $email_announcement_notifications_enabled
  * @property bool $email_chat_notifications_enabled
  * @property bool $email_moderation_notifications_enabled
+ * @property IssueNotificationLevel|null $issue_notifications
  * @property-read string|null $cover_photo_url attribute
  * @property-read string $cover_photo_gradient attribute
  * @property-read string $cover_photo_srcset attribute
@@ -751,13 +754,14 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
     }
 
     /**
-     * The relationship between a user and their comment reactions.
+     * Every reaction this user has given, across comments and mods. Users are not themselves reactable, so this is
+     * always "reactions given", never "reactions received".
      *
-     * @return HasMany<CommentReaction, $this>
+     * @return HasMany<Reaction, $this>
      */
-    public function commentReactions(): HasMany
+    public function reactions(): HasMany
     {
-        return $this->hasMany(CommentReaction::class);
+        return $this->hasMany(Reaction::class);
     }
 
     /**
@@ -778,6 +782,46 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
     public function commentSubscriptions(): HasMany
     {
         return $this->hasMany(CommentSubscription::class);
+    }
+
+    /**
+     * Null only on an instance created in this request, before the column default has been read back.
+     */
+    public function issueNotificationLevel(): IssueNotificationLevel
+    {
+        return $this->issue_notifications ?? IssueNotificationLevel::All;
+    }
+
+    /**
+     * @return HasMany<NotificationMute, $this>
+     */
+    public function notificationMutes(): HasMany
+    {
+        return $this->hasMany(NotificationMute::class);
+    }
+
+    public function hasMuted(Model $mutable): bool
+    {
+        return $this->notificationMutes()
+            ->where('mutable_type', $mutable::class)
+            ->where('mutable_id', $mutable->getKey())
+            ->exists();
+    }
+
+    public function mute(Model $mutable): void
+    {
+        $this->notificationMutes()->firstOrCreate([
+            'mutable_type' => $mutable::class,
+            'mutable_id' => $mutable->getKey(),
+        ]);
+    }
+
+    public function unmute(Model $mutable): void
+    {
+        $this->notificationMutes()
+            ->where('mutable_type', $mutable::class)
+            ->where('mutable_id', $mutable->getKey())
+            ->delete();
     }
 
     /**
@@ -1051,6 +1095,7 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
             'email_announcement_notifications_enabled' => 'boolean',
             'email_chat_notifications_enabled' => 'boolean',
             'email_moderation_notifications_enabled' => 'boolean',
+            'issue_notifications' => IssueNotificationLevel::class,
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];

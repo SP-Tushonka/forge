@@ -7,6 +7,7 @@ use App\Actions\Staff\TransferModOwnership;
 use App\Enums\TrackingEventType;
 use App\Exceptions\StaffActionException;
 use App\Facades\Track;
+use App\Livewire\Concerns\RendersMarkdownPreview;
 use App\Models\License;
 use App\Models\Mod;
 use App\Models\ModCategory;
@@ -26,6 +27,7 @@ new class extends Component
 {
     use EditsMod;
     use ModeratesModVersion;
+    use RendersMarkdownPreview;
     use WithFileUploads;
 
     /** Free text search: name, slug, GUID, mod id or owner name. */
@@ -177,14 +179,6 @@ new class extends Component
         return License::query()->find((int) $this->license)?->isCustom() ?? false;
     }
 
-    #[Computed]
-    public function canLockAiContent(): bool
-    {
-        $mod = $this->target;
-
-        return $mod !== null && (auth()->user()?->can('lockAiContent', $mod) ?? false);
-    }
-
     /**
      * @param  array<int>  $ids
      */
@@ -212,7 +206,7 @@ new class extends Component
 
         // Custom-licence reverification is deliberately skipped. It proves the *acting* user
         // controls the linked repository, which is meaningless when staff edit someone else's mod.
-        $this->applyModFields($mod, $this->canLockAiContent, $staff->timezone ?? 'UTC');
+        $this->applyModFields($mod, $staff->timezone ?? 'UTC');
 
         Track::eventSync(
             TrackingEventType::MOD_EDIT,

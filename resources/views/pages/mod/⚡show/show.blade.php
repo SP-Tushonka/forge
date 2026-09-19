@@ -173,6 +173,19 @@
                         <p title="{{ __('Exactly') }} {{ $mod->endorsements_count }}">
                             {{ Number::format($mod->endorsements_count) }}
                             {{ __(Str::plural('Endorsement', $mod->endorsements_count)) }}</p>
+
+                        {{-- Must live inside <main>: the layout hoists the header slot out of the Livewire component
+                             root, where wire:click binds to nothing. --}}
+                        <div class="mt-3">
+                            <x-reaction-bar
+                                reactable-type="mod"
+                                :reactable-id="$mod->id"
+                                :counts="$this->reactionSummary->countsFor($mod->id)"
+                                :mine="$this->reactionSummary->mineFor($mod->id)"
+                                :whitelist="$this->reactionWhitelist"
+                                :can-react="auth()->check() && Gate::allows('react', $mod)"
+                            />
+                        </div>
                         <p class="mt-2 flex flex-wrap items-center gap-2">
                             @if ($displayVersion?->latestSptVersion)
                                 <span
@@ -278,6 +291,10 @@
                                 <flux:select.option value="comments">{{ $commentCount }}
                                     {{ __(Str::plural('Comment', $commentCount)) }}</flux:select.option>
                             @endif
+                            @if ($showIssuesTab)
+                                <flux:select.option value="issues">{{ $issueCount }}
+                                    {{ __(Str::plural('Issue', $issueCount)) }}</flux:select.option>
+                            @endif
                         </flux:select>
                     </div>
 
@@ -305,6 +322,14 @@
                                     name="Comments"
                                     value="comments"
                                     :label="$commentCount . ' ' . Str::plural('Comment', $commentCount)"
+                                />
+                            @endif
+                            @if ($showIssuesTab)
+                                <x-tab-button
+                                    name="Issues"
+                                    value="issues"
+                                    :label="$issueCount . ' ' . Str::plural('Issue', $issueCount)"
+                                    data-test="issues-tab"
                                 />
                             @endif
                         </nav>
@@ -348,6 +373,19 @@
                     >
                         <livewire:mod.show.comments-tab
                             wire:key="comments-tab-{{ $mod->id }}"
+                            :mod-id="$mod->id"
+                        />
+                    </div>
+                @endif
+
+                {{-- Issues --}}
+                @if ($showIssuesTab)
+                    <div
+                        x-show="selectedTab === 'issues'"
+                        x-cloak
+                    >
+                        <livewire:mod.show.issues-tab
+                            wire:key="issues-tab-{{ $mod->id }}"
                             :mod-id="$mod->id"
                         />
                     </div>
@@ -647,49 +685,6 @@
                                 {{ __('Includes Advertising') }}
                             </h3>
                         </li>
-                    @endif
-                    @if ($mod->contains_ai_content)
-                        @if ($mod->custom_ai_disclosure)
-                            <li
-                                class="px-4 py-4 last:pb-0 sm:px-0"
-                                x-data="{ expanded: false }"
-                            >
-                                <button
-                                    type="button"
-                                    @click="expanded = !expanded"
-                                    :aria-expanded="expanded.toString()"
-                                    class="flex w-full cursor-pointer flex-row items-center gap-2 text-left"
-                                >
-                                    <flux:icon.check-circle
-                                        variant="micro"
-                                        class="size-4 grow-0 text-green-500"
-                                    />
-                                    <h3 class="grow text-gray-100">
-                                        {{ __('Includes AI Generated Content') }}
-                                    </h3>
-                                    <flux:icon.chevron-up
-                                        variant="micro"
-                                        class="size-4 grow-0 text-gray-400 transition-transform"
-                                        x-bind:class="expanded ? 'rotate-180' : ''"
-                                    />
-                                </button>
-                                <div
-                                    x-show="expanded"
-                                    x-collapse
-                                    class="user-markdown ms-6 mt-2 text-sm text-gray-300"
-                                >{!! $mod->custom_ai_disclosure_html !!}</div>
-                            </li>
-                        @else
-                            <li class="flex flex-row items-center gap-2 px-4 py-4 last:pb-0 sm:px-0">
-                                <flux:icon.check-circle
-                                    variant="micro"
-                                    class="size-4 grow-0 text-green-500"
-                                />
-                                <h3 class="grow text-gray-100">
-                                    {{ __('Includes AI Generated Content') }}
-                                </h3>
-                            </li>
-                        @endif
                     @endif
                 </ul>
             </div>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\View\Components\Mod;
 
+use App\Models\ModIssue;
 use App\Models\ModVersion;
 use Illuminate\View\Component;
 use Illuminate\View\View;
@@ -12,11 +13,14 @@ final class VersionCard extends Component
 {
     /**
      * Create a new component instance.
+     *
+     * @param  list<ModIssue>  $fixedIssues
      */
     public function __construct(
         public ModVersion $version,
         public ?int $latestVersionId = null,
         public ?bool $showActions = null,
+        public array $fixedIssues = [],
     ) {
         //
     }

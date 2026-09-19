@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Contracts\Commentable;
-use App\Models\CommentSubscription;
 use App\Models\User;
 use App\Support\ModelsThat;
 use App\Traits\HasComments;
@@ -24,7 +23,7 @@ final class CommentSubscriptionController extends Controller
         /** @var Model&Commentable<Model> $commentable */
         $commentable = $commentable_type::findOrFail($commentable_id);
 
-        CommentSubscription::unsubscribe($user, $commentable);
+        $commentable->unsubscribeUser($user);
 
         return response()->view('static.comment-unsubscribed', [
             'commentable' => $commentable,

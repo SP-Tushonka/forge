@@ -8,6 +8,7 @@ use App\Models\Addon;
 use App\Models\AddonVersion;
 use App\Models\Comment;
 use App\Models\Mod;
+use App\Models\ModIssue;
 use App\Models\ModList;
 use App\Models\ModVersion;
 use App\Models\User;
@@ -33,6 +34,10 @@ enum TrackingEventType: string
     case MOD_DELETE = 'mod_delete';
 
     case MOD_REPORT = 'mod_report';
+
+    case MOD_REACT = 'mod_react';
+
+    case MOD_UNREACT = 'mod_unreact';
 
     case MOD_CLAIM_INITIATED = 'mod_claim_initiated';
 
@@ -108,6 +113,25 @@ enum TrackingEventType: string
 
     case COMMENT_REPORT = 'comment_report';
 
+    /** Issue events */
+    case ISSUE_CREATE = 'issue_create';
+
+    case ISSUE_EDIT = 'issue_edit';
+
+    case ISSUE_DELETE = 'issue_delete';
+
+    case ISSUE_RESTORE = 'issue_restore';
+
+    case ISSUE_REPORT = 'issue_report';
+
+    case ISSUE_REACT = 'issue_react';
+
+    case ISSUE_UNREACT = 'issue_unreact';
+
+    case ISSUE_BAN = 'issue_ban';
+
+    case ISSUE_UNBAN = 'issue_unban';
+
     /** Account management events */
     case ACCOUNT_DELETE = 'account_delete';
 
@@ -174,6 +198,10 @@ enum TrackingEventType: string
     case MOD_LIST_ENABLE = 'mod_list_enable';
 
     case MOD_LIST_DELETE = 'mod_list_delete';
+
+    case EMOJI_UPDATE = 'emoji_update';
+
+    case EMOJI_DELETE = 'emoji_delete';
 
     /**
      * Get all moderation action event types.
@@ -242,7 +270,18 @@ enum TrackingEventType: string
             self::COMMENT_LIKE => 'Liked comment',
             self::COMMENT_UNLIKE => 'Unliked comment',
             self::COMMENT_REPORT => 'Reported comment',
+            self::ISSUE_CREATE => 'Opened issue',
+            self::ISSUE_EDIT => 'Edited issue',
+            self::ISSUE_DELETE => 'Deleted issue',
+            self::ISSUE_RESTORE => 'Restored issue',
+            self::ISSUE_REPORT => 'Reported issue',
+            self::ISSUE_REACT => 'Reacted to issue',
+            self::ISSUE_UNREACT => 'Removed issue reaction',
+            self::ISSUE_BAN => 'Banned user from issues',
+            self::ISSUE_UNBAN => 'Lifted issue ban',
             self::MOD_REPORT => 'Reported mod',
+            self::MOD_REACT => 'Reacted to mod',
+            self::MOD_UNREACT => 'Removed mod reaction',
             self::MOD_CLAIM_INITIATED => 'Started mod claim',
             self::MOD_CLAIM_VERIFIED => 'Claimed mod',
             self::MOD_CLAIM_REJECTED => 'Rejected mod claim',
@@ -270,6 +309,8 @@ enum TrackingEventType: string
             self::MOD_LIST_DISABLE => 'Disabled mod list',
             self::MOD_LIST_ENABLE => 'Enabled mod list',
             self::MOD_LIST_DELETE => 'Deleted mod list',
+            self::EMOJI_UPDATE => 'Updated reaction emoji',
+            self::EMOJI_DELETE => 'Deleted reaction emoji',
             self::USER_EMAIL_CHANGE => 'Changed user email',
             self::USER_EMAIL_REMOVE => 'Removed user email',
             self::USER_PASSWORD_RESET_SENT => 'Sent password reset',
@@ -327,7 +368,18 @@ enum TrackingEventType: string
             self::COMMENT_LIKE => 'User liked a comment',
             self::COMMENT_UNLIKE => 'User unliked a comment',
             self::COMMENT_REPORT => 'User reported a comment',
+            self::ISSUE_CREATE => 'User opened an issue on a mod',
+            self::ISSUE_EDIT => 'User edited an issue',
+            self::ISSUE_DELETE => 'User deleted an issue',
+            self::ISSUE_RESTORE => 'User restored a deleted issue',
+            self::ISSUE_REPORT => 'User reported an issue',
+            self::ISSUE_REACT => 'User reacted to an issue',
+            self::ISSUE_UNREACT => 'User removed their reaction from an issue',
+            self::ISSUE_BAN => "User banned a member from a mod's issues",
+            self::ISSUE_UNBAN => "User lifted a member's issue ban",
             self::MOD_REPORT => 'User reported a mod',
+            self::MOD_REACT => 'User reacted to a mod',
+            self::MOD_UNREACT => 'User removed their reaction from a mod',
             self::MOD_CLAIM_INITIATED => 'User started a claim on an unowned mod',
             self::MOD_CLAIM_VERIFIED => 'User proved ownership and was assigned the mod',
             self::MOD_CLAIM_REJECTED => 'A mod ownership claim was rejected',
@@ -355,6 +407,8 @@ enum TrackingEventType: string
             self::MOD_LIST_DISABLE => 'Moderator disabled a mod list',
             self::MOD_LIST_ENABLE => 'Moderator enabled a mod list',
             self::MOD_LIST_DELETE => 'Moderator deleted a mod list',
+            self::EMOJI_UPDATE => 'Staff changed the reaction emoji whitelist',
+            self::EMOJI_DELETE => 'Staff deleted a reaction emoji and every reaction left with it',
             self::USER_EMAIL_CHANGE => 'A staff member changed this account\'s email address',
             self::USER_EMAIL_REMOVE => 'A staff member detached this account\'s email address',
             self::USER_PASSWORD_RESET_SENT => 'A staff member sent this account a password reset link',
@@ -372,7 +426,7 @@ enum TrackingEventType: string
     public function getTrackableModel(): ?string
     {
         return match ($this) {
-            self::MOD_CREATE, self::MOD_EDIT, self::MOD_DELETE, self::MOD_REPORT, self::MOD_FEATURE, self::MOD_UNFEATURE, self::MOD_DISABLE, self::MOD_ENABLE, self::MOD_PUBLISH, self::MOD_UNPUBLISH, self::MOD_CLAIM_INITIATED, self::MOD_CLAIM_VERIFIED, self::MOD_CLAIM_REJECTED, self::MOD_OWNERSHIP_TRANSFER, self::MOD_OWNERSHIP_CLEARED => Mod::class,
+            self::MOD_CREATE, self::MOD_EDIT, self::MOD_DELETE, self::MOD_REPORT, self::MOD_REACT, self::MOD_UNREACT, self::MOD_FEATURE, self::MOD_UNFEATURE, self::MOD_DISABLE, self::MOD_ENABLE, self::MOD_PUBLISH, self::MOD_UNPUBLISH, self::MOD_CLAIM_INITIATED, self::MOD_CLAIM_VERIFIED, self::MOD_CLAIM_REJECTED, self::MOD_OWNERSHIP_TRANSFER, self::MOD_OWNERSHIP_CLEARED => Mod::class,
             self::MOD_DOWNLOAD, self::VERSION_CREATE, self::VERSION_EDIT, self::VERSION_DELETE, self::VERSION_DISABLE, self::VERSION_ENABLE, self::VERSION_PUBLISH, self::VERSION_UNPUBLISH => ModVersion::class,
             self::ADDON_CREATE, self::ADDON_EDIT, self::ADDON_DELETE, self::ADDON_REPORT, self::ADDON_ATTACH, self::ADDON_DETACH, self::ADDON_DISABLE, self::ADDON_ENABLE, self::ADDON_PUBLISH, self::ADDON_UNPUBLISH => Addon::class,
             self::ADDON_DOWNLOAD, self::ADDON_VERSION_CREATE, self::ADDON_VERSION_EDIT, self::ADDON_VERSION_DELETE, self::ADDON_VERSION_DISABLE, self::ADDON_VERSION_ENABLE, self::ADDON_VERSION_PUBLISH, self::ADDON_VERSION_UNPUBLISH => AddonVersion::class,
@@ -382,6 +436,8 @@ enum TrackingEventType: string
             self::USER_PASSWORD_INVALIDATE, self::USER_MFA_REMOVE, self::USER_DISCORD_UNLINK,
             self::USER_ACCOUNT_LOCK, self::USER_PHOTO_REMOVE => User::class,
             self::MOD_LIST_DISABLE, self::MOD_LIST_ENABLE, self::MOD_LIST_DELETE => ModList::class,
+            self::ISSUE_CREATE, self::ISSUE_EDIT, self::ISSUE_DELETE, self::ISSUE_RESTORE, self::ISSUE_REPORT, self::ISSUE_REACT, self::ISSUE_UNREACT => ModIssue::class,
+            self::ISSUE_BAN, self::ISSUE_UNBAN => Mod::class,
             default => null,
         };
     }
@@ -412,6 +468,7 @@ enum TrackingEventType: string
             self::MOD_EDIT => 'pencil-square',
             self::MOD_DELETE => 'trash',
             self::MOD_REPORT => 'flag',
+            self::MOD_REACT, self::MOD_UNREACT => 'face-smile',
             self::MOD_CLAIM_INITIATED => 'hand-raised',
             self::MOD_CLAIM_VERIFIED => 'check-badge',
             self::MOD_CLAIM_REJECTED => 'x-circle',
@@ -447,6 +504,14 @@ enum TrackingEventType: string
             self::COMMENT_LIKE => 'heart',
             self::COMMENT_UNLIKE => 'heart',
             self::COMMENT_REPORT => 'exclamation-triangle',
+            self::ISSUE_CREATE => 'bug-ant',
+            self::ISSUE_EDIT => 'pencil',
+            self::ISSUE_DELETE => 'trash',
+            self::ISSUE_RESTORE => 'arrow-path',
+            self::ISSUE_REPORT => 'flag',
+            self::ISSUE_REACT, self::ISSUE_UNREACT => 'face-smile',
+            self::ISSUE_BAN => 'no-symbol',
+            self::ISSUE_UNBAN => 'shield-check',
             self::ACCOUNT_DELETE => 'user-minus',
             self::USER_BAN => 'no-symbol',
             self::USER_UNBAN => 'check-circle',
@@ -471,6 +536,8 @@ enum TrackingEventType: string
             self::MOD_LIST_DISABLE => 'eye-slash',
             self::MOD_LIST_ENABLE => 'eye',
             self::MOD_LIST_DELETE => 'trash',
+            self::EMOJI_UPDATE => 'face-smile',
+            self::EMOJI_DELETE => 'trash',
             self::USER_EMAIL_CHANGE, self::USER_EMAIL_REMOVE => 'envelope',
             self::USER_PASSWORD_RESET_SENT, self::USER_PASSWORD_INVALIDATE => 'key',
             self::USER_MFA_REMOVE => 'shield-exclamation',
@@ -498,6 +565,8 @@ enum TrackingEventType: string
             self::MOD_EDIT => 'indigo',
             self::MOD_DELETE => 'red',
             self::MOD_REPORT => 'orange',
+            self::MOD_REACT => 'pink',
+            self::MOD_UNREACT => 'zinc',
             self::MOD_CLAIM_INITIATED => 'gray',
             self::MOD_CLAIM_VERIFIED => 'green',
             self::MOD_CLAIM_REJECTED => 'red',
@@ -541,6 +610,15 @@ enum TrackingEventType: string
             self::COMMENT_LIKE => 'pink',
             self::COMMENT_UNLIKE => 'zinc',
             self::COMMENT_REPORT => 'orange',
+            self::ISSUE_CREATE => 'teal',
+            self::ISSUE_EDIT => 'indigo',
+            self::ISSUE_DELETE => 'red',
+            self::ISSUE_RESTORE => 'green',
+            self::ISSUE_REPORT => 'orange',
+            self::ISSUE_REACT => 'pink',
+            self::ISSUE_UNREACT => 'gray',
+            self::ISSUE_BAN => 'red',
+            self::ISSUE_UNBAN => 'green',
 
             // Account management - Rose theme
             self::ACCOUNT_DELETE => 'rose',
@@ -569,6 +647,8 @@ enum TrackingEventType: string
             self::MOD_LIST_DISABLE => 'red',
             self::MOD_LIST_ENABLE => 'green',
             self::MOD_LIST_DELETE => 'red',
+            self::EMOJI_UPDATE => 'amber',
+            self::EMOJI_DELETE => 'red',
             self::USER_EMAIL_CHANGE, self::USER_PASSWORD_RESET_SENT, self::USER_PHOTO_REMOVE => 'amber',
             self::USER_EMAIL_REMOVE, self::USER_PASSWORD_INVALIDATE, self::USER_MFA_REMOVE,
             self::USER_DISCORD_UNLINK, self::USER_ACCOUNT_LOCK => 'red',
@@ -581,7 +661,7 @@ enum TrackingEventType: string
     public function shouldShowUrl(): bool
     {
         return match ($this) {
-            self::LOGIN, self::LOGOUT, self::REGISTER, self::PASSWORD_CHANGE => false,
+            self::LOGIN, self::LOGOUT, self::REGISTER, self::PASSWORD_CHANGE, self::EMOJI_UPDATE, self::EMOJI_DELETE => false,
             default => true,
         };
     }
@@ -592,7 +672,7 @@ enum TrackingEventType: string
     public function shouldShowContext(): bool
     {
         return match ($this) {
-            self::LOGIN, self::LOGOUT, self::REGISTER, self::PASSWORD_CHANGE => false,
+            self::LOGIN, self::LOGOUT, self::REGISTER, self::PASSWORD_CHANGE, self::EMOJI_UPDATE, self::EMOJI_DELETE => false,
             default => true,
         };
     }
@@ -606,7 +686,9 @@ enum TrackingEventType: string
     public function isPrivate(): bool
     {
         return match ($this) {
-            self::COMMENT_CREATE, self::COMMENT_EDIT, self::COMMENT_SOFT_DELETE, self::COMMENT_LIKE, self::COMMENT_UNLIKE => false,
+            self::COMMENT_CREATE, self::COMMENT_EDIT, self::COMMENT_SOFT_DELETE, self::COMMENT_LIKE, self::COMMENT_UNLIKE,
+            self::MOD_REACT, self::MOD_UNREACT,
+            self::ISSUE_CREATE, self::ISSUE_EDIT, self::ISSUE_REACT, self::ISSUE_UNREACT => false,
             default => true,
         };
     }

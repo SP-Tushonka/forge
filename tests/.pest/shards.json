@@ -169,7 +169,6 @@
         "Tests\\Feature\\Livewire\\VerificationDetailsTest": 9.8082,
         "Tests\\Feature\\Livewire\\VerificationStatusTest": 5.0686,
         "Tests\\Feature\\MarkdownEditorTest": 3.5188,
-        "Tests\\Feature\\Markdown\\CustomAiDisclosureTest": 1.0449,
         "Tests\\Feature\\Markdown\\LazyImageTest": 0.8062,
         "Tests\\Feature\\Markdown\\StyledBlockquoteTest": 2.7011,
         "Tests\\Feature\\Markdown\\YouTubeLinkTest": 2.6662,

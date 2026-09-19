@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Traits\Livewire;
 
+use App\Enums\VersionChange;
+use App\Enums\VersionTagColor;
 use App\Jobs\GenerateThumbnailVariants;
 use App\Models\Mod;
 use App\Models\SourceCodeLink;
@@ -17,6 +19,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 /**
  * The mod detail field set, shared by the public mod edit page and the staff Mod tool.
@@ -50,15 +53,12 @@ trait EditsMod
 
     public ?string $publishedAtTime = null;
 
-    public bool $containsAiContent = false;
-
-    public bool $containsAiContentLocked = false;
-
-    public string $customAiDisclosure = '';
-
     public bool $containsAds = false;
 
     public bool $commentsDisabled = false;
+
+    /** @var array<string, string> */
+    public array $commentVersionColors = [];
 
     /** @var array<int> */
     public array $authorIds = [];
@@ -70,6 +70,8 @@ trait EditsMod
     public bool $addonsDisabled = false;
 
     public bool $listsDisabled = false;
+
+    public bool $issuesEnabled = false;
 
     /**
      * Add a new source code link input.
@@ -135,15 +137,16 @@ trait EditsMod
             $this->publishedAtTime = $publishedAtLocal->format('H:i');
         }
 
-        $this->containsAiContent = (bool) $mod->contains_ai_content;
-        $this->containsAiContentLocked = (bool) $mod->contains_ai_content_locked;
-        $this->customAiDisclosure = $mod->custom_ai_disclosure ?? '';
         $this->containsAds = (bool) $mod->contains_ads;
         $this->commentsDisabled = (bool) $mod->comments_disabled;
+        foreach (VersionChange::cases() as $change) {
+            $this->commentVersionColors[$change->value] = $mod->getCommentVersionTagColor($change)->value;
+        }
         $this->disableProfileBindingNotice = (bool) $mod->profile_binding_notice_disabled;
         $this->cheatNotice = (bool) $mod->cheat_notice;
         $this->addonsDisabled = (bool) $mod->addons_disabled;
         $this->listsDisabled = (bool) $mod->lists_disabled;
+        $this->issuesEnabled = (bool) $mod->issues_enabled;
 
         /** @var array<int> $authorIds */
         $authorIds = $mod->additionalAuthors->pluck('id')->toArray();
@@ -179,17 +182,17 @@ trait EditsMod
             'sourceCodeLinks.*.label' => 'nullable|string|max:50',
             'publishedAtDate' => 'nullable|date',
             'publishedAtTime' => 'nullable|date_format:H:i',
-            'containsAiContent' => 'boolean',
-            'containsAiContentLocked' => 'boolean',
-            'customAiDisclosure' => 'required_if:containsAiContent,true|string|max:1000',
             'containsAds' => 'boolean',
             'commentsDisabled' => 'boolean',
+            'commentVersionColors' => 'required|array:'.implode(',', array_keys(VersionChange::defaultTagColors())),
+            'commentVersionColors.*' => ['required', Rule::enum(VersionTagColor::class)],
             'authorIds' => 'array|max:10',
             'authorIds.*' => ['exists:users,id', 'distinct', new NoBlockRelationship($mod->owner, $this->existingAuthorIds($mod))],
             'disableProfileBindingNotice' => 'boolean',
             'cheatNotice' => 'boolean',
             'addonsDisabled' => 'boolean',
             'listsDisabled' => 'boolean',
+            'issuesEnabled' => 'boolean',
         ];
     }
 
@@ -208,7 +211,6 @@ trait EditsMod
             'sourceCodeLinks.*.url.url' => 'Please enter a valid URL (e.g., https://github.com/username/repo).',
             'sourceCodeLinks.*.url.starts_with' => 'The URL must start with https:// or http://',
             'sourceCodeLinks.*.label.max' => 'The label must not exceed 50 characters.',
-            'customAiDisclosure.required_if' => 'Please describe how AI was used when your mod contains AI content.',
         ];
     }
 
@@ -287,7 +289,7 @@ trait EditsMod
     /**
      * Write every field, the thumbnail, the source code links and the authors.
      */
-    protected function applyModFields(Mod $mod, bool $canLockAiContent, string $timezone): Mod
+    protected function applyModFields(Mod $mod, string $timezone): Mod
     {
         $mod->name = $this->name;
         // Slug from the stored (censored) name so a censored word never leaks into the URL
@@ -297,24 +299,16 @@ trait EditsMod
         $mod->description = $this->description;
         $mod->license_id = (int) $this->license;
         $mod->category_id = (int) $this->category;
-
-        if ($canLockAiContent) {
-            $mod->contains_ai_content_locked = $this->containsAiContentLocked;
-            $mod->contains_ai_content = $this->containsAiContentLocked ? true : $this->containsAiContent;
-        } elseif (! $mod->contains_ai_content_locked) {
-            $mod->contains_ai_content = $this->containsAiContent;
-        }
-
-        $mod->custom_ai_disclosure = $mod->contains_ai_content && $this->customAiDisclosure !== ''
-            ? $this->customAiDisclosure
-            : null;
-
         $mod->contains_ads = $this->containsAds;
         $mod->comments_disabled = $this->commentsDisabled;
+        // Only overrides are stored, so a mod left on the defaults follows any later change to them.
+        $colorOverrides = array_diff_assoc($this->commentVersionColors, VersionChange::defaultTagColors());
+        $mod->comment_version_colors = $colorOverrides === [] ? null : $colorOverrides;
         $mod->profile_binding_notice_disabled = $this->disableProfileBindingNotice;
         $mod->cheat_notice = $this->cheatNotice;
         $mod->addons_disabled = $this->addonsDisabled;
         $mod->lists_disabled = $this->listsDisabled;
+        $mod->issues_enabled = $this->issuesEnabled;
         $mod->published_at = $this->publishedAtValue($timezone);
 
         if ($this->thumbnail instanceof UploadedFile) {

@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Enums\ListVisibility;
 use App\Models\Addon;
+use App\Models\Comment;
 use App\Models\Mod;
 use App\Models\ModList;
 use App\Models\User;
@@ -13,6 +14,7 @@ use Carbon\CarbonInterface;
 use Database\Seeders\Traits\SeederHelpers;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
 
 final class CommentSeeder extends Seeder
 {
@@ -295,13 +297,21 @@ final class CommentSeeder extends Seeder
     }
 
     /**
-     * Bulk-create 1-5 reactions from distinct users for roughly 40% of the comments.
+     * Bulk-create 1-5 reactions from distinct users for roughly 40% of the comments, spread across the whitelist.
+     * Each (user, comment) pair gets exactly one emoji, so the unique key cannot be violated.
      *
      * @param  list<int>  $commentIds
      * @param  non-empty-list<int>  $userIds
      */
     private function seedCommentReactions(array $commentIds, array $userIds): void
     {
+        /** @var list<int> $emojiIds */
+        $emojiIds = DB::table('emojis')->where('enabled', true)->pluck('id')->all();
+
+        if ($emojiIds === []) {
+            return;
+        }
+
         $maxReactions = min(5, count($userIds));
 
         $rows = [];
@@ -314,13 +324,15 @@ final class CommentSeeder extends Seeder
             foreach ($this->randomElements($userIds, random_int(1, $maxReactions)) as $userId) {
                 $rows[] = [
                     'user_id' => $userId,
-                    'comment_id' => $commentId,
+                    'reactable_type' => Comment::class,
+                    'reactable_id' => $commentId,
+                    'emoji_id' => $emojiIds[random_int(0, count($emojiIds) - 1)],
                     'created_at' => $createdAt,
                     'updated_at' => $createdAt,
                 ];
             }
         }
 
-        $this->bulkInsert('comment_reactions', $rows, 1000);
+        $this->bulkInsert('reactions', $rows, 1000);
     }
 }

@@ -651,6 +651,21 @@
                                                             </p>
                                                         @endif
                                                     </div>
+                                                @elseif($report->reportable_type === 'App\Models\ModIssue')
+                                                    <div class="space-y-2">
+                                                        <div class="flex items-center space-x-2">
+                                                            <flux:icon.bug-ant class="size-4 text-teal-500" />
+                                                            <span
+                                                                class="text-sm font-medium text-white">{{ __('Issue') }}</span>
+                                                        </div>
+                                                        <p class="text-sm font-medium text-white">
+                                                            {{ $report->reportable->getReportableTitle() }}</p>
+                                                        @if ($report->reportable->getReportableExcerpt())
+                                                            <p class="line-clamp-3 text-xs text-gray-400">
+                                                                {{ $report->reportable->getReportableExcerpt() }}
+                                                            </p>
+                                                        @endif
+                                                    </div>
                                                 @endif
                                             @else
                                                 <div class="flex h-20 items-center justify-center text-gray-500">

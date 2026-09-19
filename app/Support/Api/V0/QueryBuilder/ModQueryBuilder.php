@@ -37,7 +37,6 @@ final class ModQueryBuilder extends AbstractQueryBuilder
             'teaser' => 'filterByTeaser',
             'featured' => 'filterByFeatured',
             'contains_ads' => 'filterByContainsAds',
-            'contains_ai_content' => 'filterByContainsAiContent',
             'cheat_notice' => 'filterByCheatNotice',
             'category_id' => 'filterByCategoryId',
             'category_slug' => 'filterByCategorySlug',
@@ -100,8 +99,6 @@ final class ModQueryBuilder extends AbstractQueryBuilder
             'favourites_count',
             'endorsements_count',
             'featured',
-            'contains_ai_content',
-            'custom_ai_disclosure',
             'contains_ads',
             'cheat_notice',
             'category_id',
@@ -363,20 +360,6 @@ final class ModQueryBuilder extends AbstractQueryBuilder
         }
 
         $query->where('mods.contains_ads', self::parseBooleanInput($value));
-    }
-
-    /**
-     * Filter by 'contains AI content' status.
-     *
-     * @param  Builder<Mod>  $query
-     */
-    protected function filterByContainsAiContent(Builder $query, ?string $value): void
-    {
-        if ($value === null) {
-            return;
-        }
-
-        $query->where('mods.contains_ai_content', self::parseBooleanInput($value));
     }
 
     /**

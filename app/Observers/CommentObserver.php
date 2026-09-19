@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
+use App\Actions\ModIssues\HandleModIssueComment;
 use App\Facades\CachedGate;
 use App\Jobs\CheckCommentForSpam;
 use App\Jobs\ProcessCommentNotification;
 use App\Jobs\TranslateComment;
 use App\Models\Comment;
 use App\Models\Mod;
+use App\Models\ModIssue;
 use App\Support\HomepageSectionCache;
 
 final class CommentObserver
@@ -20,6 +22,10 @@ final class CommentObserver
     public function created(Comment $comment): void
     {
         $comment->updateRootId();
+
+        if ($comment->commentable_type === ModIssue::class) {
+            resolve(HandleModIssueComment::class)->execute($comment);
+        }
 
         // Only run the Akismet spam check when the integration is enabled. With Akismet off, mark the comment clean
         // inline so it never flickers through the PENDING ribbon state. Skip when a caller has already seeded the

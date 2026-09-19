@@ -48,6 +48,8 @@
                         :version="$mod->latestVersion"
                         section="endorsed"
                         :endorsements-count="$endorsementCounts[$mod->id] ?? 0"
+                        :reaction-counts="$this->reactionSummary->countsFor($mod->id)"
+                        :reaction-whitelist="$this->reactionWhitelist"
                     />
                 </div>
             @endforeach

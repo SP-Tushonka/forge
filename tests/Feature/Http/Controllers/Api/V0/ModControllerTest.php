@@ -39,7 +39,7 @@ describe('index', function (): void {
                 'data' => [
                     '*' => [
                         'id', 'hub_id', 'name', 'slug', 'teaser', 'featured', 'contains_ads',
-                        'contains_ai_content', 'published_at', 'created_at', 'updated_at',
+                        'published_at', 'created_at', 'updated_at',
                     ],
                 ],
                 'links' => ['first', 'last', 'prev', 'next'],
@@ -500,6 +500,32 @@ describe('index', function (): void {
         'bare scalar' => 'foo',
     ]);
 
+    it('rejects the removed contains_ai_content filter', function (): void {
+        SptVersion::factory()->state(['version' => '3.8.0'])->create();
+        Mod::factory()->hasVersions(1, ['spt_version_constraint' => '3.8.0'])->create();
+
+        $response = $this->getJson('/api/v0/mods?filter[contains_ai_content]=false');
+
+        $response->assertBadRequest()
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('code', 'INVALID_QUERY_PARAMETER');
+
+        expect($response->json('message'))->toContain('Invalid filter(s): contains_ai_content');
+    });
+
+    it('rejects the removed custom_ai_disclosure field', function (): void {
+        SptVersion::factory()->state(['version' => '3.8.0'])->create();
+        Mod::factory()->hasVersions(1, ['spt_version_constraint' => '3.8.0'])->create();
+
+        $response = $this->getJson('/api/v0/mods?fields=custom_ai_disclosure');
+
+        $response->assertBadRequest()
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('code', 'INVALID_QUERY_PARAMETER');
+
+        expect($response->json('message'))->toContain('Invalid field(s): custom_ai_disclosure');
+    });
+
     it('returns only the fields requested', function (): void {
         SptVersion::factory()->state(['version' => '3.8.0'])->create();
 
@@ -516,24 +542,10 @@ describe('index', function (): void {
         $response->assertJsonMissing(['data' => ['*' => ['created_at', 'updated_at']]]);
     });
 
-    it('does not include custom_ai_disclosure on the index endpoint', function (): void {
-        SptVersion::factory()->state(['version' => '3.8.0'])->create();
-        Mod::factory()->hasVersions(1, ['spt_version_constraint' => '3.8.0'])->create([
-            'custom_ai_disclosure' => 'AI was used to generate item icons.',
-        ]);
-
-        // Even when explicitly requested, the disclosure is only served by the single-mod show endpoint.
-        $response = $this->getJson('/api/v0/mods?fields=custom_ai_disclosure');
-
-        $response->assertOk()
-            ->assertJsonMissingPath('data.0.custom_ai_disclosure');
-    });
-
-    it('does not render markdown for description or ai disclosure on the index endpoint', function (): void {
+    it('does not render markdown for the description on the index endpoint', function (): void {
         SptVersion::factory()->state(['version' => '3.8.0'])->create();
         Mod::factory()->hasVersions(1, ['spt_version_constraint' => '3.8.0'])->create([
             'description' => 'A **markdown** description.',
-            'custom_ai_disclosure' => 'AI generated *item icons*.',
         ]);
 
         // Regression: when() was handed an eagerly evaluated value, so description_html ran Markdown + Purify for
@@ -794,7 +806,7 @@ describe('show', function (): void {
                 'success',
                 'data' => [
                     'id', 'hub_id', 'name', 'slug', 'teaser', 'featured', 'contains_ads',
-                    'contains_ai_content', 'published_at', 'created_at', 'updated_at',
+                    'published_at', 'created_at', 'updated_at',
                 ],
             ]);
     });
@@ -1068,32 +1080,6 @@ describe('show', function (): void {
         $response
             ->assertOk()
             ->assertJsonPath('data.endorsements_count', 7);
-    });
-
-    it('returns custom_ai_disclosure as rendered HTML when requested', function (): void {
-        SptVersion::factory()->state(['version' => '3.8.0'])->create();
-        $mod = Mod::factory()->hasVersions(1, ['spt_version_constraint' => '3.8.0'])->create([
-            'custom_ai_disclosure' => 'AI was used to generate **item icons**.',
-        ]);
-
-        $response = $this->getJson(sprintf('/api/v0/mod/%d?fields=custom_ai_disclosure', $mod->id));
-
-        $response->assertOk()
-            ->assertJsonPath('data.custom_ai_disclosure', $mod->custom_ai_disclosure_html);
-
-        expect($response->json('data.custom_ai_disclosure'))->toContain('<strong>item icons</strong>');
-    });
-
-    it('returns an empty custom_ai_disclosure when none is set', function (): void {
-        SptVersion::factory()->state(['version' => '3.8.0'])->create();
-        $mod = Mod::factory()->hasVersions(1, ['spt_version_constraint' => '3.8.0'])->create([
-            'custom_ai_disclosure' => null,
-        ]);
-
-        $response = $this->getJson(sprintf('/api/v0/mod/%d?fields=custom_ai_disclosure', $mod->id));
-
-        $response->assertOk()
-            ->assertJsonPath('data.custom_ai_disclosure', '');
     });
 
     it('returns thumbnail as a URL', function (): void {

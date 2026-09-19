@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
- * Reads edge-side request analytics for the open API from the Cloudflare GraphQL Analytics API: the requests
- * Cloudflare handled for the API hostname in the trailing 24 hours, split into cached and origin-bound totals.
+ * Reads edge-side request analytics from the Cloudflare GraphQL Analytics API: the open API's cached/origin split, the
+ * recent-visitor count, and per-mod page views for the mod stats dashboard.
  */
 final class CloudflareAnalyticsService
 {
@@ -42,6 +43,21 @@ final class CloudflareAnalyticsService
      * The most distinct addresses the visitor query will return.
      */
     private const int VISITOR_ROW_LIMIT = 10000;
+
+    /**
+     * The most request groups a mod page view query returns; a full response means the window must be split.
+     */
+    private const int MOD_VIEWS_ROW_LIMIT = 10000;
+
+    /**
+     * The smallest window a full mod page view response is split down to before it is accepted as a lower bound.
+     */
+    private const int MOD_VIEWS_MIN_WINDOW_SECONDS = 3600;
+
+    /**
+     * Mod detail page paths, /mod/{id}/{slug} with an optional trailing slash. The edit page shares that shape.
+     */
+    private const string MOD_PAGE_PATTERN = '#^/mod/(\d+)/(?!edit/?$)[^/]+/?$#';
 
     /**
      * The edge request totals for the open API over the trailing 24 hours, or null when Cloudflare analytics are not
@@ -132,6 +148,32 @@ final class CloudflareAnalyticsService
             'count' => $count,
             'window_minutes' => self::VISITOR_WINDOW_MINUTES,
         ];
+    }
+
+    /**
+     * HTML loads of mod pages per mod ID over [since, until), excluding Cloudflare-verified bots, or null when Cloudflare
+     * analytics are not configured or any request fails. Callers must treat null as unknown, never as zero views.
+     *
+     * @return array<int, int>|null
+     */
+    public function modPageViews(CarbonImmutable $since, CarbonImmutable $until): ?array
+    {
+        $token = config('services.cloudflare.analytics_token');
+        $zoneId = config('services.cloudflare.zone_id');
+
+        if (! is_string($token) || $token === '' || ! is_string($zoneId) || $zoneId === '') {
+            return null;
+        }
+
+        $host = parse_url(config()->string('app.url'), PHP_URL_HOST);
+
+        if (! is_string($host) || $host === '') {
+            return null;
+        }
+
+        $views = [];
+
+        return $this->collectModPageViews($token, $zoneId, $host, $since, $until, $views) ? $views : null;
     }
 
     /**
@@ -282,5 +324,93 @@ final class CloudflareAnalyticsService
     private function visitorRowLimit(): int
     {
         return self::VISITOR_ROW_LIMIT;
+    }
+
+    /**
+     * Add the window's mod page views to $views, halving the window whenever a response is full.
+     *
+     * @param  array<int, int>  $views
+     */
+    private function collectModPageViews(string $token, string $zoneId, string $host, CarbonImmutable $since, CarbonImmutable $until, array &$views): bool
+    {
+        $groups = $this->requestGroups($token, $this->modPageViewsQuery(), [
+            'zone' => $zoneId,
+            'since' => $since->toIso8601ZuluString(),
+            'until' => $until->toIso8601ZuluString(),
+            'host' => $host,
+        ]);
+
+        if ($groups === null) {
+            return false;
+        }
+
+        if (count($groups) >= self::MOD_VIEWS_ROW_LIMIT) {
+            $seconds = (int) $since->diffInSeconds($until);
+
+            if ($seconds > self::MOD_VIEWS_MIN_WINDOW_SECONDS) {
+                $middle = $since->addSeconds(intdiv($seconds, 2));
+
+                return $this->collectModPageViews($token, $zoneId, $host, $since, $middle, $views)
+                    && $this->collectModPageViews($token, $zoneId, $host, $middle, $until, $views);
+            }
+
+            Log::warning('Cloudflare mod page view query hit its row limit on the smallest window; views are a lower bound', [
+                'since' => $since->toIso8601ZuluString(),
+                'until' => $until->toIso8601ZuluString(),
+            ]);
+        }
+
+        foreach ($groups as $group) {
+            $path = data_get($group, 'dimensions.clientRequestPath');
+            $bot = data_get($group, 'dimensions.verifiedBotCategory');
+            $count = data_get($group, 'count');
+
+            if (! is_string($path) || ! is_int($count) || (is_string($bot) && $bot !== '')) {
+                continue;
+            }
+
+            if (preg_match(self::MOD_PAGE_PATTERN, $path, $matches) !== 1) {
+                continue;
+            }
+
+            $modId = (int) $matches[1];
+            $views[$modId] = ($views[$modId] ?? 0) + $count;
+        }
+
+        return true;
+    }
+
+    /**
+     * The GraphQL query returning mod-page HTML loads (GET, 200) grouped by path and verified-bot category.
+     */
+    private function modPageViewsQuery(): string
+    {
+        return <<<GRAPHQL
+        query (\$zone: String!, \$since: Time!, \$until: Time!, \$host: String!) {
+            viewer {
+                zones(filter: { zoneTag: \$zone }) {
+                    httpRequestsAdaptiveGroups(
+                        limit: {$this->modViewsRowLimit()},
+                        filter: {
+                            datetime_geq: \$since, datetime_lt: \$until, clientRequestHTTPHost: \$host,
+                            clientRequestPath_like: "/mod/%", clientRequestHTTPMethodName: "GET",
+                            edgeResponseContentTypeName: "html", edgeResponseStatus: 200
+                        }
+                    ) {
+                        count
+                        dimensions { clientRequestPath verifiedBotCategory }
+                    }
+                }
+            }
+        }
+        GRAPHQL;
+    }
+
+    /**
+     * The mod page view query's row limit.
+     */
+    private function modViewsRowLimit(): int
+    {
+        return self::MOD_VIEWS_ROW_LIMIT;
     }
 }

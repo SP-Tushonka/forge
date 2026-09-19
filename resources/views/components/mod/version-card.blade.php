@@ -254,6 +254,22 @@
                 @endforeach
             </ul>
         @endif
+
+        @if ($fixedIssues !== [])
+            <p
+                class="mt-3 text-gray-400"
+                data-test="version-fixed-issues"
+            >
+                {{ __('Fixes') }}
+                @foreach ($fixedIssues as $fixedIssue)
+                    <a
+                        href="{{ $fixedIssue->url() }}"
+                        title="{{ $fixedIssue->title }}"
+                        class="text-gray-200 hover:text-white hover:underline"
+                    >#{{ $fixedIssue->number }}</a>{{ $loop->last ? '' : ',' }}
+                @endforeach
+            </p>
+        @endif
     </div>
     <div class="user-markdown pt-3 text-gray-400">
         {{--

@@ -135,17 +135,6 @@ final class ModResource extends JsonResource
             $data['contains_ads'] = (bool) $this->resource->contains_ads;
         }
 
-        if ($this->shouldInclude('contains_ai_content')) {
-            $data['contains_ai_content'] = (bool) $this->resource->contains_ai_content;
-        }
-
-        if ($this->shouldInclude('custom_ai_disclosure')) {
-            $data['custom_ai_disclosure'] = $this->when(
-                $request->routeIs('api.v0.mods.show'),
-                fn (): string => $this->resource->custom_ai_disclosure_html,
-            );
-        }
-
         if ($this->shouldInclude('shows_profile_binding_notice')) {
             $data['shows_profile_binding_notice'] = (bool) $this->resource->shows_profile_binding_notice;
         }

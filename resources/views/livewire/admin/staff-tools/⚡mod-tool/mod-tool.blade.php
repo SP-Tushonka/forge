@@ -69,9 +69,6 @@
                 @if ($mod->featured)
                     <flux:badge color="yellow">{{ __('Featured') }}</flux:badge>
                 @endif
-                @if ($mod->contains_ai_content)
-                    <flux:badge color="purple">{{ __('AI content') }}</flux:badge>
-                @endif
             </div>
 
             <dl class="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
@@ -101,7 +98,13 @@
             <flux:input wire:model="name" :label="__('Name')" />
             <flux:input wire:model="guid" :label="__('GUID')" />
             <flux:input wire:model="teaser" :label="__('Summary')" />
-            <flux:textarea wire:model="description" :label="__('Description')" rows="10" />
+            <x-markdown-editor
+                wire-model="description"
+                name="description"
+                :label="__('Description')"
+                rows="10"
+                purify-config="description"
+            />
 
             <flux:select wire:model="category" :label="__('Category')">
                 @foreach ($this->categories as $category)
@@ -138,18 +141,28 @@
                 <flux:checkbox wire:model="commentsDisabled" :label="__('Comments disabled')" />
                 <flux:checkbox wire:model="addonsDisabled" :label="__('Addons disabled')" />
                 <flux:checkbox wire:model="listsDisabled" :label="__('Lists disabled')" />
+                <flux:checkbox wire:model="issuesEnabled" :label="__('Issues enabled')" />
                 <flux:checkbox wire:model="cheatNotice" :label="__('Show cheat notice')" />
                 <flux:checkbox wire:model="disableProfileBindingNotice" :label="__('Hide profile binding notice')" />
-                @if ($this->canLockAiContent)
-                    <flux:checkbox wire:model="containsAiContentLocked" :label="__('Lock the AI content flag')" />
-                @endif
-                <flux:checkbox wire:model="containsAiContent" :label="__('Contains AI content')" />
             </div>
 
-            <flux:textarea wire:model="customAiDisclosure" :label="__('AI disclosure')" rows="3" />
+            <div>
+                <flux:heading size="sm">{{ __('Comment version tag colours') }}</flux:heading>
+                <div class="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    @foreach (App\Enums\VersionChange::cases() as $change)
+                        <flux:select wire:model="commentVersionColors.{{ $change->value }}" :label="$change->label()">
+                            @foreach (App\Enums\VersionTagColor::cases() as $color)
+                                <flux:select.option value="{{ $color->value }}">{{ $color->label() }}</flux:select.option>
+                            @endforeach
+                        </flux:select>
+                    @endforeach
+                </div>
+                <flux:error name="commentVersionColors" />
+            </div>
 
             <flux:textarea
                 wire:model="reason"
+                data-test="mod-tool-reason"
                 :label="__('Reason for this edit')"
                 :description="__('Recorded on the moderation log. Required.')"
                 rows="2"

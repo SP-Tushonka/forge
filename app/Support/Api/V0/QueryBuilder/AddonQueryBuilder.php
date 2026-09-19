@@ -27,7 +27,6 @@ final class AddonQueryBuilder extends AbstractQueryBuilder
             'teaser' => 'filterByTeaser',
             'mod_id' => 'filterByModId',
             'contains_ads' => 'filterByContainsAds',
-            'contains_ai_content' => 'filterByContainsAiContent',
             'is_detached' => 'filterByIsDetached',
             'created_between' => 'filterByCreatedBetween',
             'updated_between' => 'filterByUpdatedBetween',
@@ -80,8 +79,6 @@ final class AddonQueryBuilder extends AbstractQueryBuilder
             'description',
             'thumbnail',
             'downloads',
-            'contains_ai_content',
-            'custom_ai_disclosure',
             'contains_ads',
             'mod_id',
             'detached_at',
@@ -261,20 +258,6 @@ final class AddonQueryBuilder extends AbstractQueryBuilder
         }
 
         $query->where('addons.contains_ads', filter_var($containsAds, FILTER_VALIDATE_BOOLEAN));
-    }
-
-    /**
-     * Filter by contains_ai_content.
-     *
-     * @param  Builder<Addon>  $query
-     */
-    protected function filterByContainsAiContent(Builder $query, ?string $containsAiContent): void
-    {
-        if ($containsAiContent === null) {
-            return;
-        }
-
-        $query->where('addons.contains_ai_content', filter_var($containsAiContent, FILTER_VALIDATE_BOOLEAN));
     }
 
     /**

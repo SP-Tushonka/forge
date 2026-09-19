@@ -134,6 +134,26 @@ final class ModPolicy
     }
 
     /**
+     * Determine whether the user can react to the mod.
+     *
+     * Mirrors endorse() on verification and self-reaction, but deliberately omits the account-age gate: an endorsement
+     * is a quality signal worth protecting, whereas a reaction is lightweight expression already covered by the rate
+     * limit. Self-reaction is blocked for consistency with CommentPolicy::react().
+     */
+    public function react(User $user, Mod $mod): Response
+    {
+        if (! $user->hasVerifiedEmail()) {
+            return Response::deny(__('You must verify your email address before reacting.'));
+        }
+
+        if ($mod->isAuthorOrOwner($user)) {
+            return Response::deny(__('You cannot react to your own mod.'));
+        }
+
+        return Response::allow();
+    }
+
+    /**
      * Determine whether the user can permanently delete the model.
      */
     public function forceDelete(User $user, Mod $mod): bool
@@ -203,11 +223,6 @@ final class ModPolicy
             return false;
         }
 
-        // Cannot feature mods that contain AI content
-        if ($mod->contains_ai_content) {
-            return false;
-        }
-
         return $user->isAdmin();
     }
 
@@ -240,23 +255,24 @@ final class ModPolicy
     }
 
     /**
-     * Determine whether the user can lock or unlock the contains_ai_content flag.
-     */
-    public function lockAiContent(User $user, Mod $mod): bool
-    {
-        if (! $user->hasVerifiedEmail()) {
-            return false;
-        }
-
-        return $user->isAdmin();
-    }
-
-    /**
      * Determine whether the user can view actions for the model. Example: Edit, Delete, etc.
      */
     public function viewActions(User $user, Mod $mod): bool
     {
         return $mod->isAuthorOrOwner($user);
+    }
+
+    /**
+     * Determine whether the user can view the mod's stats: its owner and co-authors, and staff administrators.
+     * Moderators are deliberately excluded.
+     */
+    public function viewStats(User $user, Mod $mod): bool
+    {
+        if (! $user->hasVerifiedEmail()) {
+            return false;
+        }
+
+        return $user->isAdmin() || $mod->isAuthorOrOwner($user);
     }
 
     /**
