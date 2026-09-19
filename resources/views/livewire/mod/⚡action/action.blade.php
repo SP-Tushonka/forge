@@ -21,6 +21,12 @@
                         icon:trailing="pencil-square"
                     >Edit Mod</flux:menu.item>
                     @endcachedCan
+                    @cachedCan('viewStats', $this->mod)
+                    <flux:menu.item
+                        href="{{ route('mod.stats', ['modId' => $this->modId, 'slug' => $this->mod->slug]) }}"
+                        icon:trailing="chart-bar"
+                    >View Stats</flux:menu.item>
+                    @endcachedCan
                     @cachedCan('create', [App\Models\ModVersion::class, $this->mod])
                     <flux:menu.item
                         href="{{ route('mod.version.create', $this->modId) }}"
@@ -58,6 +64,14 @@
                         icon:trailing="pencil-square"
                     >Edit Mod</flux:menu.item>
                     @endcachedCan
+                    @if (!$this->mod->isAuthorOrOwner(auth()->user()))
+                        @cachedCan('viewStats', $this->mod)
+                        <flux:menu.item
+                            href="{{ route('mod.stats', ['modId' => $this->modId, 'slug' => $this->mod->slug]) }}"
+                            icon:trailing="chart-bar"
+                        >View Stats</flux:menu.item>
+                        @endcachedCan
+                    @endif
                     @if ($this->modFeatured)
                         @cachedCan('unfeature', $this->mod)
                         <flux:modal.trigger name="mod-action-unfeature-{{ $this->modId }}">

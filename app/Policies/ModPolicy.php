@@ -263,6 +263,19 @@ final class ModPolicy
     }
 
     /**
+     * Determine whether the user can view the mod's stats: its owner and co-authors, and staff administrators.
+     * Moderators are deliberately excluded.
+     */
+    public function viewStats(User $user, Mod $mod): bool
+    {
+        if (! $user->hasVerifiedEmail()) {
+            return false;
+        }
+
+        return $user->isAdmin() || $mod->isAuthorOrOwner($user);
+    }
+
+    /**
      * Determine whether the user can report a mod.
      *
      * Authentication and email verification are required.

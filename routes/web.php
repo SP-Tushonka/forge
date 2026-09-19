@@ -168,6 +168,10 @@ Route::middleware('auth.banned')->group(function (): void {
             ->where(['modId' => '[0-9]+'])
             ->name('mod.edit');
 
+        Route::livewire('/mod/{modId}/{slug}/stats', 'pages::mod.stats')
+            ->where(['modId' => '[0-9]+'])
+            ->name('mod.stats');
+
         Route::livewire('/mod/{mod}/version/create', 'pages::mod-version.create')
             ->where(['mod' => '[0-9]+'])
             ->name('mod.version.create');
