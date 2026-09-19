@@ -9,6 +9,7 @@ use App\Models\ModIssue;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Gate;
 
 final class ModIssuePolicy
 {
@@ -18,7 +19,7 @@ final class ModIssuePolicy
      */
     public function viewAny(?User $user, Mod $mod): bool
     {
-        if (! resolve(ModPolicy::class)->view($user, $mod)) {
+        if (! Gate::forUser($user)->allows('view', $mod)) {
             return false;
         }
 
@@ -51,7 +52,7 @@ final class ModIssuePolicy
             return Response::deny(__('You must verify your email address before opening an issue.'));
         }
 
-        if ($user->isBanned() || ! resolve(ModPolicy::class)->view($user, $mod)) {
+        if ($user->isBanned() || ! Gate::forUser($user)->allows('view', $mod)) {
             return Response::deny(__('You cannot open issues on this mod.'));
         }
 

@@ -12,6 +12,7 @@ use App\Models\ModIssue;
 use App\Models\ModList;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Gate;
 
 final class CommentPolicy
 {
@@ -112,7 +113,7 @@ final class CommentPolicy
         if ($comment->commentable_type === ModIssue::class) {
             $issue = $comment->commentable;
 
-            if (! $issue instanceof ModIssue || ! resolve(ModIssuePolicy::class)->view($user, $issue)) {
+            if (! $issue instanceof ModIssue || ! Gate::forUser($user)->allows('view', $issue)) {
                 return false;
             }
         }
@@ -812,7 +813,7 @@ final class CommentPolicy
             return false;
         }
 
-        return resolve(ModIssuePolicy::class)->ban($user, $issue->mod, $comment->user)
+        return Gate::forUser($user)->allows('ban', [ModIssue::class, $issue->mod, $comment->user])
             && ! $issue->mod->isIssueBanned($comment->user);
     }
 
