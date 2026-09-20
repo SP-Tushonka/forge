@@ -33,7 +33,7 @@
             :label="__('Type')"
             variant="segmented"
         >
-            @foreach (App\Enums\ModIssueType::cases() as $issueType)
+            @foreach ($this->allowedTypes as $issueType)
                 <flux:radio
                     value="{{ $issueType->value }}"
                     :label="$issueType->label()"
@@ -41,6 +41,7 @@
                 />
             @endforeach
         </flux:radio.group>
+        <flux:error name="type" />
 
         <flux:input
             wire:model="title"
@@ -49,14 +50,17 @@
             data-test="issue-title"
         />
 
-        @if ($type === App\Enums\ModIssueType::Bug->value)
+        @if ($this->issueType()->showsAffectedVersion())
             <flux:select
                 wire:model="affectedVersionId"
                 variant="listbox"
-                :label="__('Affected version')"
-                :description="__('The version you found the bug in.')"
+                :label="$this->issueType()->requiresAffectedVersion() ? __('Affected version') : __('Affected version (optional)')"
+                :description="__('The version you ran into this on.')"
                 data-test="issue-affected-version"
             >
+                @unless ($this->issueType()->requiresAffectedVersion())
+                    <flux:select.option value="">{{ __('Not version specific') }}</flux:select.option>
+                @endunless
                 @foreach ($this->affectedVersions as $version)
                     <flux:select.option value="{{ $version->id }}">v{{ $version->version }}</flux:select.option>
                 @endforeach

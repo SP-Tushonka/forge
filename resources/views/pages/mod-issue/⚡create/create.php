@@ -28,18 +28,16 @@ new #[Layout('layouts::base')] class extends Component
     use RendersMarkdownPreview;
     use UsesSpamProtection;
 
-    private const string BUG_TEMPLATE = "**Steps to reproduce**\n1. \n\n**What you expected**\n\n\n**What happened**\n\n\n**Logs**\nUpload your log files to https://codepaste.sp-mod.com and paste the link here.";
-
     public HoneypotData $honeypotData;
 
     #[Locked]
     public Mod $mod;
 
-    public string $type = 'bug';
+    public string $type = '';
 
     public string $title = '';
 
-    public string $body = self::BUG_TEMPLATE;
+    public string $body = '';
 
     public ?int $affectedVersionId = null;
 
@@ -63,6 +61,8 @@ new #[Layout('layouts::base')] class extends Component
             return;
         }
 
+        $this->type = ($this->allowedTypes[0] ?? ModIssueType::Bug)->value;
+        $this->body = $this->issueType()->template();
         $this->affectedVersionId = $this->affectedVersions->first()?->id;
     }
 
@@ -75,17 +75,32 @@ new #[Layout('layouts::base')] class extends Component
     }
 
     /**
-     * The template only swaps while the body is untouched, so switching type never discards what they wrote.
+     * The types this mod accepts. The owner can switch any of them off.
+     *
+     * @return list<ModIssueType>
+     */
+    #[Computed]
+    public function allowedTypes(): array
+    {
+        return $this->mod->enabledIssueTypes();
+    }
+
+    public function issueType(): ModIssueType
+    {
+        return ModIssueType::tryFrom($this->type) ?? ModIssueType::Bug;
+    }
+
+    /**
+     * The template only swaps while the body is still a template or empty, so switching type never discards what
+     * they wrote.
      */
     public function updatedType(string $value): void
     {
-        if ($value === ModIssueType::Feature->value && $this->body === self::BUG_TEMPLATE) {
-            $this->body = '';
+        if (mb_trim($this->body) !== '' && ! in_array($this->body, ModIssueType::templates(), true)) {
+            return;
         }
 
-        if ($value === ModIssueType::Bug->value && mb_trim($this->body) === '') {
-            $this->body = self::BUG_TEMPLATE;
-        }
+        $this->body = (ModIssueType::tryFrom($value) ?? ModIssueType::Bug)->template();
     }
 
     /**
@@ -133,17 +148,22 @@ new #[Layout('layouts::base')] class extends Component
         }
 
         $this->validate([
-            'type' => ['required', Rule::enum(ModIssueType::class)],
+            'type' => [
+                'required',
+                Rule::enum(ModIssueType::class),
+                Rule::in(array_map(fn (ModIssueType $type): string => $type->value, $this->allowedTypes)),
+            ],
             'title' => ['required', 'string', 'min:5', 'max:'.config()->integer('mod-issues.validation.title_max')],
-            'body' => ['required', 'string', 'min:10', 'max:'.config()->integer('mod-issues.validation.body_max'), Rule::notIn([self::BUG_TEMPLATE])],
+            'body' => ['required', 'string', 'min:10', 'max:'.config()->integer('mod-issues.validation.body_max'), Rule::notIn(ModIssueType::templates())],
             'affectedVersionId' => [
-                Rule::requiredIf($this->type === ModIssueType::Bug->value),
+                Rule::requiredIf($this->issueType()->requiresAffectedVersion()),
                 'nullable',
                 'integer',
                 Rule::in($this->affectedVersions->pluck('id')->all()),
             ],
         ], [
             'body.not_in' => __('Fill in the template before opening the issue.'),
+            'type.in' => __('This mod is not accepting that kind of issue.'),
         ]);
 
         if ($rateLimited) {

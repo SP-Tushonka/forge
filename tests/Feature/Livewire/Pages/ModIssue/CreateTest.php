@@ -57,6 +57,44 @@ it('needs a version for a bug but none for a feature request', function (): void
         ->assertHasNoErrors();
 });
 
+it('offers only the types the mod accepts and rejects the rest', function (): void {
+    $this->mod->update(['disabled_issue_types' => [ModIssueType::Question->value]]);
+
+    $page = Livewire::actingAs($this->member)->test('pages::mod-issue.create', $this->params);
+
+    $page->assertSee('Compatibility')
+        ->assertDontSee('Question')
+        ->set('type', ModIssueType::Question->value)
+        ->set('title', 'How do I configure this?')
+        ->set('body', 'I cannot work out where the config file lives.')
+        ->call('save')
+        ->assertHasErrors('type');
+
+    expect(ModIssue::query()->count())->toBe(0);
+});
+
+it('lets a question go without a version but makes a compatibility report name one', function (): void {
+    Livewire::actingAs($this->member)
+        ->test('pages::mod-issue.create', $this->params)
+        ->set('type', ModIssueType::Question->value)
+        ->set('affectedVersionId', null)
+        ->set('title', 'How do I configure this?')
+        ->set('body', 'I cannot work out where the config file lives.')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    Livewire::actingAs($this->member)
+        ->test('pages::mod-issue.create', $this->params)
+        ->set('type', ModIssueType::Compatibility->value)
+        ->set('affectedVersionId', null)
+        ->set('title', 'Conflicts with another mod')
+        ->set('body', 'Both mods patch the same loot table and the raid never loads.')
+        ->call('save')
+        ->assertHasErrors(['affectedVersionId' => 'required']);
+
+    expect(ModIssue::query()->sole()->type)->toBe(ModIssueType::Question);
+});
+
 it('swaps the untouched bug template out for a feature request', function (): void {
     Livewire::actingAs($this->member)
         ->test('pages::mod-issue.create', $this->params)

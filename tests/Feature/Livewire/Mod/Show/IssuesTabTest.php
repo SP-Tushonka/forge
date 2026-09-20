@@ -48,6 +48,16 @@ it('filters by type and searches titles', function (): void {
         ->assertDontSee('Add a config option');
 });
 
+it('drops a switched-off type from the filter unless issues were already filed under it', function (): void {
+    $this->mod->update(['disabled_issue_types' => [ModIssueType::Question->value, ModIssueType::Compatibility->value]]);
+    ModIssue::factory()->for($this->mod)->create(['type' => ModIssueType::Question, 'title' => 'An older question']);
+
+    Livewire::withoutLazyLoading()
+        ->test('mod.show.issues-tab', ['modId' => $this->mod->id])
+        ->assertSee('Question')
+        ->assertDontSee('Compatibility');
+});
+
 it('forbids the tab to members once issues are off, but not to the owner', function (): void {
     $this->mod->update(['issues_enabled' => false]);
 

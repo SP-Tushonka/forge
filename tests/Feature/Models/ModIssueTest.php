@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\IssueNotificationLevel;
 use App\Enums\ModIssueStatus;
+use App\Enums\ModIssueType;
 use App\Models\ModIssue;
 use App\Models\ModIssueBan;
 use App\Models\User;
@@ -131,6 +132,19 @@ describe('mod helpers', function (): void {
 
         expect($mod->fresh()?->managers()->pluck('id')->sort()->values()->all())
             ->toBe(collect([$mod->owner_id, $author->id])->sort()->values()->all());
+    });
+
+    it('accepts every issue type until the owner opts one out', function (): void {
+        $mod = modWithIssues();
+
+        expect($mod->enabledIssueTypes())->toBe(ModIssueType::cases())
+            ->and($mod->allowsIssueType(ModIssueType::Question))->toBeTrue();
+
+        $mod->update(['disabled_issue_types' => [ModIssueType::Question->value]]);
+
+        expect($mod->allowsIssueType(ModIssueType::Question))->toBeFalse()
+            ->and($mod->allowsIssueType(ModIssueType::Bug))->toBeTrue()
+            ->and($mod->enabledIssueTypes())->not->toContain(ModIssueType::Question);
     });
 
     it('defaults the issue notification level to all', function (): void {

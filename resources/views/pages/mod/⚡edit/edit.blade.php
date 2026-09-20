@@ -409,11 +409,32 @@
                                 <flux:checkbox.group label="Issues">
                                     <flux:checkbox
                                         value="true"
-                                        wire:model.blur="issuesEnabled"
+                                        wire:model.live="issuesEnabled"
                                         label="Enable Issues"
                                         description="Adds an Issues tab where users can report bugs and request features. You and your co-authors can triage, close and lock issues. Turning this off hides existing issues from everyone except you, your co-authors and staff."
                                     />
                                 </flux:checkbox.group>
+
+                                @if ($issuesEnabled)
+                                    {{-- The group carries wire:model, not each checkbox: a bound, labelled control
+                                         renders its own copy of the error, so binding all four repeats it.
+                                         No .blur modifier either: blur never fires on the group element, so the
+                                         unticked state would never reach the server. --}}
+                                    <flux:checkbox.group
+                                        class="mt-4"
+                                        wire:model="allowedIssueTypes"
+                                        label="Issue types you accept"
+                                        description="Untick a type to stop new issues of that kind. Issues already filed under it are kept."
+                                    >
+                                        @foreach (App\Enums\ModIssueType::cases() as $issueType)
+                                            <flux:checkbox
+                                                value="{{ $issueType->value }}"
+                                                label="{{ $issueType->label() }}"
+                                            />
+                                        @endforeach
+                                    </flux:checkbox.group>
+                                @endif
+
                                 <x-mod-issue.beta-notice class="mt-3" />
                             </flux:field>
 

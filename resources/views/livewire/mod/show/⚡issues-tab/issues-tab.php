@@ -123,6 +123,23 @@ new #[Lazy] class extends Component
     }
 
     /**
+     * The types the mod accepts, plus any type its existing issues already use, so switching a type off never
+     * hides the filter for what was filed under it.
+     *
+     * @return list<ModIssueType>
+     */
+    #[Computed]
+    public function typeOptions(): array
+    {
+        $filed = $this->mod->issues()->distinct()->pluck('type')->all();
+
+        return array_values(array_filter(
+            ModIssueType::cases(),
+            fn (ModIssueType $type): bool => $this->mod->allowsIssueType($type) || in_array($type, $filed, true),
+        ));
+    }
+
+    /**
      * @return list<ModIssueStatus>
      */
     #[Computed]

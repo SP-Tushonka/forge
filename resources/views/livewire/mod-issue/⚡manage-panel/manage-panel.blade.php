@@ -62,7 +62,7 @@
                 variant="listbox"
                 :label="__('Type')"
             >
-                @foreach (App\Enums\ModIssueType::cases() as $issueType)
+                @foreach ($this->typeOptions as $issueType)
                     <flux:select.option value="{{ $issueType->value }}">{{ $issueType->label() }}</flux:select.option>
                 @endforeach
             </flux:select>

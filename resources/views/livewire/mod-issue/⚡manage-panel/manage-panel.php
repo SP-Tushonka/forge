@@ -49,6 +49,20 @@ new class extends Component
     }
 
     /**
+     * The types the mod accepts, plus whatever this issue already is, so an issue never loses its own type after
+     * the owner switches that type off.
+     *
+     * @return list<ModIssueType>
+     */
+    #[Computed]
+    public function typeOptions(): array
+    {
+        $types = $this->issue->mod->enabledIssueTypes();
+
+        return in_array($this->issue->type, $types, true) ? $types : [...$types, $this->issue->type];
+    }
+
+    /**
      * @return Collection<int, ModIssue>
      */
     #[Computed]
