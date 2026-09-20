@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\ModIssueStatus;
+use App\Enums\ModIssueType;
 use App\Enums\ModStatsSource;
 use App\Models\Mod;
 use App\Models\ModCountryDailyDownload;
@@ -15,8 +17,10 @@ use App\Support\DataTransferObjects\StatsRange;
 use App\Support\ModStats\DownloadStatsCollector;
 use App\Support\ModStats\DownstreamModsQuery;
 use App\Support\ModStats\EngagementStatsQuery;
+use App\Support\ModStats\IssueStatsQuery;
 use App\Support\ModStats\ModStatsState;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterval;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -35,7 +39,10 @@ use Locale;
  * @phpstan-type Country array{code: string, label: string, downloads: int, share: float}
  * @phpstan-type Downstream array{count: int, top: list<array{name: string, url: string, downloads: int}>}
  * @phpstan-type Since array{downloads: string|null, views: string|null}
- * @phpstan-type ModReport array{summary: list<SummaryTile>, traffic: list<TrafficPoint>, versions: Versions, countries: list<Country>, engagement: list<EngagementPoint>, downstream: Downstream, since: Since}
+ * @phpstan-type IssuePoint array{date: string, label: string, opened: int, closed: int}
+ * @phpstan-type IssueBreakdown array{label: string, count: int, share: float}
+ * @phpstan-type Issues array{open_now: int, opened: SummaryTile, closed: SummaryTile, median_close: string|null, series: list<IssuePoint>, by_type: list<IssueBreakdown>, by_status: list<IssueBreakdown>}
+ * @phpstan-type ModReport array{summary: list<SummaryTile>, traffic: list<TrafficPoint>, versions: Versions, countries: list<Country>, engagement: list<EngagementPoint>, downstream: Downstream, issues: Issues|null, since: Since}
  * @phpstan-type OverviewRow array{name: string, url: string, status: string|null, downloads: int, downloads_change: Change|null, views: int, views_change: Change|null, trend: list<array{date: string, downloads: int|null}>}
  * @phpstan-type OverviewReport array{summary: list<SummaryTile>, traffic: list<TrafficPoint>, mods: list<OverviewRow>, since: Since}
  */
@@ -70,6 +77,7 @@ final readonly class ModStatsService
         private ModStatsState $state,
         private EngagementStatsQuery $engagement,
         private DownstreamModsQuery $downstream,
+        private IssueStatsQuery $issues,
     ) {}
 
     /**
@@ -120,6 +128,7 @@ final readonly class ModStatsService
             'countries' => $this->countries($mod, $range),
             'engagement' => $this->engagementSeries($range, $engagement),
             'downstream' => $this->downstreamFor($mod, $range),
+            'issues' => $this->issues($mod, $range),
             'since' => $this->sinceStrings($since),
         ];
     }
@@ -521,6 +530,93 @@ final readonly class ModStatsService
         }
 
         return $points;
+    }
+
+    /**
+     * The issue tracker panel, or null when the mod has the tracker switched off and the section should not render.
+     *
+     * @return Issues|null
+     */
+    private function issues(Mod $mod, StatsRange $range): ?array
+    {
+        if (! $mod->issues_enabled) {
+            return null;
+        }
+
+        [$previousFrom] = $range->previousWindow();
+        $counts = $this->issues->forMod($mod, $previousFrom, $range->end());
+
+        $series = [];
+
+        foreach ($range->buckets() as $bucket) {
+            $series[] = [
+                'date' => $bucket['key'],
+                'label' => $bucket['label'],
+                'opened' => $this->sumBetween($counts['opened'], $bucket['start'], $bucket['end']),
+                'closed' => $this->sumBetween($counts['closed'], $bucket['start'], $bucket['end']),
+            ];
+        }
+
+        return [
+            'open_now' => $counts['open_now'],
+            'opened' => $this->tile('issues_opened', 'Opened', $counts['opened'], $range, true),
+            'closed' => $this->tile('issues_closed', 'Closed', $counts['closed'], $range, true),
+            'median_close' => $this->medianCloseTime($counts['close_seconds']),
+            'series' => $series,
+            'by_type' => $this->issueBreakdown($counts['open_by_type'], fn (string $value): string => (ModIssueType::from($value))->label()),
+            'by_status' => $this->issueBreakdown(
+                $counts['open_by_status'],
+                // Only open statuses appear here, and their labels read the same for every issue type.
+                fn (string $value): string => (ModIssueStatus::from($value))->label(ModIssueType::Bug),
+            ),
+        ];
+    }
+
+    /**
+     * The middle time-to-close of the issues closed in the range, as "2d 4h", or null when none were closed.
+     *
+     * @param  list<int>  $seconds
+     */
+    private function medianCloseTime(array $seconds): ?string
+    {
+        if ($seconds === []) {
+            return null;
+        }
+
+        sort($seconds);
+        $middle = intdiv(count($seconds), 2);
+        $median = count($seconds) % 2 === 1
+            ? $seconds[$middle]
+            : intdiv($seconds[$middle - 1] + $seconds[$middle], 2);
+
+        return CarbonInterval::seconds(max($median, 1))->cascade()->forHumans(['short' => true, 'parts' => 2]);
+    }
+
+    /**
+     * @param  array<string, int>  $counts  Keyed by enum value.
+     * @param  callable(string): string  $label
+     * @return list<IssueBreakdown>
+     */
+    private function issueBreakdown(array $counts, callable $label): array
+    {
+        $total = array_sum($counts);
+
+        if ($total === 0) {
+            return [];
+        }
+
+        arsort($counts);
+        $rows = [];
+
+        foreach ($counts as $value => $count) {
+            $rows[] = [
+                'label' => $label((string) $value),
+                'count' => $count,
+                'share' => round($count / $total * 100, 1),
+            ];
+        }
+
+        return $rows;
     }
 
     /**

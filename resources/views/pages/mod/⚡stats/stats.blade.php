@@ -248,6 +248,10 @@
         @endif
     </section>
 
+    @if ($report['issues'] !== null)
+        <x-mod-stats.issues :issues="$report['issues']" />
+    @endif
+
     <flux:text
         size="sm"
         class="pb-6 text-center"
