@@ -40,6 +40,8 @@ dialog[data-modal]::backdrop {
     --color-stats-version-4: #256abf;
     --color-stats-version-5: #184f95;
     --color-stats-older: #71717a;
+    --color-stats-issues-opened: #e66767;
+    --color-stats-issues-closed: #008300;
     --color-stats-up: #0ca30c;
     --color-stats-down: #d03b3b;
 }

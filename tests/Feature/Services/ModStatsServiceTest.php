@@ -2,11 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Enums\ModIssueStatus;
+use App\Enums\ModIssueType;
 use App\Models\Comment;
 use App\Models\Dependency;
 use App\Models\Mod;
 use App\Models\ModCountryDailyDownload;
 use App\Models\ModDailyStat;
+use App\Models\ModIssue;
 use App\Models\ModVersion;
 use App\Models\ModVersionDailyDownload;
 use App\Models\SptVersion;
@@ -183,4 +186,27 @@ it('builds the overview from owned and co-authored mods only', function (): void
         ->and(array_column($report['mods'], 'status'))->toBe([null, 'Unpublished'])
         ->and(($this->tile)($report, 'downloads')['total'])->toBe(10)
         ->and($report['mods'][0]['url'])->toBe(route('mod.stats', ['modId' => $owned->id, 'slug' => $owned->slug]));
+});
+
+it('leaves out the issues panel when the tracker is off', function (): void {
+    expect($this->service->forMod($this->mod, StatsRange::make(7, 'daily'))['issues'])->toBeNull();
+});
+
+it('builds the issues panel when the tracker is on', function (): void {
+    $mod = modWithIssues();
+    ModIssue::factory()->for($mod)->create(['type' => ModIssueType::Bug, 'status' => ModIssueStatus::New, 'created_at' => '2026-09-16 08:00:00']);
+    ModIssue::factory()->for($mod)->status(ModIssueStatus::Completed)->create([
+        'created_at' => '2026-09-14 08:00:00',
+        'closed_at' => '2026-09-16 08:00:00',
+    ]);
+
+    $issues = $this->service->forMod($mod, StatsRange::make(7, 'daily'))['issues'];
+
+    expect($issues['open_now'])->toBe(1)
+        ->and($issues['opened']['total'])->toBe(2)
+        ->and($issues['closed']['total'])->toBe(1)
+        ->and($issues['median_close'])->toBe('2d')
+        ->and(collect($issues['series'])->firstWhere('date', '2026-09-16'))->toMatchArray(['opened' => 1, 'closed' => 1])
+        ->and($issues['by_type'])->toBe([['label' => 'Bug', 'count' => 1, 'share' => 100.0]])
+        ->and($issues['by_status'])->toBe([['label' => 'New', 'count' => 1, 'share' => 100.0]]);
 });
