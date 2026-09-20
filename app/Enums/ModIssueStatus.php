@@ -42,7 +42,7 @@ enum ModIssueStatus: string
     }
 
     /**
-     * "Won't implement" reads wrongly on a bug report, so declined bugs are labelled "Won't fix".
+     * "Won't implement" reads wrongly on anything but a request, so the declined label follows the type.
      */
     public function label(ModIssueType $type): string
     {
@@ -51,7 +51,11 @@ enum ModIssueStatus: string
             self::NeedsInfo => 'Needs info',
             self::InProgress => 'In progress',
             self::Completed => 'Completed',
-            self::WontImplement => $type === ModIssueType::Bug ? "Won't fix" : "Won't implement",
+            self::WontImplement => match ($type) {
+                ModIssueType::Bug, ModIssueType::Compatibility => "Won't fix",
+                ModIssueType::Question => "Won't answer",
+                ModIssueType::Feature => "Won't implement",
+            },
             self::Duplicate => 'Duplicate',
             self::Closed => 'Closed',
         };

@@ -14,9 +14,31 @@ it('splits statuses into open and closed', function (): void {
         ->and(ModIssueStatus::Duplicate->isOpen())->toBeFalse();
 });
 
-it("labels a declined bug Won't fix and a declined feature Won't implement", function (): void {
-    expect(ModIssueStatus::WontImplement->label(ModIssueType::Bug))->toBe("Won't fix")
-        ->and(ModIssueStatus::WontImplement->label(ModIssueType::Feature))->toBe("Won't implement");
+it('labels a declined issue to suit its type', function (ModIssueType $type, string $label): void {
+    expect(ModIssueStatus::WontImplement->label($type))->toBe($label);
+})->with([
+    [ModIssueType::Bug, "Won't fix"],
+    [ModIssueType::Compatibility, "Won't fix"],
+    [ModIssueType::Feature, "Won't implement"],
+    [ModIssueType::Question, "Won't answer"],
+]);
+
+it('asks for an affected version only where one makes sense', function (ModIssueType $type, bool $shows, bool $requires): void {
+    expect($type->showsAffectedVersion())->toBe($shows)
+        ->and($type->requiresAffectedVersion())->toBe($requires);
+})->with([
+    [ModIssueType::Bug, true, true],
+    [ModIssueType::Compatibility, true, true],
+    [ModIssueType::Question, true, false],
+    [ModIssueType::Feature, false, false],
+]);
+
+it('gives every type but a feature request a starting template', function (): void {
+    expect(ModIssueType::Bug->template())->toContain('Steps to reproduce')
+        ->and(ModIssueType::Compatibility->template())->toContain('Mods involved')
+        ->and(ModIssueType::Question->template())->toContain('What are you trying to do?')
+        ->and(ModIssueType::Feature->template())->toBe('')
+        ->and(ModIssueType::templates())->toHaveCount(3);
 });
 
 it('maps each notification level to its channels', function (IssueNotificationLevel $level, array $channels): void {

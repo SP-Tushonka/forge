@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Traits\Livewire;
 
+use App\Enums\ModIssueType;
 use App\Enums\VersionChange;
 use App\Enums\VersionTagColor;
 use App\Jobs\GenerateThumbnailVariants;
@@ -72,6 +73,14 @@ trait EditsMod
     public bool $listsDisabled = false;
 
     public bool $issuesEnabled = false;
+
+    /**
+     * The issue types this mod accepts, as enum values. Stored inverted on the mod, so a type added later is
+     * accepted until the owner switches it off.
+     *
+     * @var list<string>
+     */
+    public array $allowedIssueTypes = [];
 
     /**
      * Add a new source code link input.
@@ -147,6 +156,7 @@ trait EditsMod
         $this->addonsDisabled = (bool) $mod->addons_disabled;
         $this->listsDisabled = (bool) $mod->lists_disabled;
         $this->issuesEnabled = (bool) $mod->issues_enabled;
+        $this->allowedIssueTypes = array_map(fn (ModIssueType $type): string => $type->value, $mod->enabledIssueTypes());
 
         /** @var array<int> $authorIds */
         $authorIds = $mod->additionalAuthors->pluck('id')->toArray();
@@ -193,6 +203,8 @@ trait EditsMod
             'addonsDisabled' => 'boolean',
             'listsDisabled' => 'boolean',
             'issuesEnabled' => 'boolean',
+            'allowedIssueTypes' => [Rule::requiredIf($this->issuesEnabled), 'array'],
+            'allowedIssueTypes.*' => [Rule::enum(ModIssueType::class)],
         ];
     }
 
@@ -211,6 +223,7 @@ trait EditsMod
             'sourceCodeLinks.*.url.url' => 'Please enter a valid URL (e.g., https://github.com/username/repo).',
             'sourceCodeLinks.*.url.starts_with' => 'The URL must start with https:// or http://',
             'sourceCodeLinks.*.label.max' => 'The label must not exceed 50 characters.',
+            'allowedIssueTypes.required' => 'Keep at least one issue type enabled, or switch the issue tracker off.',
         ];
     }
 
@@ -309,6 +322,12 @@ trait EditsMod
         $mod->addons_disabled = $this->addonsDisabled;
         $mod->lists_disabled = $this->listsDisabled;
         $mod->issues_enabled = $this->issuesEnabled;
+        // Only the opt-outs are stored, so a type added later is accepted without the owner touching this page.
+        $optedOut = array_values(array_diff(
+            array_map(fn (ModIssueType $type): string => $type->value, ModIssueType::cases()),
+            $this->allowedIssueTypes,
+        ));
+        $mod->disabled_issue_types = $optedOut === [] ? null : $optedOut;
         $mod->published_at = $this->publishedAtValue($timezone);
 
         if ($this->thumbnail instanceof UploadedFile) {

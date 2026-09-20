@@ -60,6 +60,13 @@ it('subscribes the reporter and managers, and notifies the managers', function (
     Notification::assertNotSentTo($this->reporter, NewModIssueNotification::class);
 });
 
+it('refuses a type the mod does not accept', function (): void {
+    $this->mod->update(['disabled_issue_types' => [ModIssueType::Question->value]]);
+
+    expect(fn (): App\Models\ModIssue => openIssue($this, ModIssueType::Question))
+        ->toThrow(Illuminate\Validation\ValidationException::class);
+});
+
 it('leaves out managers who muted the mod or switched issue notifications off', function (): void {
     $this->author->mute($this->mod);
     $this->mod->owner->update(['issue_notifications' => IssueNotificationLevel::Off]);

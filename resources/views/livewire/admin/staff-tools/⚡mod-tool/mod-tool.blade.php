@@ -141,10 +141,24 @@
                 <flux:checkbox wire:model="commentsDisabled" :label="__('Comments disabled')" />
                 <flux:checkbox wire:model="addonsDisabled" :label="__('Addons disabled')" />
                 <flux:checkbox wire:model="listsDisabled" :label="__('Lists disabled')" />
-                <flux:checkbox wire:model="issuesEnabled" :label="__('Issues enabled')" />
+                <flux:checkbox wire:model.live="issuesEnabled" :label="__('Issues enabled')" />
                 <flux:checkbox wire:model="cheatNotice" :label="__('Show cheat notice')" />
                 <flux:checkbox wire:model="disableProfileBindingNotice" :label="__('Hide profile binding notice')" />
             </div>
+
+            @if ($issuesEnabled)
+                <flux:checkbox.group
+                    wire:model="allowedIssueTypes"
+                    :label="__('Issue types accepted')"
+                >
+                    @foreach (App\Enums\ModIssueType::cases() as $issueType)
+                        <flux:checkbox
+                            value="{{ $issueType->value }}"
+                            :label="$issueType->label()"
+                        />
+                    @endforeach
+                </flux:checkbox.group>
+            @endif
 
             <div>
                 <flux:heading size="sm">{{ __('Comment version tag colours') }}</flux:heading>
