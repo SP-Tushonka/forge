@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Enums\ModIssueStatus;
 use App\Models\Mod;
 use App\Models\ModCountryDailyDownload;
+use App\Models\ModIssue;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Queue;
@@ -89,4 +91,19 @@ it('explains the flat start of the chart before collection began', function (): 
 
 it('shows an empty state when there are no downloads', function (): void {
     $this->actingAs($this->owner)->get($this->url)->assertSee('No downloads in this period.');
+});
+
+it('hides the issues section when the mod has no issue tracker', function (): void {
+    $this->actingAs($this->owner)->get($this->url)->assertDontSee('Issues opened &amp; closed', false);
+});
+
+it('shows the issues section when the tracker is on', function (): void {
+    $mod = modWithIssues(['owner_id' => $this->owner->id]);
+    ModIssue::factory()->for($mod)->create(['status' => ModIssueStatus::New]);
+
+    $this->actingAs($this->owner)->get(route('mod.stats', ['modId' => $mod->id, 'slug' => $mod->slug]))
+        ->assertOk()
+        ->assertSee('Open issues')
+        ->assertSee('Open issues by type')
+        ->assertSee('Median time to close');
 });
