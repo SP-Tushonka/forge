@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\ModIssueStatus;
+use App\Enums\ModIssueType;
 use App\Models\ModIssue;
 use App\Models\User;
 use Illuminate\Support\Facades\Notification;
@@ -54,6 +55,16 @@ it('saves a normalised fixed version and rejects nonsense', function (): void {
         ->set('fixedVersion', 'next week')
         ->call('saveDetails')
         ->assertHasErrors('fixedVersion');
+});
+
+it('keeps an issue own type in the dropdown after the owner switches that type off', function (): void {
+    $this->issue->update(['type' => ModIssueType::Question]);
+    $this->mod->update(['disabled_issue_types' => [ModIssueType::Question->value]]);
+
+    Livewire::actingAs($this->owner)
+        ->test('mod-issue.manage-panel', ['issueId' => $this->issue->id])
+        ->assertSee('Question')
+        ->assertSee('Bug');
 });
 
 it('locks and deletes, and lets staff restore', function (): void {

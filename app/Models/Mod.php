@@ -11,6 +11,7 @@ use App\Contracts\Trackable;
 use App\Contracts\VersionedCommentable;
 use App\Enums\EmojiSurface;
 use App\Enums\FikaCompatibility;
+use App\Enums\ModIssueType;
 use App\Enums\VersionChange;
 use App\Enums\VersionTagColor;
 use App\Models\Scopes\PublishedScope;
@@ -72,6 +73,7 @@ use Stevebauman\Purify\Facades\Purify;
  * @property bool $addons_disabled
  * @property bool $lists_disabled
  * @property bool $issues_enabled
+ * @property list<string>|null $disabled_issue_types
  * @property int $last_issue_number
  * @property bool $profile_binding_notice_disabled
  * @property bool $cheat_notice
@@ -287,6 +289,27 @@ final class Mod extends Model implements Commentable, Reactable, Reportable, Tra
     public function isIssueBanned(User $user): bool
     {
         return $this->issueBans()->where('user_id', $user->id)->active()->exists();
+    }
+
+    /**
+     * The issue types this mod accepts. Only the owner's opt-outs are stored, so a type added later is accepted
+     * until they switch it off.
+     *
+     * @return list<ModIssueType>
+     */
+    public function enabledIssueTypes(): array
+    {
+        $disabled = $this->disabled_issue_types ?? [];
+
+        return array_values(array_filter(
+            ModIssueType::cases(),
+            fn (ModIssueType $type): bool => ! in_array($type->value, $disabled, true),
+        ));
+    }
+
+    public function allowsIssueType(ModIssueType $type): bool
+    {
+        return in_array($type, $this->enabledIssueTypes(), true);
     }
 
     /**
@@ -951,6 +974,7 @@ final class Mod extends Model implements Commentable, Reactable, Reportable, Tra
             'addons_disabled' => 'boolean',
             'lists_disabled' => 'boolean',
             'issues_enabled' => 'boolean',
+            'disabled_issue_types' => 'array',
             'last_issue_number' => 'integer',
             'profile_binding_notice_disabled' => 'boolean',
             'cheat_notice' => 'boolean',

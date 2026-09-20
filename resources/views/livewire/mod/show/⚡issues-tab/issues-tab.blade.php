@@ -91,7 +91,7 @@
             wire:model.live="type"
         >
             <flux:select.option value="">{{ __('All types') }}</flux:select.option>
-            @foreach (App\Enums\ModIssueType::cases() as $issueType)
+            @foreach ($this->typeOptions as $issueType)
                 <flux:select.option value="{{ $issueType->value }}">{{ $issueType->label() }}</flux:select.option>
             @endforeach
         </flux:select>

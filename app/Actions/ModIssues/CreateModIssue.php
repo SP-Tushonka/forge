@@ -14,11 +14,21 @@ use App\Models\User;
 use App\Notifications\NewModIssueNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\ValidationException;
 
 final readonly class CreateModIssue
 {
+    /**
+     * @throws ValidationException
+     */
     public function execute(User $reporter, Mod $mod, ModIssueType $type, string $title, string $body, ?int $affectedVersionId): ModIssue
     {
+        if (! $mod->allowsIssueType($type)) {
+            throw ValidationException::withMessages([
+                'type' => __('This mod is not accepting that kind of issue.'),
+            ]);
+        }
+
         // ModIssue's creating hook bumps the mod's issue counter. Inside the transaction that increment holds the mod
         // row lock until the insert commits, so a concurrent report waits instead of reading the same number.
         $issue = DB::transaction(function () use ($reporter, $mod, $type, $title, $body, $affectedVersionId): ModIssue {
@@ -29,7 +39,7 @@ final readonly class CreateModIssue
                 'status' => ModIssueStatus::New,
                 'title' => $title,
                 'body' => $body,
-                'affected_mod_version_id' => $type === ModIssueType::Bug ? $affectedVersionId : null,
+                'affected_mod_version_id' => $type->showsAffectedVersion() ? $affectedVersionId : null,
                 'last_activity_at' => now(),
             ]);
         });
