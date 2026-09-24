@@ -91,7 +91,7 @@
             {{-- Footer --}}
             <div class="flex flex-col border-t border-gray-700 py-1.5">
                 <a
-                    href="{{ route('dashboard') }}"
+                    href="{{ route('notifications') }}"
                     wire:navigate
                     x-on:click="notificationDropdownOpen = false"
                     class="focus-visible:outline-hidden flex items-center gap-2 bg-gray-800 px-4 py-2 text-sm text-slate-300 hover:bg-slate-100/5 hover:text-white focus-visible:bg-slate-100/10 focus-visible:text-white"
