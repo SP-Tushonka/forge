@@ -393,7 +393,7 @@
                 </div>
                 {{-- Mobile Notifications Button --}}
                 <a
-                    href="{{ route('dashboard') }}"
+                    href="{{ route('notifications') }}"
                     wire:navigate
                     class="relative inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-gray-300 transition duration-150 ease-in-out hover:bg-gray-700/50 hover:text-white"
                 >
