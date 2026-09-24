@@ -148,6 +148,8 @@ Route::middleware('auth.banned')->group(function (): void {
         // Authenticated and verified routes
         Route::livewire('/dashboard', 'pages::dashboard')->name('dashboard');
 
+        Route::livewire('/notifications', 'pages::notifications')->name('notifications');
+
         Route::livewire('/mods/recently-updated', 'pages::mod.recently-updated')
             ->can('viewAny', Mod::class)
             ->name('mods.recently-updated');
