@@ -208,38 +208,36 @@ describe('following', function (): void {
 
 describe('profile photo', function (): void {
     describe('default profile photo url', function (): void {
-        it('handles null name without throwing an error', function (): void {
-            $user = User::factory()->make(['name' => null, 'profile_photo_path' => null]);
+        it('falls back to a blank avatar for a null or empty name', function (?string $name): void {
+            $user = User::factory()->make(['name' => $name, 'profile_photo_path' => null]);
 
-            $url = $user->profile_photo_url;
+            expect($user->profile_photo_url)->toBe(route('avatar.default', ['initials' => '-']));
+        })->with([null, '', '   ', '*** ___']);
 
-            expect($url)->toBeString()
-                ->and($url)->toStartWith('https://ui-avatars.com/api/?name=');
-        });
+        it('uses the uppercased initials of the first two words', function (string $name, string $initials): void {
+            $user = User::factory()->make(['name' => $name, 'profile_photo_path' => null]);
 
-        it('handles empty string name', function (): void {
-            $user = User::factory()->make(['name' => '', 'profile_photo_path' => null]);
+            expect($user->profile_photo_url)->toBe(route('avatar.default', ['initials' => $initials]));
+        })->with([
+            'single word' => ['john', 'J'],
+            'two words' => ['John Doe', 'JD'],
+            'three words' => ['John Paul Doe', 'JP'],
+            'leading symbols' => ['[SPT] _modder', 'SM'],
+            'non-latin' => ['Ёжик Туманов', 'ЁТ'],
+            'uppercase expands' => ['ßtraße Müller', 'SM'],
+            'uppercase adds a combining mark' => ['ǰohn Doe', 'JD'],
+        ]);
 
-            $url = $user->profile_photo_url;
+        it('builds a url the avatar route serves', function (string $name): void {
+            $user = User::factory()->make(['name' => $name, 'profile_photo_path' => null]);
 
-            expect($url)->toBeString()
-                ->and($url)->toStartWith('https://ui-avatars.com/api/?name=');
-        });
+            $this->get($user->profile_photo_url)->assertOk();
+        })->with(['John Doe', 'ǰohn', 'ΐησους ὐλη', 'ẖarry', '½ Ⅻ', '🙂 party', '李 小龙', 'مرحبا بك', '***']);
 
-        it('generates initials from a single word name', function (): void {
-            $user = User::factory()->make(['name' => 'John', 'profile_photo_path' => null]);
-
-            $url = $user->profile_photo_url;
-
-            expect($url)->toContain('name=J');
-        });
-
-        it('generates initials from a multi-word name', function (): void {
+        it('never points at a third-party avatar service', function (): void {
             $user = User::factory()->make(['name' => 'John Doe', 'profile_photo_path' => null]);
 
-            $url = $user->profile_photo_url;
-
-            expect($url)->toContain('name=J+D');
+            expect($user->profile_photo_url)->toStartWith(config('app.url'));
         });
     });
 });

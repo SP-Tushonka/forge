@@ -17,8 +17,6 @@ use Override;
  * @property int $user_id
  * @property string $provider
  * @property string $provider_id
- * @property string $token
- * @property string $refresh_token
  * @property string $nickname
  * @property string $name
  * @property string $email

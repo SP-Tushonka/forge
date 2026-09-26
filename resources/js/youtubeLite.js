@@ -13,7 +13,10 @@ function initializeYouTubeLite(container = document) {
         // Mark as initialized to prevent duplicate handlers
         embed.setAttribute('data-youtube-initialized', 'true');
 
-        embed.addEventListener('click', function handleClick() {
+        embed.addEventListener('click', function handleClick(event) {
+            // The label is a fallback link to the video; play inline instead of following it.
+            event.preventDefault();
+
             const embedUrl = this.dataset.embedUrl;
 
             if (!embedUrl) {

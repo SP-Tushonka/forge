@@ -27,17 +27,6 @@ describe('Lazy image rendering in markdown', function (): void {
             ->toContain('decoding="async"');
     });
 
-    it('adds lazy loading attributes to YouTube embed posters', function (): void {
-        $mod = Mod::factory()->create([
-            'description' => 'https://youtu.be/88Cu_DiZ9YY',
-        ]);
-
-        expect($mod->description_html)
-            ->toContain('class="youtube-lite"')
-            ->toContain('loading="lazy"')
-            ->toContain('decoding="async"');
-    });
-
     it('does not add lazy loading attributes to links', function (): void {
         $mod = Mod::factory()->create([
             'description' => '[A link](https://example.com/page)',

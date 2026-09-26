@@ -462,7 +462,7 @@
                                                                         {{ $action->trackingEvent->event_display_name }}
                                                                     </span>
                                                                     <span class="text-gray-400">
-                                                                        by {{ $action->moderator->name }}
+                                                                        by {{ $action->moderator?->name ?? 'a deleted account' }}
                                                                     </span>
                                                                     <span class="text-gray-500">
                                                                         {{ $action->created_at->diffForHumans() }}

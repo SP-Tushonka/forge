@@ -174,8 +174,6 @@ new #[Layout('layouts::base')] #[Title('Event Analytics - The Forge')] class ext
                 'tracking_events.country_name',
                 'tracking_events.region_name',
                 'tracking_events.city_name',
-                'tracking_events.latitude',
-                'tracking_events.longitude',
                 'tracking_events.timezone',
                 'tracking_events.created_at',
             ]);
@@ -361,8 +359,6 @@ new #[Layout('layouts::base')] #[Title('Event Analytics - The Forge')] class ext
             'country_name' => $event->country_name,
             'region_name' => $event->region_name,
             'city_name' => $event->city_name,
-            'latitude' => $event->latitude,
-            'longitude' => $event->longitude,
             'timezone' => $event->timezone,
             'created_at' => $event->created_at?->toISOString(),
             'updated_at' => $event->updated_at?->toISOString(),

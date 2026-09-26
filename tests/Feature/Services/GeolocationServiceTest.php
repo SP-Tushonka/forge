@@ -24,8 +24,6 @@ describe('GeolocationService', function (): void {
                 'country_name' => null,
                 'region_name' => null,
                 'city_name' => null,
-                'latitude' => null,
-                'longitude' => null,
                 'timezone' => null,
             ]);
         })->with([
@@ -46,8 +44,6 @@ describe('GeolocationService', function (): void {
                     'country_name' => 'United States',
                     'region_name' => 'California',
                     'city_name' => 'Mountain View',
-                    'latitude' => 37.4056,
-                    'longitude' => -122.0775,
                     'timezone' => 'America/Los_Angeles',
                 ]);
 
@@ -56,7 +52,7 @@ describe('GeolocationService', function (): void {
 
             expect($result)->toHaveKeys([
                 'country_code', 'country_name', 'region_name',
-                'city_name', 'latitude', 'longitude', 'timezone',
+                'city_name', 'timezone',
             ]);
         });
 
@@ -67,8 +63,6 @@ describe('GeolocationService', function (): void {
                 'country_name' => 'United States',
                 'region_name' => 'California',
                 'city_name' => 'Mountain View',
-                'latitude' => 37.4056,
-                'longitude' => -122.0775,
                 'timezone' => 'America/Los_Angeles',
             ];
 
@@ -93,7 +87,7 @@ describe('GeolocationService', function (): void {
             // Should return default data structure regardless of lookup result
             expect($result)->toHaveKeys([
                 'country_code', 'country_name', 'region_name',
-                'city_name', 'latitude', 'longitude', 'timezone',
+                'city_name', 'timezone',
             ]);
         });
 
@@ -106,8 +100,6 @@ describe('GeolocationService', function (): void {
                     'country_name' => 'Canada',
                     'region_name' => 'Ontario',
                     'city_name' => 'Toronto',
-                    'latitude' => 43.7001,
-                    'longitude' => -79.4163,
                     'timezone' => 'America/Toronto',
                 ]);
 
@@ -116,7 +108,7 @@ describe('GeolocationService', function (): void {
 
             expect($result)->toHaveKeys([
                 'country_code', 'country_name', 'region_name',
-                'city_name', 'latitude', 'longitude', 'timezone',
+                'city_name', 'timezone',
             ])
                 ->and($result['country_code'])->toBe('CA');
         });
@@ -175,8 +167,6 @@ describe('GeolocationService', function (): void {
                 'country_name' => null,
                 'region_name' => null,
                 'city_name' => null,
-                'latitude' => null,
-                'longitude' => null,
                 'timezone' => null,
             ]);
         })->with([
@@ -195,8 +185,6 @@ describe('GeolocationService', function (): void {
                     'country_name' => 'United States',
                     'region_name' => null,
                     'city_name' => null,
-                    'latitude' => null,
-                    'longitude' => null,
                     'timezone' => null,
                 ]);
 
