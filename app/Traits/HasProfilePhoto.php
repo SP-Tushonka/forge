@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Traits;
 
+use App\Http\Controllers\DefaultAvatarController;
 use App\Jobs\NormalizeUserAvatar;
 use App\Services\ThumbnailService;
 use App\Support\DataTransferObjects\ImageCropRect;
@@ -112,12 +113,20 @@ trait HasProfilePhoto
     }
 
     /**
-     * Get the default profile photo URL if no profile photo has been uploaded.
+     * Get the default profile photo URL if no profile photo has been uploaded: the initials of the first two words of
+     * the name. Only letters and digits are kept, since route() leaves characters like "?" and "/" unencoded. Each
+     * initial is filtered again after uppercasing, which can expand a letter ("ß" to "SS") or add a combining mark.
      */
     protected function defaultProfilePhotoUrl(): string
     {
-        $name = mb_trim(collect(explode(' ', $this->name ?? ''))->map(fn ($segment): string => mb_substr($segment, 0, 1))->join(' '));
+        $firstLetter = fn (string $text): string => mb_substr((string) preg_replace('/[^\p{L}\p{N}]/u', '', $text), 0, 1);
 
-        return 'https://ui-avatars.com/api/?name='.urlencode($name).'&color=7F9CF5&background=EBF4FF';
+        $initials = collect(preg_split('/\s+/u', $this->name ?? '', -1, PREG_SPLIT_NO_EMPTY) ?: [])
+            ->map(fn (string $word): string => $firstLetter(mb_strtoupper($firstLetter($word))))
+            ->filter()
+            ->take(2)
+            ->join('');
+
+        return route('avatar.default', ['initials' => $initials === '' ? DefaultAvatarController::BLANK : $initials]);
     }
 }

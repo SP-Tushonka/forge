@@ -92,10 +92,7 @@ final readonly class SocialiteService
         ProviderUser $providerUser,
         ?bool $mfaStatus,
     ): User {
-        /** @var \Laravel\Socialite\Two\User $providerUser */
         $connection->update([
-            'token' => $providerUser->token,
-            'refresh_token' => $providerUser->refreshToken,
             'nickname' => $providerUser->getNickname() ?? '',
             'name' => $providerUser->getName() ?? '',
             'email' => $providerUser->getEmail(),
@@ -159,13 +156,10 @@ final readonly class SocialiteService
      */
     private function attachConnection(User $user, string $provider, ProviderUser $providerUser, ?bool $mfaStatus): void
     {
-        /** @var \Laravel\Socialite\Two\User $providerUser */
         $oAuthConnection = $user->oAuthConnections()->updateOrCreate([
             'provider' => $provider,
             'provider_id' => $providerUser->getId(),
         ], [
-            'token' => $providerUser->token,
-            'refresh_token' => $providerUser->refreshToken,
             'nickname' => $providerUser->getNickname() ?? '',
             'name' => $providerUser->getName() ?? '',
             'email' => $providerUser->getEmail(),

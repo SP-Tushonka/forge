@@ -188,8 +188,6 @@ final readonly class TrackService
             'country_name' => $locationData['country_name'] ?? null,
             'region_name' => $locationData['region_name'] ?? null,
             'city_name' => $locationData['city_name'] ?? null,
-            'latitude' => $locationData['latitude'] ?? null,
-            'longitude' => $locationData['longitude'] ?? null,
             'timezone' => $locationData['timezone'] ?? null,
         ]);
     }

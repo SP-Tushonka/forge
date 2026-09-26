@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Comment;
+use App\Models\Message;
 use App\Models\Mod;
 use App\Models\User;
 
@@ -18,7 +19,8 @@ describe('YouTube link rendering in mod descriptions', function (): void {
         expect($html)
             ->toContain('class="youtube-lite"')
             ->toContain('data-video-id="88Cu_DiZ9YY"')
-            ->toContain('i.ytimg.com/vi/88Cu_DiZ9YY');
+            ->toContain('href="https://www.youtube.com/watch?v=88Cu_DiZ9YY"')
+            ->not->toContain('i.ytimg.com');
     });
 
     it('converts standalone youtu.be link to YouTube embed in mod descriptions', function (): void {
@@ -32,7 +34,7 @@ describe('YouTube link rendering in mod descriptions', function (): void {
         expect($html)
             ->toContain('class="youtube-lite"')
             ->toContain('data-video-id="88Cu_DiZ9YY"')
-            ->toContain('i.ytimg.com/vi/88Cu_DiZ9YY');
+            ->not->toContain('i.ytimg.com');
     });
 
     it('converts YouTube link on its own line to YouTube embed', function (): void {
@@ -45,7 +47,7 @@ describe('YouTube link rendering in mod descriptions', function (): void {
         expect($html)
             ->toContain('class="youtube-lite"')
             ->toContain('data-video-id="88Cu_DiZ9YY"')
-            ->toContain('i.ytimg.com/vi/88Cu_DiZ9YY');
+            ->not->toContain('i.ytimg.com');
     });
 
     it('converts inline YouTube link to clickable link in mod descriptions', function (): void {
@@ -94,7 +96,7 @@ describe('YouTube link rendering in comments', function (): void {
         expect($html)
             ->toContain('class="youtube-lite"')
             ->toContain('data-video-id="88Cu_DiZ9YY"')
-            ->toContain('i.ytimg.com/vi/88Cu_DiZ9YY');
+            ->not->toContain('i.ytimg.com');
     });
 
     it('converts youtu.be link to YouTube embed in comments', function (): void {
@@ -111,7 +113,7 @@ describe('YouTube link rendering in comments', function (): void {
         expect($html)
             ->toContain('class="youtube-lite"')
             ->toContain('data-video-id="88Cu_DiZ9YY"')
-            ->toContain('i.ytimg.com/vi/88Cu_DiZ9YY');
+            ->not->toContain('i.ytimg.com');
     });
 
     it('converts inline YouTube link to clickable link in comments', function (): void {
@@ -146,7 +148,7 @@ describe('YouTube link rendering in comments', function (): void {
         expect($html)
             ->toContain('class="youtube-lite"')
             ->toContain('data-video-id="88Cu_DiZ9YY"')
-            ->toContain('i.ytimg.com/vi/88Cu_DiZ9YY');
+            ->not->toContain('i.ytimg.com');
     });
 
     it('handles multiple YouTube links in comments as YouTube embeds', function (): void {
@@ -168,6 +170,18 @@ describe('YouTube link rendering in comments', function (): void {
     });
 });
 
+describe('YouTube link rendering in chat messages', function (): void {
+    it('converts a standalone YouTube link to a YouTube embed in messages', function (): void {
+        $message = Message::factory()->create(['content' => 'https://youtu.be/88Cu_DiZ9YY']);
+
+        expect($message->content_html)
+            ->toContain('class="youtube-lite"')
+            ->toContain('data-video-id="88Cu_DiZ9YY"')
+            ->toContain('href="https://www.youtube.com/watch?v=88Cu_DiZ9YY"')
+            ->not->toContain('i.ytimg.com');
+    });
+});
+
 describe('YouTube link rendering on user profiles', function (): void {
     it('converts youtube.com link to YouTube embed in user about field', function (): void {
         $user = User::factory()->create([
@@ -180,7 +194,7 @@ describe('YouTube link rendering on user profiles', function (): void {
         expect($html)
             ->toContain('class="youtube-lite"')
             ->toContain('data-video-id="88Cu_DiZ9YY"')
-            ->toContain('i.ytimg.com/vi/88Cu_DiZ9YY');
+            ->not->toContain('i.ytimg.com');
     });
 
     it('converts youtu.be link to YouTube embed in user about field', function (): void {
@@ -194,6 +208,6 @@ describe('YouTube link rendering on user profiles', function (): void {
         expect($html)
             ->toContain('class="youtube-lite"')
             ->toContain('data-video-id="88Cu_DiZ9YY"')
-            ->toContain('i.ytimg.com/vi/88Cu_DiZ9YY');
+            ->not->toContain('i.ytimg.com');
     });
 });

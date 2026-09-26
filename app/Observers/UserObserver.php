@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
+use App\Models\Ban;
 use App\Models\ModIssue;
 use App\Models\User;
+use App\Services\BanIdentifierService;
 use App\Services\ModListService;
 use App\Services\ThumbnailService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 
 final readonly class UserObserver
@@ -15,6 +18,7 @@ final readonly class UserObserver
     public function __construct(
         private ModListService $modListService,
         private ThumbnailService $thumbnailService,
+        private BanIdentifierService $banIdentifierService,
     ) {}
 
     /**
@@ -51,6 +55,11 @@ final readonly class UserObserver
         // The mod_issues cascade would skip ModIssue's forceDeleting hook and orphan the discussion on their issues.
         ModIssue::withTrashed()->where('user_id', $user->id)->each(function (ModIssue $issue): void {
             $issue->forceDelete();
+        });
+
+        // Bans outlive the account, so refresh their copy of its emails and IPs while the rows holding them still exist.
+        $user->bans()->where(fn (Builder $query) => $query->notExpired())->each(function (Ban $ban) use ($user): void {
+            $this->banIdentifierService->capture($ban, $user);
         });
     }
 }

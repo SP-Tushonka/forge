@@ -4,7 +4,9 @@
     response past our Octane (FrankenPHP) origin's size cap and truncates the page, leaving it blank. Instead we load the
     bundle as an external static asset (published to public/vendor/horizon by app:publish-horizon-assets and served from
     the CDN via asset()), keeping only the tiny script-variables inline. The CSS stays inline via Horizon::css() since it
-    fits well under the cap. When upgrading Horizon, re-sync this file against the package's resources/views/layout.blade.php.
+    fits well under the cap. The package's Bunny Fonts stylesheet is also dropped so no third-party font host sees staff IPs;
+    the dashboard falls back to system fonts. When upgrading Horizon, re-sync this file against the package's
+    resources/views/layout.blade.php.
 --}}
 <!DOCTYPE html>
 <html lang="en">
@@ -18,8 +20,6 @@
     <title>Horizon{{ config('horizon.name') ? ' - ' . config('horizon.name') : '' }}</title>
 
     <!-- Style sheets-->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:300,400,500,600" rel="stylesheet" />
     {{ Laravel\Horizon\Horizon::css() }}
 
     {{-- Load the dashboard bundle as an external static asset instead of Horizon::js()'s inline copy (see header note). --}}

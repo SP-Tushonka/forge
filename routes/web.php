@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Chat\StartConversationController;
 use App\Http\Controllers\ChatSubscriptionController;
 use App\Http\Controllers\CommentSubscriptionController;
+use App\Http\Controllers\DefaultAvatarController;
 use App\Http\Controllers\FileRedirectController;
 use App\Http\Controllers\ModRssFeedController;
 use App\Http\Controllers\ModVersionController;
@@ -47,6 +48,13 @@ Route::middleware('cache.headers:public;max_age=3600;s_maxage=21600;etag')->with
 
     Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
 });
+
+Route::middleware('cache.headers:public;max_age=31536000;immutable')->withoutMiddleware([
+    StartSession::class,
+    ShareErrorsFromSession::class,
+    PreventRequestForgery::class,
+    ProtectAgainstSpam::class,
+])->get('/avatars/{initials}.svg', DefaultAvatarController::class)->name('avatar.default');
 
 Route::middleware('auth.banned')->group(function (): void {
 

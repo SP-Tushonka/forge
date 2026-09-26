@@ -6,15 +6,22 @@ namespace App\Observers;
 
 use App\Models\Ban;
 use App\Models\User;
+use App\Services\BanIdentifierService;
 use Illuminate\Support\Facades\Cache;
 
 final readonly class BanObserver
 {
+    public function __construct(private BanIdentifierService $banIdentifierService) {}
+
     /**
      * Handle the Ban "created" event.
      */
     public function created(Ban $ban): void
     {
+        if ($ban->bannable instanceof User) {
+            $this->banIdentifierService->capture($ban, $ban->bannable);
+        }
+
         $this->forgetBanState($ban);
     }
 

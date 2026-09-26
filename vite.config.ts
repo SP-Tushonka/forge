@@ -91,6 +91,37 @@ function copyTwemoji() {
     };
 }
 
+/**
+ * Copies the libraries the Scribe API docs page loads into public/vendor/scribe, so /docs is served without any CDN
+ * (see resources/views/vendor/scribe/themes/default/index.blade.php). Generated and gitignored like the Twemoji set.
+ */
+function copyScribeAssets() {
+    const files = {
+        'lodash.min.js': 'node_modules/lodash/lodash.min.js',
+        'highlight.min.js': 'node_modules/@highlightjs/cdn-assets/highlight.min.js',
+        'obsidian.min.css': 'node_modules/@highlightjs/cdn-assets/styles/obsidian.min.css',
+        'jets.min.js': 'node_modules/jets/jets.min.js',
+    };
+    const targetDir = resolve('public/vendor/scribe');
+
+    const writeAll = () => {
+        mkdirSync(targetDir, { recursive: true });
+        for (const [name, source] of Object.entries(files)) {
+            copyFileSync(resolve(source), join(targetDir, name));
+        }
+    };
+
+    return {
+        name: 'forge:copy-scribe-assets',
+        buildStart() {
+            writeAll();
+        },
+        configureServer() {
+            writeAll();
+        },
+    };
+}
+
 export default defineConfig({
     fmt: {
         printWidth: 120,
@@ -117,5 +148,6 @@ export default defineConfig({
         tailwindcss(),
         copyStaticJson(),
         copyTwemoji(),
+        copyScribeAssets(),
     ],
 });

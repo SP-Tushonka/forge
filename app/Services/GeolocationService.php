@@ -88,8 +88,6 @@ final class GeolocationService implements Geolocator
                 'country_name' => $record->country->name,
                 'region_name' => $record->mostSpecificSubdivision->name,
                 'city_name' => $record->city->name,
-                'latitude' => $record->location->latitude,
-                'longitude' => $record->location->longitude,
                 'timezone' => $record->location->timeZone,
             ];
         } catch (AddressNotFoundException) {
@@ -153,8 +151,6 @@ final class GeolocationService implements Geolocator
             'country_name' => null,
             'region_name' => null,
             'city_name' => null,
-            'latitude' => null,
-            'longitude' => null,
             'timezone' => null,
         ];
     }

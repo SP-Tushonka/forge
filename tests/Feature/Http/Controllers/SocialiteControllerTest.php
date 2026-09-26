@@ -159,8 +159,6 @@ describe('OAuth callback authentication', function (): void {
         $user->oAuthConnections()->create([
             'provider' => 'discord',
             'provider_id' => 'returning-provider-id',
-            'token' => 'old-token',
-            'refresh_token' => 'old-refresh-token',
             'nickname' => '',
             'name' => 'Returning User',
             'email' => 'returning@example.com',
@@ -332,8 +330,6 @@ describe('OAuth callback archived account recovery', function (): void {
         $user->oAuthConnections()->create([
             'provider' => 'discord',
             'provider_id' => 'returning-provider-id',
-            'token' => 'old-token',
-            'refresh_token' => 'old-refresh-token',
             'nickname' => '',
             'name' => 'Returning User',
             'email' => 'returning@example.com',
@@ -384,8 +380,6 @@ describe('OAuth callback with registration disabled', function (): void {
         $user->oAuthConnections()->create([
             'provider' => 'discord',
             'provider_id' => 'returning-provider-id',
-            'token' => 'old-token',
-            'refresh_token' => 'old-refresh-token',
             'nickname' => '',
             'name' => 'Returning User',
             'email' => 'returning@example.com',
