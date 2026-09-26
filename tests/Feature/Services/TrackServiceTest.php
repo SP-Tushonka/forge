@@ -34,8 +34,6 @@ describe('TrackService', function (): void {
                     'country_name' => 'United States',
                     'region_name' => 'California',
                     'city_name' => 'San Francisco',
-                    'latitude' => 37.7749,
-                    'longitude' => -122.4194,
                     'timezone' => 'America/Los_Angeles',
                 ]);
 
@@ -171,8 +169,6 @@ describe('TrackService', function (): void {
                     'country_name' => null,
                     'region_name' => null,
                     'city_name' => null,
-                    'latitude' => null,
-                    'longitude' => null,
                     'timezone' => null,
                 ]);
 
@@ -184,8 +180,6 @@ describe('TrackService', function (): void {
                 'country_name' => null,
                 'region_name' => null,
                 'city_name' => null,
-                'latitude' => null,
-                'longitude' => null,
                 'timezone' => null,
             ]);
         });

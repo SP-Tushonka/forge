@@ -39,8 +39,6 @@ use Override;
  * @property string|null $country_name
  * @property string|null $region_name
  * @property string|null $city_name
- * @property null|string $latitude
- * @property null|string $longitude
  * @property string|null $timezone
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -109,8 +107,6 @@ final class TrackingEvent extends Model
             'event_data' => 'array',
             'is_moderation_action' => 'boolean',
             'languages' => 'array',
-            'latitude' => 'decimal:8',
-            'longitude' => 'decimal:8',
         ];
     }
 

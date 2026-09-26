@@ -113,8 +113,6 @@ final class TrackingEventSeeder extends Seeder
                 'Pennsylvania', 'Ohio', 'Georgia', 'North Carolina', 'Michigan',
             ]),
             'city_name' => $this->faker->city(),
-            'latitude' => $this->faker->latitude(),
-            'longitude' => $this->faker->longitude(),
             'timezone' => $this->faker->timezone(),
             'visitor_type' => $visitorId !== null ? User::class : null,
             'visitor_id' => $visitorId,

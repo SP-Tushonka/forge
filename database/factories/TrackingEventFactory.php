@@ -61,8 +61,6 @@ final class TrackingEventFactory extends Factory
                 'Pennsylvania', 'Ohio', 'Georgia', 'North Carolina', 'Michigan',
             ]),
             'city_name' => $this->faker->city(),
-            'latitude' => $this->faker->latitude(),
-            'longitude' => $this->faker->longitude(),
             'timezone' => $this->faker->timezone(),
             'created_at' => $this->faker->dateTimeBetween('-6 months', 'now'),
         ];

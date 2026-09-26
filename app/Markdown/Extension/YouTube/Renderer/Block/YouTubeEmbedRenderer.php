@@ -20,13 +20,14 @@ final class YouTubeEmbedRenderer implements NodeRendererInterface
 
         $videoId = $node->videoId;
         $embedUrl = 'https://www.youtube-nocookie.com/embed/'.$videoId.'?autoplay=1';
-        $thumbnailUrl = 'https://i.ytimg.com/vi/'.$videoId.'/hqdefault.jpg';
+        $watchUrl = 'https://www.youtube.com/watch?v='.$videoId;
 
-        // Render a lite YouTube facade that only loads the iframe when clicked. This dramatically improves page load
-        // performance by avoiding YouTube's heavy JS. The div uses data attributes that survive HTML purification.
-        // JavaScript in resources/js/youtube-lite.js handles the click-to-play behavior.
+        // Render a lite YouTube facade that only loads the iframe when clicked. Nothing, not even a thumbnail, is
+        // requested from YouTube before that click, so visitors' IPs stay with us until they choose to play. The label
+        // keeps the div non-empty, which HTML purification would otherwise remove, and links to the video wherever
+        // resources/js/youtubeLite.js (the click-to-play behavior) does not run, such as API consumers.
         return '<div class="youtube-lite" data-video-id="'.$videoId.'" data-embed-url="'.$embedUrl.'">'.
-            '<img src="'.$thumbnailUrl.'" alt="YouTube video thumbnail" loading="lazy" decoding="async" />'.
+            '<a href="'.$watchUrl.'">Play YouTube video</a>'.
             '</div>';
     }
 }

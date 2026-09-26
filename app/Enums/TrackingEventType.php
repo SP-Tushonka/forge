@@ -217,6 +217,25 @@ enum TrackingEventType: string
     }
 
     /**
+     * Event types that record a ban or its lifting. Bans are permanent, so these are never pruned.
+     *
+     * @return list<self>
+     */
+    public static function banAuditTrail(): array
+    {
+        return [
+            self::USER_BAN,
+            self::USER_UNBAN,
+            self::USER_BANNED,
+            self::USER_UNBANNED,
+            self::IP_BAN,
+            self::IP_UNBAN,
+            self::ISSUE_BAN,
+            self::ISSUE_UNBAN,
+        ];
+    }
+
+    /**
      * Get the user-friendly display name for this event type.
      */
     public function label(): string

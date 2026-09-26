@@ -14,12 +14,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int $report_id
  * @property int $tracking_event_id
- * @property int $moderator_id
+ * @property int|null $moderator_id
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property Report $report
  * @property TrackingEvent $trackingEvent
- * @property User $moderator
+ * @property User|null $moderator
  */
 final class ReportAction extends Model
 {

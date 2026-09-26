@@ -74,7 +74,7 @@
         />
     </x-slot>
 
-    <p><strong>Effective Date:</strong> 2025-08-26<br><strong>Last Updated:</strong> 2026-06-25</p>
+    <p><strong>Effective Date:</strong> 2025-08-26<br><strong>Last Updated:</strong> 2026-09-27</p>
 
     <h2 id="about-these-terms">1. About These Terms</h2>
 
@@ -376,9 +376,6 @@
         <li><strong>Allow reasonable time</strong> for us to respond and address problems</li>
     </ul>
 
-    <h3 id="governing-law">Governing Law</h3>
-    <p>These Terms are governed by the laws of Ontario and Canada, without regard to conflict of law principles.</p>
-
     <h3 id="arbitration">Arbitration</h3>
     <p>For disputes that cannot be resolved informally:</p>
     <ul>
@@ -442,5 +439,5 @@
                 href="{{ route('static.dmca') }}"
             >DMCA Copyright Notice</a> to govern your use of The Forge.</em></p>
 
-    <p><em>Last updated: 2026-06-25</em></p>
+    <p><em>Last updated: 2026-09-27</em></p>
 </x-layouts::static-toc>

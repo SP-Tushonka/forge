@@ -6,6 +6,7 @@ use App\Console\Commands\CensorExistingContentCommand;
 use App\Console\Commands\CleanupOldNotificationLogs;
 use App\Console\Commands\EnsureFavouritesLists;
 use App\Console\Commands\ForgeHeartbeat;
+use App\Console\Commands\PrunePersonalData;
 use App\Console\Commands\SyncModStatsCommand;
 use App\Console\Commands\UpdateGeoLiteDatabase;
 use App\Jobs\AggregateApiUsageDailyJob;
@@ -41,6 +42,9 @@ Schedule::job(new AuditCustomLicensedModsJob)->daily()->at('01:00')->onOneServer
 Schedule::command(SyncModStatsCommand::class, ['--from=1', '--to=0'])->everyFifteenMinutes()->onOneServer()->withoutOverlapping();
 Schedule::command(SyncModStatsCommand::class, ['--from=30', '--to=2'])->dailyAt('03:00')->onOneServer();
 Schedule::job(new PruneModStatsJob)->dailyAt('03:30')->onOneServer();
+
+// One-year limit on incidental personal data. Bans and their audit trail are exempt; see config/retention.php.
+Schedule::command(PrunePersonalData::class)->dailyAt('04:30')->onOneServer()->withoutOverlapping();
 
 Schedule::command(UpdateGeoLiteDatabase::class)->daily()->at('02:00')->onOneServer()->runInBackground()->environments('production');
 Schedule::command(CensorExistingContentCommand::class, ['--force', '--if-changed'])->daily()->at('02:30')->onOneServer()->withoutOverlapping()->environments('production');

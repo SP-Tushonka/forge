@@ -203,8 +203,6 @@ describe('ApiAnalytics Top Clients', function (): void {
                     'country_name' => 'United States',
                     'region_name' => 'California',
                     'city_name' => 'Los Angeles',
-                    'latitude' => 34.05,
-                    'longitude' => -118.24,
                     'timezone' => 'America/Los_Angeles',
                 ];
             }

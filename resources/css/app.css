@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '../../vendor/livewire/flux/dist/flux.css';
+@import '@fontsource-variable/figtree';
 
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
@@ -21,7 +22,7 @@ dialog[data-modal]::backdrop {
 
 @theme {
     --font-sans:
-        Figtree, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Figtree Variable', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
     --color-accent: var(--color-cyan-500);
     --color-accent-content: var(--color-cyan-600);
@@ -662,26 +663,21 @@ textarea[data-com-onepassword-filled='light'] {
 /* YouTube Lite Embed - Facade pattern for performance */
 .youtube-lite {
     position: relative;
-    display: block;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
     width: 100%;
     aspect-ratio: 16 / 9;
     background-color: #000;
     cursor: pointer;
     overflow: hidden;
     contain: content;
-    @apply my-1;
+    @apply my-1 pb-4 text-sm text-gray-400;
 }
 
-.youtube-lite > img {
-    display: block !important;
-    position: absolute !important;
-    top: 0;
-    left: 0;
-    width: 100% !important;
-    height: 100% !important;
-    max-width: none !important;
-    object-fit: cover;
-    object-position: center;
+.youtube-lite a {
+    color: inherit;
+    text-decoration: none;
 }
 
 .youtube-lite::after {

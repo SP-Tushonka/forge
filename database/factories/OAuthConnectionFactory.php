@@ -7,7 +7,6 @@ namespace Database\Factories;
 use App\Models\OAuthConnection;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
 
 /**
  * @extends Factory<OAuthConnection>
@@ -23,8 +22,6 @@ final class OAuthConnectionFactory extends Factory
             'user_id' => User::factory(),
             'provider' => $this->faker->randomElement(['discord', 'google', 'facebook']),
             'provider_id' => (string) $this->faker->unique()->numberBetween(100000, 999999),
-            'token' => Str::random(40),
-            'refresh_token' => Str::random(40),
             'created_at' => now(),
             'updated_at' => now(),
         ];
