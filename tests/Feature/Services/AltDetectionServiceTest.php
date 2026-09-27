@@ -107,15 +107,32 @@ it('ignores moderation-action events when correlating IPs', function (): void {
 
     $ip = '5.5.5.5';
     altTrackEvent($suspect->id, $ip, '2026-06-01 10:00:00');
-    // Candidate only appears on this IP via a moderation action.
     altTrackEvent($candidate->id, $ip, '2026-06-01 10:01:00', [
-        'event_name' => 'user_banned',
+        'event_name' => 'mod_disable',
         'is_moderation_action' => true,
     ]);
 
     $result = resolve(AltDetectionService::class)->investigate($suspect);
 
     expect($result->candidates)->toBeEmpty();
+});
+
+it('does not link the banning moderator through the ban event filed against the suspect', function (): void {
+    $suspect = User::factory()->create(['email' => 'suspect@alpha.test']);
+    $moderator = User::factory()->create(['email' => 'mod@beta.test']);
+
+    $moderatorIp = '5.5.5.5';
+    $moderatorDevice = ['useragent' => 'Mozilla/5.0 (Windows NT 10.0) Chrome/140.0', 'languages' => '["en-US"]'];
+    altTrackEvent($suspect->id, '9.9.9.9', '2026-06-01 09:00:00', ['platform' => 'Linux', 'browser' => 'Firefox']);
+    altTrackEvent($moderator->id, $moderatorIp, '2026-06-01 09:55:00', $moderatorDevice);
+    altTrackEvent($moderator->id, $moderatorIp, '2026-06-01 10:00:00', ['event_name' => 'user_ban', ...$moderatorDevice]);
+    // Filed against the suspect, but stamped with the moderator's request IP and device.
+    altTrackEvent($suspect->id, $moderatorIp, '2026-06-01 10:00:00', ['event_name' => 'user_banned', ...$moderatorDevice]);
+
+    $result = resolve(AltDetectionService::class)->investigate($suspect);
+
+    expect($result->candidates)->toBeEmpty()
+        ->and($result->suspectIpCount)->toBe(1);
 });
 
 it('surfaces same disposable-domain accounts even without a shared IP', function (): void {
