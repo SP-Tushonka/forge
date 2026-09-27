@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\TrackingEventType;
 use App\Models\DisposableEmailBlocklist;
 use App\Models\User;
 use App\Support\DataTransferObjects\AltCandidate;
@@ -21,9 +22,10 @@ use Illuminate\Support\Facades\DB;
  * Detects likely alternate ("alt") accounts for a suspect user.
  *
  * Correlates accounts by shared IP (tracking events and comments), email domain, activity timing, and device
- * fingerprint (user-agent and language) into ranked candidates with supporting evidence. Moderation-action events are
- * excluded from IP correlation. Accounts deleted since their activity have no user row, so they are recovered from
- * orphaned tracking events and flagged.
+ * fingerprint (user-agent and language) into ranked candidates with supporting evidence. Moderation-action and ban
+ * events are excluded: ban events are filed against the banned account but carry the moderator's IP and device.
+ * Accounts deleted since their activity have no user row, so they are recovered from orphaned tracking events and
+ * flagged.
  *
  * @phpstan-type SharedIpData array{ip: string, breadth: int, hits: int, sources: list<string>, first_seen: string, last_seen: string}
  */
@@ -162,7 +164,7 @@ final class AltDetectionService
         $fromTracking = array_map($this->toStr(...), DB::table('tracking_events')
             ->select('ip')
             ->where('visitor_id', $suspectId)
-            ->where('is_moderation_action', false)
+            ->where($this->ownActivity(...))
             ->whereNotNull('ip')
             ->groupBy('ip')
             ->orderByRaw('MAX(created_at) desc')
@@ -214,7 +216,7 @@ final class AltDetectionService
         $trackingRows = DB::table('tracking_events')
             ->select('ip', 'visitor_id', DB::raw('COUNT(*) as hits'), DB::raw('MIN(created_at) as first_seen'), DB::raw('MAX(created_at) as last_seen'))
             ->whereIn('ip', $keptIps)
-            ->where('is_moderation_action', false)
+            ->where($this->ownActivity(...))
             ->whereNotNull('visitor_id')
             ->where('visitor_id', '!=', $suspectId)
             ->groupBy('ip', 'visitor_id')
@@ -254,6 +256,7 @@ final class AltDetectionService
         $trackingRows = DB::table('tracking_events')
             ->select('ip', DB::raw('COUNT(DISTINCT visitor_id) as breadth'))
             ->whereIn('ip', $suspectIps)
+            ->where($this->ownActivity(...))
             ->whereNotNull('visitor_id')
             ->groupBy('ip')
             ->get();
@@ -376,7 +379,7 @@ final class AltDetectionService
             ->select('ip', DB::raw('MIN(created_at) as first_seen'), DB::raw('MAX(created_at) as last_seen'))
             ->whereIn('ip', $ips)
             ->where('visitor_id', $userId)
-            ->where('is_moderation_action', false)
+            ->where($this->ownActivity(...))
             ->groupBy('ip')
             ->get();
 
@@ -426,7 +429,7 @@ final class AltDetectionService
         $rows = DB::table('tracking_events')
             ->select('visitor_id', 'platform', 'browser', 'useragent', 'languages')
             ->whereIn('visitor_id', $userIds)
-            ->where('is_moderation_action', false)
+            ->where($this->ownActivity(...))
             ->whereNotNull('visitor_id')
             ->where(function (QueryBuilder $query): void {
                 $query->whereNotNull('platform')->orWhereNotNull('browser')->orWhereNotNull('useragent');
@@ -459,6 +462,17 @@ final class AltDetectionService
         }
 
         return $fingerprints;
+    }
+
+    /**
+     * Limit a tracking-event query to activity the visitor performed themselves.
+     */
+    private function ownActivity(QueryBuilder $query): void
+    {
+        $banEvents = array_map(static fn (TrackingEventType $type): string => $type->value, TrackingEventType::banAuditTrail());
+
+        $query->where('is_moderation_action', false)
+            ->where(static fn (QueryBuilder $query) => $query->whereNull('event_name')->orWhereNotIn('event_name', $banEvents));
     }
 
     /**
