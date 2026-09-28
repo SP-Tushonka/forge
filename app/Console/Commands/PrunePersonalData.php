@@ -23,6 +23,8 @@ final class PrunePersonalData extends Command
 {
     private const int CHUNK = 5000;
 
+    private const int ALT_WATCH_GRACE_DAYS = 30;
+
     private CarbonImmutable $cutoff;
 
     private bool $dryRun;
@@ -41,6 +43,7 @@ final class PrunePersonalData extends Command
             'password_reset_tokens' => $this->pruneOlderThanCutoff('password_reset_tokens', key: 'email'),
             'alt_investigation_runs' => $this->pruneOlderThanCutoff('alt_investigation_runs'),
             'user_devices' => $this->pruneOlderThanCutoff('user_devices', column: 'last_seen_at'),
+            'alt_watches (ended or expired)' => $this->pruneEndedAltWatches(),
             'tracking_events (deleted accounts)' => $this->pruneDeletedAccountTrackingEvents(),
             'notifications (deleted accounts)' => $this->deleteInChunks(fn (): Builder => DB::table('notifications')
                 ->where('notifiable_type', User::class)
@@ -85,6 +88,15 @@ final class PrunePersonalData extends Command
             ->whereNotExists(fn (Builder $query): Builder => $query->select(DB::raw(1))
                 ->from('report_actions')
                 ->whereColumn('report_actions.tracking_event_id', 'tracking_events.id'));
+    }
+
+    // The watch's indicators and matches go with it through the foreign-key cascade.
+    private function pruneEndedAltWatches(): int
+    {
+        $cutoff = CarbonImmutable::now()->subDays(self::ALT_WATCH_GRACE_DAYS);
+
+        return $this->deleteInChunks(fn (): Builder => DB::table('alt_watches')
+            ->where(fn (Builder $query): Builder => $query->where('ended_at', '<', $cutoff)->orWhere('expires_at', '<', $cutoff)));
     }
 
     /**

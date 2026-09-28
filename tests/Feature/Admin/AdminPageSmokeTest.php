@@ -29,6 +29,18 @@ describe('admin page access', function (): void {
             ->assertOk();
     });
 
+    it('renders the admin alt monitoring page', function (): void {
+        $this->actingAs(User::factory()->admin()->create())
+            ->get('/admin/alt-monitoring')
+            ->assertOk();
+    });
+
+    it('renders the admin new alt watch page', function (): void {
+        $this->actingAs(User::factory()->admin()->create())
+            ->get('/admin/alt-monitoring/watches/create')
+            ->assertOk();
+    });
+
     it('redirects guests from admin pages to login', function (): void {
         $this->get('/admin/user-management')->assertRedirect('/login');
     });

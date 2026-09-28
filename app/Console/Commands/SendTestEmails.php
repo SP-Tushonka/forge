@@ -11,6 +11,7 @@ use App\Models\Message;
 use App\Models\Mod;
 use App\Models\Report;
 use App\Models\User;
+use App\Notifications\AltWatchMatchedNotification;
 use App\Notifications\CommentReplyNotification;
 use App\Notifications\ContentGuidelinesUpdatedNotification;
 use App\Notifications\NewChatMessageNotification;
@@ -88,6 +89,7 @@ final class SendTestEmails extends Command
             'ResetPassword' => new ResetPassword('test-reset-token-'.bin2hex(random_bytes(16))),
             'VerifyEmail' => new VerifyEmail,
             'NewDeviceLogin' => new NewDeviceLoginNotification('Firefox on Windows', 'Berlin, DE', '203.0.113.42', now()->toImmutable()),
+            'AltWatchMatched' => new AltWatchMatchedNotification(0, 'ExampleUser', 'Test watch for email rendering only; no account is being watched.', [['id' => 0, 'name' => 'ExampleAlt']], ['Device', 'IP range']),
         ];
     }
 

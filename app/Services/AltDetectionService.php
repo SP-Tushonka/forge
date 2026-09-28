@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Enums\TrackingEventType;
 use App\Models\DisposableEmailBlocklist;
 use App\Models\User;
 use App\Models\UserDevice;
@@ -187,7 +186,7 @@ final class AltDetectionService
         $fromTracking = array_map($this->toStr(...), DB::table('tracking_events')
             ->select('ip')
             ->where('visitor_id', $suspectId)
-            ->where($this->ownActivity(...))
+            ->where(AltIndicatorService::ownActivity(...))
             ->whereNotNull('ip')
             ->groupBy('ip')
             ->orderByRaw('MAX(created_at) desc')
@@ -239,7 +238,7 @@ final class AltDetectionService
         $trackingRows = DB::table('tracking_events')
             ->select('ip', 'visitor_id', DB::raw('COUNT(*) as hits'), DB::raw('MIN(created_at) as first_seen'), DB::raw('MAX(created_at) as last_seen'))
             ->whereIn('ip', $keptIps)
-            ->where($this->ownActivity(...))
+            ->where(AltIndicatorService::ownActivity(...))
             ->whereNotNull('visitor_id')
             ->where('visitor_id', '!=', $suspectId)
             ->groupBy('ip', 'visitor_id')
@@ -381,7 +380,7 @@ final class AltDetectionService
         $trackingRows = DB::table('tracking_events')
             ->select('ip', DB::raw('COUNT(DISTINCT visitor_id) as breadth'))
             ->whereIn('ip', $suspectIps)
-            ->where($this->ownActivity(...))
+            ->where(AltIndicatorService::ownActivity(...))
             ->whereNotNull('visitor_id')
             ->groupBy('ip')
             ->get();
@@ -507,7 +506,7 @@ final class AltDetectionService
             ->select('ip', DB::raw('MIN(created_at) as first_seen'), DB::raw('MAX(created_at) as last_seen'))
             ->whereIn('ip', $ips)
             ->where('visitor_id', $userId)
-            ->where($this->ownActivity(...))
+            ->where(AltIndicatorService::ownActivity(...))
             ->groupBy('ip')
             ->get();
 
@@ -557,7 +556,7 @@ final class AltDetectionService
         $rows = DB::table('tracking_events')
             ->select('visitor_id', 'platform', 'browser', 'useragent', 'languages')
             ->whereIn('visitor_id', $userIds)
-            ->where($this->ownActivity(...))
+            ->where(AltIndicatorService::ownActivity(...))
             ->whereNotNull('visitor_id')
             ->where(function (QueryBuilder $query): void {
                 $query->whereNotNull('platform')->orWhereNotNull('browser')->orWhereNotNull('useragent');
@@ -570,8 +569,8 @@ final class AltDetectionService
         foreach ($rows as $row) {
             $id = $this->toInt($row->visitor_id);
 
-            $print = $this->toStr($row->platform).'|'.$this->toStr($row->browser).'|'.$this->normalizeLanguages($this->toStr($row->languages));
-            if ($print !== '||') {
+            $print = AltIndicatorService::browserPrint($this->toStr($row->platform), $this->toStr($row->browser), $this->toStr($row->languages));
+            if ($print !== null) {
                 $prints[$id][] = $print;
             }
 
@@ -590,25 +589,6 @@ final class AltDetectionService
         }
 
         return $fingerprints;
-    }
-
-    /**
-     * Limit a tracking-event query to activity the visitor performed themselves.
-     */
-    private function ownActivity(QueryBuilder $query): void
-    {
-        $banEvents = array_map(static fn (TrackingEventType $type): string => $type->value, TrackingEventType::banAuditTrail());
-
-        $query->where('is_moderation_action', false)
-            ->where(static fn (QueryBuilder $query) => $query->whereNull('event_name')->orWhereNotIn('event_name', $banEvents));
-    }
-
-    /**
-     * Reduce a stored `languages` JSON array to a bare comma-separated locale list for fingerprint comparison.
-     */
-    private function normalizeLanguages(string $languages): string
-    {
-        return mb_trim(str_replace(['[', ']', '"'], '', $languages));
     }
 
     /**

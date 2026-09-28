@@ -267,6 +267,15 @@ Route::middleware('auth.banned')->group(function (): void {
             Route::livewire('/admin/alt-detection/{user?}', 'pages::admin.alt-detection')
                 ->whereNumber('user')
                 ->name('admin.alt-detection');
+            Route::livewire('/admin/alt-monitoring', 'pages::admin.alt-monitoring')->name('admin.alt-monitoring');
+            Route::livewire('/admin/alt-monitoring/watches/create', 'pages::admin.alt-watch-form')
+                ->name('admin.alt-monitoring.watches.create');
+            Route::livewire('/admin/alt-monitoring/watches/{watch}', 'pages::admin.alt-watch')
+                ->whereNumber('watch')
+                ->name('admin.alt-monitoring.watches.show');
+            Route::livewire('/admin/alt-monitoring/watches/{watch}/edit', 'pages::admin.alt-watch-form')
+                ->whereNumber('watch')
+                ->name('admin.alt-monitoring.watches.edit');
         });
     });
 

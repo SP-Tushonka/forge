@@ -8,7 +8,6 @@ use App\Models\AltInvestigationRun;
 use App\Models\User;
 use App\Support\DataTransferObjects\AltInvestigation;
 use App\Support\DataTransferObjects\AltTimeline;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -59,18 +58,7 @@ new #[Layout('layouts::base')] #[Title('Alt Detection - The Forge')] class exten
             return new Collection;
         }
 
-        return User::query()
-            ->where(function (Builder $query) use ($term): void {
-                $query->whereLike('name', '%'.$term.'%')
-                    ->orWhereLike('email', '%'.$term.'%');
-
-                if (ctype_digit($term)) {
-                    $query->orWhere('id', $term);
-                }
-            })
-            ->orderBy('name')
-            ->limit(10)
-            ->get();
+        return User::query()->lookup($term)->orderBy('name')->limit(10)->get();
     }
 
     /**
