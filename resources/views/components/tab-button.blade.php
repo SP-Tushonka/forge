@@ -5,7 +5,7 @@
         'font-extrabold': selectedTab == '{{ $tabValue }}',
         'font-light': selectedTab != '{{ $tabValue }}'
     }"
-    class="tab group relative flex min-w-0 flex-1 items-center justify-center gap-1 overflow-hidden bg-cyan-700 px-4 py-4 text-center text-sm text-white first:rounded-l-xl last:rounded-r-xl hover:bg-cyan-600 focus:z-10"
+    class="tab group relative flex min-w-0 flex-1 items-center justify-center gap-1 overflow-hidden whitespace-nowrap bg-cyan-700 px-2 py-4 text-center text-sm text-white first:rounded-l-xl last:rounded-r-xl hover:bg-cyan-600 focus:z-10"
     {{ $attributes }}
 >
     {{ __($displayLabel) }}

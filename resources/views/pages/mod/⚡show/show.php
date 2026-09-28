@@ -7,6 +7,7 @@ use App\Enums\ListPopularityTier;
 use App\Models\Mod;
 use App\Models\ModIssue;
 use App\Models\ModVersion;
+use App\Support\ModStats\DownstreamModsQuery;
 use App\Traits\Livewire\HandlesReactions;
 use App\Traits\Livewire\ModeratesAddon;
 use App\Traits\Livewire\ModeratesMod;
@@ -223,6 +224,20 @@ new #[Layout('layouts::base')] class extends Component
     }
 
     /**
+     * Get the number of published mods whose latest version depends on this one. Cached like the list-presence counts,
+     * since a dependent appearing a few minutes late in the tab label is harmless. Cast because the Redis store keeps
+     * numbers unserialized and hands them back as strings.
+     */
+    public function getDependentCount(): int
+    {
+        return (int) Cache::remember(
+            sprintf('mod:%d:dependent-count', $this->mod->id),
+            now()->addMinutes(15),
+            fn (): int => count(resolve(DownstreamModsQuery::class)->dependentModIds($this->mod)),
+        );
+    }
+
+    /**
      * Check if the mod should display a profile binding notice.
      */
     public function requiresProfileBindingNotice(): bool
@@ -276,6 +291,7 @@ new #[Layout('layouts::base')] class extends Component
             'commentCount' => $this->getCommentCount(),
             'addonCount' => $this->getAddonCount(),
             'issueCount' => $this->getIssueCount(),
+            'dependentCount' => $this->getDependentCount(),
             'showIssuesTab' => Gate::allows('viewAny', [ModIssue::class, $this->mod]),
             'fikaStatus' => $this->mod->getOverallFikaCompatibility(),
             'presenceSummary' => $this->getPresenceSummary(),

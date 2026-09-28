@@ -287,6 +287,10 @@
                                 <flux:select.option value="addons">{{ $addonCount }}
                                     {{ __(Str::plural('Addon', $addonCount)) }}</flux:select.option>
                             @endif
+                            @if ($dependentCount > 0)
+                                <flux:select.option value="dependents">{{ $dependentCount }}
+                                    {{ __(Str::plural('Dependent', $dependentCount)) }}</flux:select.option>
+                            @endif
                             @if (!$mod->comments_disabled || auth()->user()?->isModOrAdmin() || $mod->isAuthorOrOwner(auth()->user()))
                                 <flux:select.option value="comments">{{ $commentCount }}
                                     {{ __(Str::plural('Comment', $commentCount)) }}</flux:select.option>
@@ -315,6 +319,13 @@
                                     name="Addons"
                                     value="addons"
                                     :label="$addonCount . ' ' . Str::plural('Addon', $addonCount)"
+                                />
+                            @endif
+                            @if ($dependentCount > 0)
+                                <x-tab-button
+                                    name="Dependents"
+                                    value="dependents"
+                                    :label="$dependentCount . ' ' . Str::plural('Dependent', $dependentCount)"
                                 />
                             @endif
                             @if (!$mod->comments_disabled || auth()->user()?->isModOrAdmin() || $mod->isAuthorOrOwner(auth()->user()))
@@ -360,6 +371,19 @@
                     >
                         <livewire:mod.show.addons-tab
                             wire:key="addons-tab-{{ $mod->id }}"
+                            :mod-id="$mod->id"
+                        />
+                    </div>
+                @endif
+
+                {{-- Dependents --}}
+                @if ($dependentCount > 0)
+                    <div
+                        x-show="selectedTab === 'dependents'"
+                        x-cloak
+                    >
+                        <livewire:mod.show.dependents-tab
+                            wire:key="dependents-tab-{{ $mod->id }}"
                             :mod-id="$mod->id"
                         />
                     </div>
