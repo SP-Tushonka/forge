@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Enums\TrackingEventType;
 use App\Models\DisposableEmailBlocklist;
 use App\Models\User;
+use App\Models\UserDevice;
 use App\Support\DataTransferObjects\AltCandidate;
 use App\Support\DataTransferObjects\AltFingerprint;
 use App\Support\DataTransferObjects\AltInvestigation;
+use App\Support\DataTransferObjects\AltSharedDevice;
 use App\Support\DataTransferObjects\AltSharedIp;
 use App\Support\DataTransferObjects\AltSuspect;
 use App\Support\DataTransferObjects\AltTimeline;
@@ -21,13 +22,14 @@ use Illuminate\Support\Facades\DB;
 /**
  * Detects likely alternate ("alt") accounts for a suspect user.
  *
- * Correlates accounts by shared IP (tracking events and comments), email domain, activity timing, and device
- * fingerprint (user-agent and language) into ranked candidates with supporting evidence. Moderation-action and ban
- * events are excluded: ban events are filed against the banned account but carry the moderator's IP and device.
- * Accounts deleted since their activity have no user row, so they are recovered from orphaned tracking events and
- * flagged.
+ * Correlates accounts by shared device (the forge_device cookie), shared IP (tracking events and comments), email
+ * domain, activity timing, and device fingerprint (user-agent and language) into ranked candidates with supporting
+ * evidence. Moderation-action and ban events are excluded: ban events are filed against the banned account but carry
+ * the moderator's IP and device. Accounts deleted since their activity have no user row, so they are recovered from
+ * orphaned tracking events and flagged.
  *
  * @phpstan-type SharedIpData array{ip: string, breadth: int, hits: int, sources: list<string>, first_seen: string, last_seen: string}
+ * @phpstan-type SharedDeviceData array{hash: string, label: string, breadth: int, first_seen: string, last_seen: string}
  */
 final class AltDetectionService
 {
@@ -65,6 +67,14 @@ final class AltDetectionService
 
     private const int SCORE_FINGERPRINT_EXACT = 4;
 
+    private const int MAX_DEVICE_ACCOUNTS = 5;
+
+    private const int SCORE_SHARED_DEVICE_EXCLUSIVE = 50;
+
+    private const int SCORE_SHARED_DEVICE_DECAY = 10;
+
+    private const int SCORE_SHARED_DEVICE_FLOOR = 20;
+
     private const int HANDOFF_TIGHT_SECONDS = 300;
 
     private const int HANDOFF_CLOSE_SECONDS = 3600;
@@ -87,17 +97,20 @@ final class AltDetectionService
             [$ipCandidates, $keptIps, $noisyIpCount] = $this->findIpCandidates($suspectId, $suspectIps);
         }
 
+        [$deviceCandidates, $suspectDeviceWindows, $sharedDeviceCount] = $this->findDeviceCandidates($suspectId);
+
         $domain = $this->resolveDomain((string) $suspect->email);
         $domainCandidateIds = $this->findDomainCandidates($suspectId, $domain);
 
         $candidateIds = array_values(array_unique([
             ...array_keys($ipCandidates),
+            ...array_keys($deviceCandidates),
             ...$domainCandidateIds,
         ]));
 
         $truncated = count($candidateIds) > self::MAX_CANDIDATE_POOL;
         if ($truncated) {
-            $candidateIds = $this->boundCandidatePool($candidateIds, $ipCandidates);
+            $candidateIds = $this->boundCandidatePool($candidateIds, $ipCandidates, $deviceCandidates);
         }
 
         /** @var Collection<int, User> $users */
@@ -111,21 +124,29 @@ final class AltDetectionService
         $orphanIds = array_values(array_filter($candidateIds, static fn (int $id): bool => ! $users->has($id)));
         $deletedNames = $this->deletedAccountNames($orphanIds);
 
-        $ipCohort = $this->ipCohort($ipCandidates);
         $accountNames = $this->accountNames($users, $deletedNames);
+        $ipCohort = $this->cohort($ipCandidates, 'shared_ips');
+        $deviceCohort = $this->cohort($deviceCandidates, 'shared_devices');
 
         $candidates = [];
         foreach ($candidateIds as $candidateId) {
             $sharedIps = $this->sortSharedIps(
                 $ipCandidates[$candidateId]['shared_ips'] ?? [],
-                $this->otherAccountsPerIp($ipCohort, $accountNames, $candidateId),
+                $this->otherAccountsPerKey($ipCohort, $accountNames, $candidateId),
             );
+            $deviceData = $deviceCandidates[$candidateId]['shared_devices'] ?? [];
+            $sharedDevices = $this->sortSharedDevices($deviceData, $this->otherAccountsPerKey($deviceCohort, $accountNames, $candidateId));
+            $timeline = $this->strongerTimeline(
+                $this->bestTimeline($sharedIps, $suspectWindows),
+                $this->bestDeviceTimeline($deviceData, $suspectDeviceWindows),
+            );
+            $candidateFingerprint = $fingerprints[$candidateId] ?? $emptyFingerprint;
             $user = $users->get($candidateId);
 
             if ($user instanceof User) {
-                $candidate = $this->scoreCandidate($user, $sharedIps, $domain, $suspectWindows, $suspectFingerprint, $fingerprints[$candidateId] ?? $emptyFingerprint);
-            } elseif ($sharedIps !== []) {
-                $candidate = $this->scoreDeletedCandidate($candidateId, $deletedNames[$candidateId] ?? null, $sharedIps, $suspectWindows, $suspectFingerprint, $fingerprints[$candidateId] ?? $emptyFingerprint);
+                $candidate = $this->scoreCandidate($user, $sharedIps, $sharedDevices, $domain, $timeline, $suspectFingerprint, $candidateFingerprint);
+            } elseif ($sharedIps !== [] || $sharedDevices !== []) {
+                $candidate = $this->scoreDeletedCandidate($candidateId, $deletedNames[$candidateId] ?? null, $sharedIps, $sharedDevices, $timeline, $suspectFingerprint, $candidateFingerprint);
             } else {
                 $candidate = null;
             }
@@ -151,6 +172,7 @@ final class AltDetectionService
             suspectIpCount: count($suspectIps),
             excludedNoisyIps: $noisyIpCount,
             truncated: $truncated,
+            excludedSharedDevices: $sharedDeviceCount,
         );
     }
 
@@ -164,7 +186,7 @@ final class AltDetectionService
         $fromTracking = array_map($this->toStr(...), DB::table('tracking_events')
             ->select('ip')
             ->where('visitor_id', $suspectId)
-            ->where($this->ownActivity(...))
+            ->where(AltIndicatorService::ownActivity(...))
             ->whereNotNull('ip')
             ->groupBy('ip')
             ->orderByRaw('MAX(created_at) desc')
@@ -216,7 +238,7 @@ final class AltDetectionService
         $trackingRows = DB::table('tracking_events')
             ->select('ip', 'visitor_id', DB::raw('COUNT(*) as hits'), DB::raw('MIN(created_at) as first_seen'), DB::raw('MAX(created_at) as last_seen'))
             ->whereIn('ip', $keptIps)
-            ->where($this->ownActivity(...))
+            ->where(AltIndicatorService::ownActivity(...))
             ->whereNotNull('visitor_id')
             ->where('visitor_id', '!=', $suspectId)
             ->groupBy('ip', 'visitor_id')
@@ -244,6 +266,108 @@ final class AltDetectionService
     }
 
     /**
+     * Find other accounts signed in from one of the suspect's browsers, using device rows and the device hashes kept
+     * on active bans (which outlive a deleted account). A browser used by more than MAX_DEVICE_ACCOUNTS accounts is a
+     * shared machine and is skipped. Device rows are only written by requests the account itself made, so a
+     * moderator's actions can never place the moderator's browser on the suspect.
+     *
+     * @return array{0: array<int, array{shared_devices: array<string, SharedDeviceData>}>, 1: array<string, array{first: string, last: string}>, 2: int}
+     */
+    private function findDeviceCandidates(int $suspectId): array
+    {
+        $suspectRows = DB::table('user_devices')
+            ->select('device_hash', 'browser', 'platform', 'first_seen_at', 'last_seen_at')
+            ->where('user_id', $suspectId)
+            ->get();
+
+        if ($suspectRows->isEmpty()) {
+            return [[], [], 0];
+        }
+
+        $suspectWindows = [];
+        $labels = [];
+        foreach ($suspectRows as $row) {
+            $hash = $this->toStr($row->device_hash);
+            $suspectWindows[$hash] = ['first' => $this->toStr($row->first_seen_at), 'last' => $this->toStr($row->last_seen_at)];
+            $labels[$hash] = UserDevice::describe($this->toStr($row->browser), $this->toStr($row->platform));
+        }
+
+        /** @var array<string, array<int, array{first: string, last: string}|null>> $accounts */
+        $accounts = [];
+
+        $rows = DB::table('user_devices')
+            ->select('device_hash', 'user_id', 'first_seen_at', 'last_seen_at')
+            ->whereIn('device_hash', array_keys($suspectWindows))
+            ->where('user_id', '!=', $suspectId)
+            ->get();
+
+        foreach ($rows as $row) {
+            $accounts[$this->toStr($row->device_hash)][$this->toInt($row->user_id)] = ['first' => $this->toStr($row->first_seen_at), 'last' => $this->toStr($row->last_seen_at)];
+        }
+
+        foreach ($this->activeBanDevices($suspectId, array_keys($suspectWindows)) as $userId => $hashes) {
+            foreach ($hashes as $hash) {
+                $accounts[$hash][$userId] ??= null;
+            }
+        }
+
+        $candidates = [];
+        $excluded = 0;
+        foreach ($accounts as $hash => $users) {
+            $breadth = count($users) + 1;
+            if ($breadth > self::MAX_DEVICE_ACCOUNTS) {
+                $excluded++;
+
+                continue;
+            }
+
+            foreach ($users as $userId => $window) {
+                $candidates[$userId]['shared_devices'][$hash] = [
+                    'hash' => $hash,
+                    'label' => $labels[$hash],
+                    'breadth' => $breadth,
+                    'first_seen' => $window['first'] ?? '',
+                    'last_seen' => $window['last'] ?? '',
+                ];
+            }
+        }
+
+        return [$candidates, $suspectWindows, $excluded];
+    }
+
+    /**
+     * Map each other account under an active ban to the suspect's device hashes kept on that ban.
+     *
+     * @param  list<string>  $hashes
+     * @return array<int, list<string>>
+     */
+    private function activeBanDevices(int $suspectId, array $hashes): array
+    {
+        $rows = DB::table('bans')
+            ->select('bannable_id', 'subject_devices')
+            ->where('bannable_type', User::class)
+            ->where('bannable_id', '!=', $suspectId)
+            ->whereNotNull('subject_devices')
+            ->whereNull('deleted_at')
+            ->where(fn (QueryBuilder $query): QueryBuilder => $query->whereNull('expired_at')->orWhere('expired_at', '>', now()))
+            ->get();
+
+        $matches = [];
+        foreach ($rows as $row) {
+            $stored = json_decode($this->toStr($row->subject_devices), true);
+            $stored = is_array($stored) ? array_filter($stored, is_string(...)) : [];
+            $shared = array_values(array_intersect($hashes, $stored));
+
+            if ($shared !== []) {
+                $userId = $this->toInt($row->bannable_id);
+                $matches[$userId] = array_values(array_unique([...$matches[$userId] ?? [], ...$shared]));
+            }
+        }
+
+        return $matches;
+    }
+
+    /**
      * Count how many distinct accounts have used each IP, across tracking events and comments.
      *
      * @param  list<string>  $suspectIps
@@ -256,7 +380,7 @@ final class AltDetectionService
         $trackingRows = DB::table('tracking_events')
             ->select('ip', DB::raw('COUNT(DISTINCT visitor_id) as breadth'))
             ->whereIn('ip', $suspectIps)
-            ->where($this->ownActivity(...))
+            ->where(AltIndicatorService::ownActivity(...))
             ->whereNotNull('visitor_id')
             ->groupBy('ip')
             ->get();
@@ -352,15 +476,18 @@ final class AltDetectionService
     }
 
     /**
-     * Reduce the candidate pool to the strongest entries, preferring those on the most shared IPs.
+     * Reduce the candidate pool to the strongest entries, preferring shared devices, then the most shared IPs.
      *
      * @param  list<int>  $candidateIds
      * @param  array<int, array{shared_ips: array<string, SharedIpData>}>  $ipCandidates
+     * @param  array<int, array{shared_devices: array<string, SharedDeviceData>}>  $deviceCandidates
      * @return list<int>
      */
-    private function boundCandidatePool(array $candidateIds, array $ipCandidates): array
+    private function boundCandidatePool(array $candidateIds, array $ipCandidates, array $deviceCandidates): array
     {
-        usort($candidateIds, static fn (int $a, int $b): int => count($ipCandidates[$b]['shared_ips'] ?? []) <=> count($ipCandidates[$a]['shared_ips'] ?? []));
+        $strength = static fn (int $id): array => [count($deviceCandidates[$id]['shared_devices'] ?? []), count($ipCandidates[$id]['shared_ips'] ?? [])];
+
+        usort($candidateIds, static fn (int $a, int $b): int => $strength($b) <=> $strength($a));
 
         return array_slice($candidateIds, 0, self::MAX_CANDIDATE_POOL);
     }
@@ -379,7 +506,7 @@ final class AltDetectionService
             ->select('ip', DB::raw('MIN(created_at) as first_seen'), DB::raw('MAX(created_at) as last_seen'))
             ->whereIn('ip', $ips)
             ->where('visitor_id', $userId)
-            ->where($this->ownActivity(...))
+            ->where(AltIndicatorService::ownActivity(...))
             ->groupBy('ip')
             ->get();
 
@@ -429,7 +556,7 @@ final class AltDetectionService
         $rows = DB::table('tracking_events')
             ->select('visitor_id', 'platform', 'browser', 'useragent', 'languages')
             ->whereIn('visitor_id', $userIds)
-            ->where($this->ownActivity(...))
+            ->where(AltIndicatorService::ownActivity(...))
             ->whereNotNull('visitor_id')
             ->where(function (QueryBuilder $query): void {
                 $query->whereNotNull('platform')->orWhereNotNull('browser')->orWhereNotNull('useragent');
@@ -442,8 +569,8 @@ final class AltDetectionService
         foreach ($rows as $row) {
             $id = $this->toInt($row->visitor_id);
 
-            $print = $this->toStr($row->platform).'|'.$this->toStr($row->browser).'|'.$this->normalizeLanguages($this->toStr($row->languages));
-            if ($print !== '||') {
+            $print = AltIndicatorService::browserPrint($this->toStr($row->platform), $this->toStr($row->browser), $this->toStr($row->languages));
+            if ($print !== null) {
                 $prints[$id][] = $print;
             }
 
@@ -465,35 +592,21 @@ final class AltDetectionService
     }
 
     /**
-     * Limit a tracking-event query to activity the visitor performed themselves.
-     */
-    private function ownActivity(QueryBuilder $query): void
-    {
-        $banEvents = array_map(static fn (TrackingEventType $type): string => $type->value, TrackingEventType::banAuditTrail());
-
-        $query->where('is_moderation_action', false)
-            ->where(static fn (QueryBuilder $query) => $query->whereNull('event_name')->orWhereNotIn('event_name', $banEvents));
-    }
-
-    /**
-     * Reduce a stored `languages` JSON array to a bare comma-separated locale list for fingerprint comparison.
-     */
-    private function normalizeLanguages(string $languages): string
-    {
-        return mb_trim(str_replace(['[', ']', '"'], '', $languages));
-    }
-
-    /**
      * Build the scored candidate, or null if nothing links this account to the suspect.
      *
      * @param  list<AltSharedIp>  $sharedIps
+     * @param  list<AltSharedDevice>  $sharedDevices
      * @param  array{domain: string|null, disposable: bool}  $suspectDomain
-     * @param  array<string, array{first: string, last: string}>  $suspectWindows
      */
-    private function scoreCandidate(User $user, array $sharedIps, array $suspectDomain, array $suspectWindows, AltFingerprint $suspectFingerprint, AltFingerprint $candidateFingerprint): ?AltCandidate
+    private function scoreCandidate(User $user, array $sharedIps, array $sharedDevices, array $suspectDomain, ?AltTimeline $timeline, AltFingerprint $suspectFingerprint, AltFingerprint $candidateFingerprint): ?AltCandidate
     {
         $score = 0;
         $signals = [];
+
+        if ($sharedDevices !== []) {
+            $score += $this->deviceScore($sharedDevices);
+            $signals[] = 'shared_device';
+        }
 
         if ($sharedIps !== []) {
             $score += $this->ipAddressScore($sharedIps);
@@ -508,7 +621,6 @@ final class AltDetectionService
             $signals[] = $disposableDomain ? 'disposable_email_domain' : 'shared_email_domain';
         }
 
-        $timeline = $this->bestTimeline($sharedIps, $suspectWindows);
         if ($timeline instanceof AltTimeline) {
             $score += $this->timelineScore($timeline->type);
             $signals[] = 'timeline_'.$timeline->type;
@@ -539,22 +651,33 @@ final class AltDetectionService
             disposableDomain: $disposableDomain,
             timeline: $timeline,
             fingerprintOverlap: $fingerprintOverlap,
+            sharedDevices: $sharedDevices,
         );
     }
 
     /**
-     * Build a scored candidate for a since-deleted account recovered from orphaned tracking events. Deleted accounts
-     * have no user row, so they are scored on shared IP, timeline, and device fingerprint only.
+     * Build a scored candidate for a since-deleted account, recovered from orphaned tracking events or from the
+     * device hashes kept on its ban. Deleted accounts have no user row, so they are scored on shared devices, shared
+     * IPs, timeline, and device fingerprint only.
      *
      * @param  list<AltSharedIp>  $sharedIps
-     * @param  array<string, array{first: string, last: string}>  $suspectWindows
+     * @param  list<AltSharedDevice>  $sharedDevices
      */
-    private function scoreDeletedCandidate(int $userId, ?string $name, array $sharedIps, array $suspectWindows, AltFingerprint $suspectFingerprint, AltFingerprint $candidateFingerprint): AltCandidate
+    private function scoreDeletedCandidate(int $userId, ?string $name, array $sharedIps, array $sharedDevices, ?AltTimeline $timeline, AltFingerprint $suspectFingerprint, AltFingerprint $candidateFingerprint): AltCandidate
     {
-        $score = $this->ipAddressScore($sharedIps);
-        $signals = ['shared_ip'];
+        $score = 0;
+        $signals = [];
 
-        $timeline = $this->bestTimeline($sharedIps, $suspectWindows);
+        if ($sharedDevices !== []) {
+            $score += $this->deviceScore($sharedDevices);
+            $signals[] = 'shared_device';
+        }
+
+        if ($sharedIps !== []) {
+            $score += $this->ipAddressScore($sharedIps);
+            $signals[] = 'shared_ip';
+        }
+
         if ($timeline instanceof AltTimeline) {
             $score += $this->timelineScore($timeline->type);
             $signals[] = 'timeline_'.$timeline->type;
@@ -581,6 +704,7 @@ final class AltDetectionService
             disposableDomain: false,
             timeline: $timeline,
             fingerprintOverlap: $fingerprintOverlap,
+            sharedDevices: $sharedDevices,
         );
     }
 
@@ -599,6 +723,24 @@ final class AltDetectionService
         }
 
         return min($score, self::SCORE_IP_CAP);
+    }
+
+    /**
+     * Score contribution from the strongest shared device. A browser cookie is not shared by accident the way a
+     * carrier or household IP is, so an exclusive device outweighs an exclusive IP; the score decays as more accounts
+     * share the device.
+     *
+     * @param  list<AltSharedDevice>  $sharedDevices
+     */
+    private function deviceScore(array $sharedDevices): int
+    {
+        $best = 0;
+        foreach ($sharedDevices as $sharedDevice) {
+            $decayed = self::SCORE_SHARED_DEVICE_EXCLUSIVE - max(0, $sharedDevice->breadth - 2) * self::SCORE_SHARED_DEVICE_DECAY;
+            $best = max($best, self::SCORE_SHARED_DEVICE_FLOOR, $decayed);
+        }
+
+        return $best;
     }
 
     /**
@@ -664,7 +806,6 @@ final class AltDetectionService
     private function bestTimeline(array $sharedIps, array $suspectWindows): ?AltTimeline
     {
         $best = null;
-        $bestScore = 0;
 
         foreach ($sharedIps as $sharedIp) {
             $suspectWindow = $suspectWindows[$sharedIp->ip] ?? null;
@@ -672,39 +813,81 @@ final class AltDetectionService
                 continue;
             }
 
-            $candidateFirst = (int) strtotime($sharedIp->firstSeen);
-            $candidateLast = (int) strtotime($sharedIp->lastSeen);
-            $suspectFirst = (int) strtotime($suspectWindow['first']);
-            $suspectLast = (int) strtotime($suspectWindow['last']);
-
-            $overlaps = $candidateFirst <= $suspectLast && $suspectFirst <= $candidateLast;
-            $gap = $overlaps ? 0 : ($candidateFirst > $suspectLast ? $candidateFirst - $suspectLast : $suspectFirst - $candidateLast);
-
-            $type = match (true) {
-                $overlaps => 'concurrent',
-                $gap <= self::HANDOFF_TIGHT_SECONDS => 'handoff',
-                $gap <= self::HANDOFF_CLOSE_SECONDS => 'close',
-                $gap <= self::HANDOFF_SUCCESSION_SECONDS => 'succession',
-                default => 'none',
-            };
-
-            if ($type === 'none') {
-                continue;
-            }
-
-            $score = $this->timelineScore($type);
-            if (! $best instanceof AltTimeline || $score > $bestScore) {
-                $bestScore = $score;
-                $best = new AltTimeline(
-                    type: $type,
-                    gapSeconds: $gap,
-                    gapHuman: $overlaps ? 'overlapping activity' : CarbonInterval::seconds($gap)->cascade()->forHumans(),
-                    ip: $sharedIp->ip,
-                );
-            }
+            $best = $this->strongerTimeline($best, $this->timelineBetween($sharedIp->ip, $sharedIp->firstSeen, $sharedIp->lastSeen, $suspectWindow['first'], $suspectWindow['last']));
         }
 
         return $best;
+    }
+
+    /**
+     * Find the strongest timeline relationship between the candidate and suspect across their shared devices.
+     *
+     * @param  array<string, SharedDeviceData>  $sharedDevices
+     * @param  array<string, array{first: string, last: string}>  $suspectWindows
+     */
+    private function bestDeviceTimeline(array $sharedDevices, array $suspectWindows): ?AltTimeline
+    {
+        $best = null;
+
+        foreach ($sharedDevices as $hash => $sharedDevice) {
+            $suspectWindow = $suspectWindows[$hash] ?? null;
+            if ($suspectWindow === null || $sharedDevice['first_seen'] === '') {
+                continue;
+            }
+
+            $best = $this->strongerTimeline($best, $this->timelineBetween('device '.$sharedDevice['label'], $sharedDevice['first_seen'], $sharedDevice['last_seen'], $suspectWindow['first'], $suspectWindow['last']));
+        }
+
+        return $best;
+    }
+
+    /**
+     * Classify how two activity windows on the same IP or device relate in time, or null when they are too far apart.
+     */
+    private function timelineBetween(string $where, string $candidateFirstSeen, string $candidateLastSeen, string $suspectFirstSeen, string $suspectLastSeen): ?AltTimeline
+    {
+        $candidateFirst = (int) strtotime($candidateFirstSeen);
+        $candidateLast = (int) strtotime($candidateLastSeen);
+        $suspectFirst = (int) strtotime($suspectFirstSeen);
+        $suspectLast = (int) strtotime($suspectLastSeen);
+
+        $overlaps = $candidateFirst <= $suspectLast && $suspectFirst <= $candidateLast;
+        $gap = $overlaps ? 0 : ($candidateFirst > $suspectLast ? $candidateFirst - $suspectLast : $suspectFirst - $candidateLast);
+
+        $type = match (true) {
+            $overlaps => 'concurrent',
+            $gap <= self::HANDOFF_TIGHT_SECONDS => 'handoff',
+            $gap <= self::HANDOFF_CLOSE_SECONDS => 'close',
+            $gap <= self::HANDOFF_SUCCESSION_SECONDS => 'succession',
+            default => null,
+        };
+
+        if ($type === null) {
+            return null;
+        }
+
+        return new AltTimeline(
+            type: $type,
+            gapSeconds: $gap,
+            gapHuman: $overlaps ? 'overlapping activity' : CarbonInterval::seconds($gap)->cascade()->forHumans(),
+            ip: $where,
+        );
+    }
+
+    /**
+     * The higher-scoring of two timelines; the current one wins a tie.
+     */
+    private function strongerTimeline(?AltTimeline $current, ?AltTimeline $candidate): ?AltTimeline
+    {
+        if (! $candidate instanceof AltTimeline) {
+            return $current;
+        }
+
+        if (! $current instanceof AltTimeline) {
+            return $candidate;
+        }
+
+        return $this->timelineScore($candidate->type) > $this->timelineScore($current->type) ? $candidate : $current;
     }
 
     /**
@@ -746,17 +929,40 @@ final class AltDetectionService
     }
 
     /**
-     * Map each shared IP to the candidate ids that used it, so an IP's full account cohort can be listed.
+     * Order a candidate's shared devices so the most exclusive come first.
      *
-     * @param  array<int, array{shared_ips: array<string, SharedIpData>}>  $ipCandidates
+     * @param  array<string, SharedDeviceData>  $sharedDevices
+     * @param  array<string, list<string>>  $otherAccounts
+     * @return list<AltSharedDevice>
+     */
+    private function sortSharedDevices(array $sharedDevices, array $otherAccounts): array
+    {
+        $sharedDevices = array_values($sharedDevices);
+
+        usort($sharedDevices, static fn (array $a, array $b): int => $a['breadth'] <=> $b['breadth']);
+
+        return array_map(static fn (array $sharedDevice): AltSharedDevice => new AltSharedDevice(
+            label: $sharedDevice['label'],
+            breadth: $sharedDevice['breadth'],
+            firstSeen: $sharedDevice['first_seen'],
+            lastSeen: $sharedDevice['last_seen'],
+            otherAccounts: $otherAccounts[$sharedDevice['hash']] ?? [],
+        ), $sharedDevices);
+    }
+
+    /**
+     * Map each shared IP or device to the candidate ids that used it, so its full account cohort can be listed.
+     *
+     * @param  array<int, array<string, array<string, mixed>>>  $candidates
+     * @param  'shared_ips'|'shared_devices'  $field
      * @return array<string, list<int>>
      */
-    private function ipCohort(array $ipCandidates): array
+    private function cohort(array $candidates, string $field): array
     {
         $cohort = [];
-        foreach ($ipCandidates as $candidateId => $data) {
-            foreach (array_keys($data['shared_ips']) as $ip) {
-                $cohort[$ip][] = (int) $candidateId;
+        foreach ($candidates as $candidateId => $data) {
+            foreach (array_keys($data[$field] ?? []) as $key) {
+                $cohort[(string) $key][] = (int) $candidateId;
             }
         }
 
@@ -785,13 +991,13 @@ final class AltDetectionService
     }
 
     /**
-     * List the other accounts sharing each IP with the candidate, excluding the candidate itself.
+     * List the other accounts sharing each IP or device with the candidate, excluding the candidate itself.
      *
      * @param  array<string, list<int>>  $ipCohort
      * @param  array<int, string>  $names
      * @return array<string, list<string>>
      */
-    private function otherAccountsPerIp(array $ipCohort, array $names, int $candidateId): array
+    private function otherAccountsPerKey(array $ipCohort, array $names, int $candidateId): array
     {
         $result = [];
         foreach ($ipCohort as $ip => $ids) {

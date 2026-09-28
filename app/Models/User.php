@@ -82,6 +82,7 @@ use Stevebauman\Purify\Facades\Purify;
  * @property bool $email_announcement_notifications_enabled
  * @property bool $email_chat_notifications_enabled
  * @property bool $email_moderation_notifications_enabled
+ * @property bool $email_alt_alert_notifications_enabled
  * @property IssueNotificationLevel|null $issue_notifications
  * @property-read string|null $cover_photo_url attribute
  * @property-read string $cover_photo_gradient attribute
@@ -97,6 +98,7 @@ use Stevebauman\Purify\Facades\Purify;
  * @property-read Collection<int, User> $following
  * @property-read Collection<int, ModList> $modLists
  * @property-read Collection<int, OAuthConnection> $oAuthConnections
+ * @property-read Collection<int, UserDevice> $devices
  *
  * @implements Commentable<self>
  */
@@ -730,6 +732,16 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
     }
 
     /**
+     * Browsers this account has been signed in from.
+     *
+     * @return HasMany<UserDevice, $this>
+     */
+    public function devices(): HasMany
+    {
+        return $this->hasMany(UserDevice::class);
+    }
+
+    /**
      * Check to see if the user has two-factor authentication enabled. If the user has any OAuth connections, check if
      * every connection has MFA enabled.
      */
@@ -1095,6 +1107,7 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
             'email_announcement_notifications_enabled' => 'boolean',
             'email_chat_notifications_enabled' => 'boolean',
             'email_moderation_notifications_enabled' => 'boolean',
+            'email_alt_alert_notifications_enabled' => 'boolean',
             'issue_notifications' => IssueNotificationLevel::class,
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
@@ -1140,6 +1153,39 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
     {
         return $query->whereNotBlockedBy($user)
             ->whereNotBlocking($user);
+    }
+
+    /**
+     * Users with the staff (admin) role.
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    #[Scope]
+    protected function admins(Builder $query): Builder
+    {
+        return $query->whereHas('role', function (Builder $query): void {
+            $query->whereRaw('LOWER(name) = ?', ['staff']);
+        });
+    }
+
+    /**
+     * Staff lookup of an account by part of its name or email, or its exact id.
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    #[Scope]
+    protected function lookup(Builder $query, string $term): Builder
+    {
+        return $query->where(function (Builder $query) use ($term): void {
+            $query->whereLike('name', '%'.$term.'%')
+                ->orWhereLike('email', '%'.$term.'%');
+
+            if (ctype_digit($term)) {
+                $query->orWhere('id', $term);
+            }
+        });
     }
 
     /**

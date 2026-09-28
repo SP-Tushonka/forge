@@ -5,6 +5,9 @@ declare(strict_types=1);
 use App\Enums\TrackingEventType;
 use App\Models\AccountRecovery;
 use App\Models\AltInvestigationRun;
+use App\Models\AltWatch;
+use App\Models\AltWatchIndicator;
+use App\Models\AltWatchMatch;
 use App\Models\Ban;
 use App\Models\Comment;
 use App\Models\CommentVersion;
@@ -13,6 +16,7 @@ use App\Models\Report;
 use App\Models\ReportAction;
 use App\Models\TrackingEvent;
 use App\Models\User;
+use App\Models\UserDevice;
 use App\Notifications\NewCommentNotification;
 use App\Support\NotificationsToken;
 use Illuminate\Support\Facades\Config;
@@ -189,6 +193,29 @@ describe('alt investigations', function (): void {
     });
 });
 
+describe('user devices', function (): void {
+    test('deletes devices unseen for the retention window and keeps recent ones', function (): void {
+        $stale = UserDevice::factory()->create(['last_seen_at' => now()->subMonths(12)->subDay()]);
+        $recent = UserDevice::factory()->create(['last_seen_at' => now()->subMonths(12)->addDay()]);
+
+        $this->artisan('data:prune-personal')->assertSuccessful();
+
+        expect(UserDevice::query()->find($stale->id))->toBeNull()
+            ->and(UserDevice::query()->find($recent->id))->not->toBeNull();
+    });
+
+    test('clears device hashes kept on a ban once it is lifted', function (): void {
+        $user = User::factory()->create();
+        UserDevice::factory()->for($user)->create();
+        $ban = $user->ban();
+        $user->unban();
+
+        $this->artisan('data:prune-personal')->assertSuccessful();
+
+        expect(Ban::withTrashed()->findOrFail($ban->id)->subject_devices)->toBeNull();
+    });
+});
+
 describe('deleted accounts', function (): void {
     test('deletes recent tracking events of a deleted account but keeps its ban audit trail', function (): void {
         $deleted = User::factory()->create();
@@ -288,5 +315,22 @@ describe('dry run', function (): void {
             ->assertSuccessful();
 
         expect(TrackingEvent::query()->find($event->id))->not->toBeNull();
+    });
+});
+
+describe('alt watches', function (): void {
+    test('deletes watches 30 days after they end or expire, with their indicators and matches', function (): void {
+        $ended = AltWatch::factory()->create(['ended_at' => now()->subDays(31)]);
+        AltWatch::factory()->create(['expires_at' => now()->subDays(31)]);
+        $recent = AltWatch::factory()->create(['ended_at' => now()->subDays(29)]);
+        $active = AltWatch::factory()->create();
+        AltWatchIndicator::factory()->for($ended, 'watch')->create();
+        AltWatchMatch::factory()->for($ended, 'watch')->create();
+
+        $this->artisan('data:prune-personal')->assertSuccessful();
+
+        expect(AltWatch::query()->pluck('id')->all())->toEqualCanonicalizing([$recent->id, $active->id])
+            ->and(AltWatchIndicator::query()->count())->toBe(0)
+            ->and(AltWatchMatch::query()->count())->toBe(0);
     });
 });

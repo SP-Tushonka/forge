@@ -20,6 +20,8 @@ new class extends Component
 
     public bool $emailModerationNotificationsEnabled = true;
 
+    public bool $emailAltAlertNotificationsEnabled = true;
+
     public string $issueNotifications = 'all';
 
     public function mount(): void
@@ -30,6 +32,7 @@ new class extends Component
         $this->emailReplyNotificationsEnabled = $user->email_reply_notifications_enabled ?? true;
         $this->emailChatNotificationsEnabled = $user->email_chat_notifications_enabled ?? true;
         $this->emailModerationNotificationsEnabled = $user->email_moderation_notifications_enabled ?? true;
+        $this->emailAltAlertNotificationsEnabled = $user->email_alt_alert_notifications_enabled ?? true;
         $this->issueNotifications = $user?->issueNotificationLevel()->value ?? IssueNotificationLevel::All->value;
     }
 
@@ -53,6 +56,10 @@ new class extends Component
 
         if ($user->isModOrAdmin()) {
             $preferences['email_moderation_notifications_enabled'] = $this->emailModerationNotificationsEnabled;
+        }
+
+        if ($user->isAdmin()) {
+            $preferences['email_alt_alert_notifications_enabled'] = $this->emailAltAlertNotificationsEnabled;
         }
 
         $user->update($preferences);

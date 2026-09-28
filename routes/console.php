@@ -22,6 +22,7 @@ use App\Jobs\ProcessPinnedModVersionPublishDates;
 use App\Jobs\PruneModStatsJob;
 use App\Jobs\SearchSyncJob;
 use App\Jobs\SendDiscordNotifications;
+use App\Jobs\SweepAltWatchesJob;
 use App\Jobs\UpdateDisposableEmailBlocklist;
 use App\Jobs\UpdateEndorsementsJob;
 use App\Jobs\UpdateFavouritesJob;
@@ -35,6 +36,7 @@ Schedule::job(new UpdateFavouritesJob)->hourly()->onOneServer()->withoutOverlapp
 Schedule::job(new UpdateEndorsementsJob)->hourly()->onOneServer()->withoutOverlapping();
 Schedule::job(new ExpireStaleModClaimsJob)->hourly()->onOneServer()->withoutOverlapping();
 Schedule::job(new NotifyReleasedIssueFixes)->everyTenMinutes()->onOneServer()->withoutOverlapping();
+Schedule::job(new SweepAltWatchesJob)->everyFiveMinutes()->onOneServer()->withoutOverlapping();
 Schedule::job(new AuditCustomLicensedModsJob)->daily()->at('01:00')->onOneServer()->withoutOverlapping();
 
 // Mod stats dashboard: reconcile today and yesterday every 15 minutes, re-check the rest of Cloudflare's 30-day window
