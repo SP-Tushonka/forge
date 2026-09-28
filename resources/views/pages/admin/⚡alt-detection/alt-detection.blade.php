@@ -45,9 +45,9 @@
             >
                 <flux:callout.heading>Correlate accounts that may belong to the same person</flux:callout.heading>
                 <flux:callout.text>
-                    Pick a suspect to surface other accounts linked by shared IP addresses, email domain, activity
-                    timing, and device fingerprint. Since-deleted accounts are recovered from their leftover activity
-                    and
+                    Pick a suspect to surface other accounts linked by shared devices, IP addresses, email domain,
+                    activity timing, and device fingerprint. Since-deleted accounts are recovered from their leftover
+                    activity and
                     flagged. Candidates are ranked by a confidence score. Treat the result as a lead, not proof: IP
                     addresses can be shared through VPNs, mobile carriers, or a single household, so always review the
                     underlying evidence before taking action.
@@ -160,6 +160,10 @@
                                 analyzed</span>
                             <span>{{ number_format($this->result->excludedNoisyIps) }} shared/noisy IP(s)
                                 excluded</span>
+                            @if ($this->result->excludedSharedDevices > 0)
+                                <span>{{ number_format($this->result->excludedSharedDevices) }} shared computer(s)
+                                    excluded</span>
+                            @endif
                             @if ($this->result->truncated)
                                 <span class="text-amber-400">Results truncated to the strongest
                                     candidates</span>
@@ -244,6 +248,59 @@
                                     x-cloak
                                     class="mt-4 space-y-3 text-sm text-gray-300"
                                 >
+                                    @if (count($candidate->sharedDevices) > 0)
+                                        <div class="overflow-hidden rounded-lg border border-gray-700">
+                                            <div class="flex items-center gap-2 bg-gray-800/50 px-3 py-2">
+                                                <flux:icon.computer-desktop class="h-4 w-4 text-gray-500" />
+                                                <span
+                                                    class="text-xs font-semibold uppercase tracking-wide text-gray-400"
+                                                >Shared devices</span>
+                                            </div>
+                                            <div class="overflow-x-auto">
+                                                <table class="w-full text-xs">
+                                                    <thead>
+                                                        <tr class="border-t border-gray-700 text-left text-gray-500">
+                                                            <th class="px-3 py-2 font-medium">Device</th>
+                                                            <th class="whitespace-nowrap px-3 py-2 font-medium">First
+                                                                seen</th>
+                                                            <th class="whitespace-nowrap px-3 py-2 font-medium">Last
+                                                                seen</th>
+                                                            <th class="px-3 py-2 font-medium">Also used by</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="divide-y divide-gray-800 border-t border-gray-700">
+                                                        @foreach ($candidate->sharedDevices as $sharedDevice)
+                                                            <tr>
+                                                                <td class="whitespace-nowrap px-3 py-2 align-top text-gray-100">
+                                                                    {{ $sharedDevice->label }}</td>
+                                                                <td
+                                                                    class="whitespace-nowrap px-3 py-2 align-top font-mono text-gray-400">
+                                                                    {{ $sharedDevice->firstSeen !== '' ? $sharedDevice->firstSeen : 'Kept on ban' }}</td>
+                                                                <td
+                                                                    class="whitespace-nowrap px-3 py-2 align-top font-mono text-gray-400">
+                                                                    {{ $sharedDevice->lastSeen !== '' ? $sharedDevice->lastSeen : '—' }}</td>
+                                                                <td class="px-3 py-2 align-top">
+                                                                    @if (count($sharedDevice->otherAccounts) > 0)
+                                                                        <div class="flex max-w-xs flex-wrap gap-1">
+                                                                            @foreach ($sharedDevice->otherAccounts as $otherAccount)
+                                                                                <span
+                                                                                    class="rounded bg-gray-800 px-1.5 py-0.5 text-gray-300"
+                                                                                >{{ $otherAccount }}</span>
+                                                                            @endforeach
+                                                                        </div>
+                                                                    @else
+                                                                        <span
+                                                                            class="italic text-gray-500">Exclusive</span>
+                                                                    @endif
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    @endif
+
                                     @if (count($candidate->sharedIps) > 0)
                                         <div class="overflow-hidden rounded-lg border border-gray-700">
                                             <div class="flex items-center gap-2 bg-gray-800/50 px-3 py-2">

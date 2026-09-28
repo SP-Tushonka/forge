@@ -40,6 +40,7 @@ final class PrunePersonalData extends Command
             'account_recoveries' => $this->pruneOlderThanCutoff('account_recoveries'),
             'password_reset_tokens' => $this->pruneOlderThanCutoff('password_reset_tokens', key: 'email'),
             'alt_investigation_runs' => $this->pruneOlderThanCutoff('alt_investigation_runs'),
+            'user_devices' => $this->pruneOlderThanCutoff('user_devices', column: 'last_seen_at'),
             'tracking_events (deleted accounts)' => $this->pruneDeletedAccountTrackingEvents(),
             'notifications (deleted accounts)' => $this->deleteInChunks(fn (): Builder => DB::table('notifications')
                 ->where('notifiable_type', User::class)
@@ -119,16 +120,17 @@ final class PrunePersonalData extends Command
     }
 
     /**
-     * A ban's copy of the account's emails and IPs is kept only while the ban is in force. Banhammer expires bans with a
-     * bulk update that fires no model events, so this one sweep clears the copy for lifted and expired bans alike.
+     * A ban's copy of the account's emails, IPs and device hashes is kept only while the ban is in force. Banhammer
+     * expires bans with a bulk update that fires no model events, so this one sweep clears the copy for lifted and
+     * expired bans alike.
      */
     private function clearEndedBanIdentifiers(): int
     {
         $query = DB::table('bans')
-            ->where(fn (Builder $query) => $query->whereNotNull('subject_emails')->orWhereNotNull('subject_ips'))
+            ->where(fn (Builder $query) => $query->whereNotNull('subject_emails')->orWhereNotNull('subject_ips')->orWhereNotNull('subject_devices'))
             ->where(fn (Builder $query) => $query->whereNotNull('deleted_at')->orWhere('expired_at', '<=', CarbonImmutable::now()));
 
-        return $this->dryRun ? $query->count() : $query->update(['subject_emails' => null, 'subject_ips' => null]);
+        return $this->dryRun ? $query->count() : $query->update(['subject_emails' => null, 'subject_ips' => null, 'subject_devices' => null]);
     }
 
     private function pruneReports(): int
@@ -156,9 +158,9 @@ final class PrunePersonalData extends Command
         );
     }
 
-    private function pruneOlderThanCutoff(string $table, string $key = 'id'): int
+    private function pruneOlderThanCutoff(string $table, string $key = 'id', string $column = 'created_at'): int
     {
-        return $this->deleteInChunks(fn (): Builder => DB::table($table)->where('created_at', '<', $this->cutoff), $key);
+        return $this->deleteInChunks(fn (): Builder => DB::table($table)->where($column, '<', $this->cutoff), $key);
     }
 
     /**

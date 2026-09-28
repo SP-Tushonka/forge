@@ -13,6 +13,7 @@ use App\Models\Report;
 use App\Models\ReportAction;
 use App\Models\TrackingEvent;
 use App\Models\User;
+use App\Models\UserDevice;
 use App\Notifications\NewCommentNotification;
 use App\Support\NotificationsToken;
 use Illuminate\Support\Facades\Config;
@@ -186,6 +187,29 @@ describe('alt investigations', function (): void {
 
         expect(AltInvestigationRun::query()->find($old->id))->toBeNull()
             ->and(AltInvestigationRun::query()->find($recent->id))->not->toBeNull();
+    });
+});
+
+describe('user devices', function (): void {
+    test('deletes devices unseen for the retention window and keeps recent ones', function (): void {
+        $stale = UserDevice::factory()->create(['last_seen_at' => now()->subMonths(12)->subDay()]);
+        $recent = UserDevice::factory()->create(['last_seen_at' => now()->subMonths(12)->addDay()]);
+
+        $this->artisan('data:prune-personal')->assertSuccessful();
+
+        expect(UserDevice::query()->find($stale->id))->toBeNull()
+            ->and(UserDevice::query()->find($recent->id))->not->toBeNull();
+    });
+
+    test('clears device hashes kept on a ban once it is lifted', function (): void {
+        $user = User::factory()->create();
+        UserDevice::factory()->for($user)->create();
+        $ban = $user->ban();
+        $user->unban();
+
+        $this->artisan('data:prune-personal')->assertSuccessful();
+
+        expect(Ban::withTrashed()->findOrFail($ban->id)->subject_devices)->toBeNull();
     });
 });
 

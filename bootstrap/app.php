@@ -9,6 +9,7 @@ use App\Http\Middleware\RecordApiUsage;
 use App\Http\Middleware\RejectMalformedUtf8;
 use App\Http\Middleware\SanitizeBroadcastSocketId;
 use App\Http\Middleware\SetApiCacheControl;
+use App\Http\Middleware\TrackDevice;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -65,9 +66,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // X-Forwarded-For values sent on direct-to-origin requests.
         $middleware->trustProxies(at: ['127.0.0.1', '::1']);
 
-        // Protect against spam on the web middleware group.
+        // Protect against spam and track the signed-in user's device on the web middleware group.
         $middleware->web(append: [
             ProtectAgainstSpam::class,
+            TrackDevice::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

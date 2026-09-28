@@ -22,6 +22,7 @@ final readonly class AltInvestigation
         public int $suspectIpCount,
         public int $excludedNoisyIps,
         public bool $truncated,
+        public int $excludedSharedDevices = 0,
     ) {}
 
     /**
@@ -38,6 +39,7 @@ final readonly class AltInvestigation
             suspectIpCount: self::coerceInt($data['suspect_ip_count'] ?? null),
             excludedNoisyIps: self::coerceInt($data['excluded_noisy_ips'] ?? null),
             truncated: self::coerceBool($data['truncated'] ?? null),
+            excludedSharedDevices: self::coerceInt($data['excluded_shared_devices'] ?? null),
         );
     }
 
@@ -56,6 +58,7 @@ final readonly class AltInvestigation
             'candidates' => array_map(static fn (AltCandidate $candidate): array => $candidate->toArray(), $this->candidates),
             'suspect_ip_count' => $this->suspectIpCount,
             'excluded_noisy_ips' => $this->excludedNoisyIps,
+            'excluded_shared_devices' => $this->excludedSharedDevices,
             'truncated' => $this->truncated,
         ];
     }

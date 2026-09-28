@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use Anthropic\Client;
+use App\Actions\Devices\RecordLoginDevice;
 use App\Contracts\ApiUsageStore;
 use App\Contracts\CommentTranslator;
 use App\Contracts\DependencyResolver;
@@ -182,6 +183,10 @@ final class AppServiceProvider extends ServiceProvider
         Event::listen(Login::class, function (Login $event): void {
             $user = $event->user instanceof User ? $event->user : null;
             Track::event(TrackingEventType::LOGIN, $user);
+
+            if ($user instanceof User) {
+                resolve(RecordLoginDevice::class)->handle($user, request());
+            }
         });
         Event::listen(Logout::class, function (Logout $event): void {
             // Pass the user as the trackable model to capture user data
