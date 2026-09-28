@@ -88,3 +88,30 @@ describe('moderation preference', function (): void {
         expect($user->refresh()->email_moderation_notifications_enabled)->toBeTrue();
     });
 });
+
+describe('alt monitoring alert preference', function (): void {
+    it('shows the alt monitoring checkbox to admins only', function (): void {
+        $this->actingAs(User::factory()->admin()->create());
+        Livewire::test('profile.notification-preferences')->assertSee('Alt Monitoring Alerts');
+
+        $this->actingAs(User::factory()->moderator()->create());
+        Livewire::test('profile.notification-preferences')->assertDontSee('Alt Monitoring Alerts');
+    });
+
+    it('saves the alt monitoring toggle for admins and ignores it for everyone else', function (): void {
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin);
+        Livewire::test('profile.notification-preferences')
+            ->set('emailAltAlertNotificationsEnabled', false)
+            ->call('updateNotificationPreferences');
+
+        $moderator = User::factory()->moderator()->create();
+        $this->actingAs($moderator);
+        Livewire::test('profile.notification-preferences')
+            ->set('emailAltAlertNotificationsEnabled', false)
+            ->call('updateNotificationPreferences');
+
+        expect($admin->refresh()->email_alt_alert_notifications_enabled)->toBeFalse()
+            ->and($moderator->refresh()->email_alt_alert_notifications_enabled)->toBeTrue();
+    });
+});

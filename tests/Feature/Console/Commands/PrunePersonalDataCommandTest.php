@@ -5,6 +5,9 @@ declare(strict_types=1);
 use App\Enums\TrackingEventType;
 use App\Models\AccountRecovery;
 use App\Models\AltInvestigationRun;
+use App\Models\AltWatch;
+use App\Models\AltWatchIndicator;
+use App\Models\AltWatchMatch;
 use App\Models\Ban;
 use App\Models\Comment;
 use App\Models\CommentVersion;
@@ -312,5 +315,22 @@ describe('dry run', function (): void {
             ->assertSuccessful();
 
         expect(TrackingEvent::query()->find($event->id))->not->toBeNull();
+    });
+});
+
+describe('alt watches', function (): void {
+    test('deletes watches 30 days after they end or expire, with their indicators and matches', function (): void {
+        $ended = AltWatch::factory()->create(['ended_at' => now()->subDays(31)]);
+        AltWatch::factory()->create(['expires_at' => now()->subDays(31)]);
+        $recent = AltWatch::factory()->create(['ended_at' => now()->subDays(29)]);
+        $active = AltWatch::factory()->create();
+        AltWatchIndicator::factory()->for($ended, 'watch')->create();
+        AltWatchMatch::factory()->for($ended, 'watch')->create();
+
+        $this->artisan('data:prune-personal')->assertSuccessful();
+
+        expect(AltWatch::query()->pluck('id')->all())->toEqualCanonicalizing([$recent->id, $active->id])
+            ->and(AltWatchIndicator::query()->count())->toBe(0)
+            ->and(AltWatchMatch::query()->count())->toBe(0);
     });
 });

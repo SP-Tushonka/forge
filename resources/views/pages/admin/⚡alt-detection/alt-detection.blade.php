@@ -125,6 +125,15 @@
                                 </flux:button>
                             @endif
                             <flux:button
+                                href="{{ route('admin.alt-monitoring.watches.create', ['user' => $this->suspectId]) }}"
+                                wire:navigate
+                                variant="outline"
+                                size="sm"
+                                icon="eye"
+                            >
+                                Watch this user
+                            </flux:button>
+                            <flux:button
                                 wire:click="clearSuspect"
                                 variant="outline"
                                 size="sm"

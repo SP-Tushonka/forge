@@ -42,6 +42,14 @@
                         description="{{ __('Receive email notifications for moderation activity, such as new content reports.') }}"
                     />
                 @endif
+                @if (auth()->user()?->isAdmin())
+                    <flux:checkbox
+                        wire:model.live="emailAltAlertNotificationsEnabled"
+                        wire:change="updateNotificationPreferences"
+                        label="{{ __('Alt Monitoring Alerts') }}"
+                        description="{{ __('Receive email notifications when an account newly matches an alt watch.') }}"
+                    />
+                @endif
             </flux:checkbox.group>
         </flux:field>
 

@@ -77,6 +77,15 @@ describe('AltDetection Authorization', function (): void {
             ->get(route('admin.alt-detection', $suspect))
             ->assertOk();
     });
+
+    it('offers to watch the suspect', function (): void {
+        Queue::fake();
+        $suspect = User::factory()->create();
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->get(route('admin.alt-detection', $suspect))
+            ->assertSee(route('admin.alt-monitoring.watches.create', ['user' => $suspect->id]), false);
+    });
 });
 
 describe('AltDetection Behaviour', function (): void {

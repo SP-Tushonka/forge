@@ -160,7 +160,10 @@
             sending account emails such as password resets</li>
         <li><strong>Security and abuse prevention:</strong> detecting spam, attacks and misuse</li>
         <li><strong>Moderation:</strong> handling reports and enforcing our rules. To stop banned members from
-            returning, staff can compare the IP addresses and devices used by different accounts</li>
+            returning, staff can compare the IP addresses and devices used by different accounts. When staff suspect
+            abuse or ban evasion, they can also place an account under monitoring: its device identifier, IP
+            addresses, email domain, browser details and country are compared with other accounts' activity, and
+            staff are told when another account matches</li>
         <li><strong>Understanding how the site is used:</strong> for example which pages are visited and which
             browsers people use, so we can fix problems and improve the site</li>
         <li><strong>Legal requirements:</strong> responding to lawful requests</li>
@@ -181,8 +184,8 @@
     <h4 id="legitimate-interests-art-6-1-f">Legitimate Interests (Art. 6(1)(f)):</h4>
     <ul>
         <li>Keeping the site secure and free of spam and abuse</li>
-        <li>Moderation, including comparing IP addresses and devices to detect ban evasion, and keeping ban records permanently
-            so bans stay enforceable</li>
+        <li>Moderation, including comparing IP addresses and devices to detect ban evasion, monitoring accounts suspected
+            of abuse or ban evasion, and keeping ban records permanently so bans stay enforceable</li>
         <li>Activity records, to understand and improve how the site is used</li>
         <li>Announcing newly published mods and addons on our Discord server</li>
     </ul>
@@ -254,8 +257,8 @@
         <li><strong>When you delete your account:</strong> it is deleted immediately, along with your comments,
             reactions, endorsements, issues, mod lists, follows, blocks, the reports you filed, your Discord link,
             and your private conversations. Deleting a conversation this way removes it for the other person too.
-            Activity records and notifications linked to your account are deleted within a day. Ban records are the
-            exception; see 6.4</li>
+            Activity records and notifications linked to your account are deleted within a day. Ban records and account monitoring are the
+            exceptions; see 6.3 and 6.4</li>
         <li><strong>Mods and addons you published</strong> stay on the site without an owner after your account is
             deleted. Ask us if you want them removed</li>
     </ul>
@@ -277,6 +280,11 @@
         <li>Daily API usage counts per IP address. Per-minute counts are deleted after 7 days</li>
         <li>Devices you have not signed in from for 12 months</li>
     </ul>
+
+    <p>Account monitoring by staff is set for at most 12 months at a time, and staff can renew it. It continues if
+        the monitored account is deleted. Its records, including the identifiers being watched for and the accounts
+        that matched, are deleted 30 days after the monitoring ends. Alerts sent to staff about matching accounts are
+        kept for up to 12 months.</p>
 
     <h3 id="6-4-kept-permanently">6.4 Kept Permanently</h3>
     <ul>
