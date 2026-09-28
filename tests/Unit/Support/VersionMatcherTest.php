@@ -101,3 +101,27 @@ describe('VersionMatcher::explainInvalidity', function (): void {
         expect(VersionMatcher::explainInvalidity('not-a-version'))->toContain('not a valid semantic version number');
     });
 });
+
+describe('VersionMatcher::isNewer', function (): void {
+    it('is true only for a strictly greater version', function (): void {
+        expect(VersionMatcher::isNewer('1.5.0', '1.4.0'))->toBeTrue()
+            ->and(VersionMatcher::isNewer('1.10.0', '1.9.0'))->toBeTrue()
+            ->and(VersionMatcher::isNewer('2.0.0', '2.0.0-beta'))->toBeTrue()
+            ->and(VersionMatcher::isNewer('1.4.0', '1.5.0'))->toBeFalse()
+            ->and(VersionMatcher::isNewer('1.5.0', '1.5.0'))->toBeFalse();
+    });
+
+    it('ignores build metadata', function (): void {
+        expect(VersionMatcher::isNewer('1.1.0+2', '1.1.0+1'))->toBeFalse();
+    });
+
+    it('falls back to major.minor.patch for labels Composer rejects', function (): void {
+        expect(VersionMatcher::isNewer('2.0.0', '1.0.0-FikaEnhanced'))->toBeTrue()
+            ->and(VersionMatcher::isNewer('1.0.0-FikaEnhanced', '1.0.0'))->toBeFalse();
+    });
+
+    it('treats an unparsable version as not newer instead of throwing', function (): void {
+        expect(VersionMatcher::isNewer('not-a-version', '1.0.0'))->toBeFalse()
+            ->and(VersionMatcher::isNewer('1.0.0', 'not-a-version'))->toBeFalse();
+    });
+});

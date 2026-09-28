@@ -97,6 +97,7 @@ use Stevebauman\Purify\Facades\Purify;
  * @property-read Collection<int, User> $followers
  * @property-read Collection<int, User> $following
  * @property-read Collection<int, ModList> $modLists
+ * @property-read Collection<int, ModUserDownload> $modDownloads
  * @property-read Collection<int, OAuthConnection> $oAuthConnections
  * @property-read Collection<int, UserDevice> $devices
  *
@@ -236,6 +237,16 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
     public function modLists(): HasMany
     {
         return $this->hasMany(ModList::class, 'owner_id');
+    }
+
+    /**
+     * The latest version of each mod this user has downloaded.
+     *
+     * @return HasMany<ModUserDownload, $this>
+     */
+    public function modDownloads(): HasMany
+    {
+        return $this->hasMany(ModUserDownload::class);
     }
 
     /**

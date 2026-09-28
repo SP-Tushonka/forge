@@ -135,8 +135,13 @@ final class ModVersionPolicy
             return true;
         }
 
-        // Deny if the mod is unpublished, disabled, or the version is disabled.
-        return ! (! $modVersion->mod->isPublished() || $modVersion->mod->disabled || $modVersion->disabled);
+        // Deny if the mod is unpublished or disabled, or the version is unpublished, scheduled or disabled.
+        $versionPublished = $modVersion->published_at !== null && ! $modVersion->published_at->isFuture();
+
+        return $modVersion->mod->isPublished()
+            && ! $modVersion->mod->disabled
+            && $versionPublished
+            && ! $modVersion->disabled;
     }
 
     /**

@@ -220,19 +220,26 @@
 
             {{-- Mobile Download Button --}}
             @if ($displayVersion)
-                <x-mod.download-button
-                    name="download-show-mobile"
-                    :mod-id="$mod->id"
-                    :latest-version-id="$displayVersion->id"
-                    :download-url="$displayVersion->downloadUrl()"
-                    :version-string="$displayVersion->version"
-                    :spt-version-formatted="$displayVersion->latestSptVersion?->version_formatted ?? ($displayVersion->spt_version_constraint === '' ? __('Legacy') : null)"
-                    :spt-version-color-class="$displayVersion->latestSptVersion?->color_class ?? ($displayVersion->spt_version_constraint === '' ? 'gray' : null)"
-                    :version-description-html="$displayVersion->description_html"
-                    :version-updated-at="$displayVersion->updated_at"
-                    :file-size="$displayVersion->formatted_file_size"
-                    :dependencies="$displayVersion->latestDependenciesResolved"
-                />
+                <div class="flex flex-col gap-2 lg:hidden">
+                    <x-mod.download-button
+                        name="download-show-mobile"
+                        :mod-id="$mod->id"
+                        :latest-version-id="$displayVersion->id"
+                        :download-url="$displayVersion->downloadUrl()"
+                        :version-string="$displayVersion->version"
+                        :spt-version-formatted="$displayVersion->latestSptVersion?->version_formatted ?? ($displayVersion->spt_version_constraint === '' ? __('Legacy') : null)"
+                        :spt-version-color-class="$displayVersion->latestSptVersion?->color_class ?? ($displayVersion->spt_version_constraint === '' ? 'gray' : null)"
+                        :version-description-html="$displayVersion->description_html"
+                        :version-updated-at="$displayVersion->updated_at"
+                        :file-size="$displayVersion->formatted_file_size"
+                        :dependencies="$displayVersion->latestDependenciesResolved"
+                    />
+                    <x-mod.last-download
+                        :download="$lastDownload"
+                        :update-available="$updateAvailable"
+                        :latest-version="$displayVersion"
+                    />
+                </div>
             @endif
 
             {{-- Mobile Cheat Notice Warning --}}
@@ -422,19 +429,26 @@
 
             {{-- Desktop Download Button --}}
             @if ($displayVersion)
-                <x-mod.download-button
-                    name="download-show-desktop"
-                    :mod-id="$mod->id"
-                    :latest-version-id="$displayVersion->id"
-                    :download-url="$displayVersion->downloadUrl()"
-                    :version-string="$displayVersion->version"
-                    :spt-version-formatted="$displayVersion->latestSptVersion?->version_formatted ?? ($displayVersion->spt_version_constraint === '' ? __('Legacy') : null)"
-                    :spt-version-color-class="$displayVersion->latestSptVersion?->color_class ?? ($displayVersion->spt_version_constraint === '' ? 'gray' : null)"
-                    :version-description-html="$displayVersion->description_html"
-                    :version-updated-at="$displayVersion->updated_at"
-                    :file-size="$displayVersion->formatted_file_size"
-                    :dependencies="$displayVersion->latestDependenciesResolved"
-                />
+                <div class="hidden flex-col gap-2 lg:flex">
+                    <x-mod.download-button
+                        name="download-show-desktop"
+                        :mod-id="$mod->id"
+                        :latest-version-id="$displayVersion->id"
+                        :download-url="$displayVersion->downloadUrl()"
+                        :version-string="$displayVersion->version"
+                        :spt-version-formatted="$displayVersion->latestSptVersion?->version_formatted ?? ($displayVersion->spt_version_constraint === '' ? __('Legacy') : null)"
+                        :spt-version-color-class="$displayVersion->latestSptVersion?->color_class ?? ($displayVersion->spt_version_constraint === '' ? 'gray' : null)"
+                        :version-description-html="$displayVersion->description_html"
+                        :version-updated-at="$displayVersion->updated_at"
+                        :file-size="$displayVersion->formatted_file_size"
+                        :dependencies="$displayVersion->latestDependenciesResolved"
+                    />
+                    <x-mod.last-download
+                        :download="$lastDownload"
+                        :update-available="$updateAvailable"
+                        :latest-version="$displayVersion"
+                    />
+                </div>
             @endif
 
             {{-- Required Dependencies --}}

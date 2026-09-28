@@ -279,6 +279,13 @@
                                 >{{ __('Edit Profile') }}</flux:navmenu.item>
 
                                 <flux:navmenu.separator />
+                                @can('create', App\Models\Mod::class)
+                                    <flux:navmenu.item
+                                        icon="plus"
+                                        href="{{ route('mod.guidelines') }}"
+                                        wire:navigate
+                                    >{{ __('Create New Mod') }}</flux:navmenu.item>
+                                @endcan
                                 <flux:navmenu.item
                                     icon="cube-transparent"
                                     href="{{ auth()->user()->profile_url }}#mods"
@@ -446,6 +453,17 @@
                             {{ __('Edit Profile') }}
                         </span>
                     </x-responsive-nav-link>
+                    @can('create', App\Models\Mod::class)
+                        <x-responsive-nav-link
+                            href="{{ route('mod.guidelines') }}"
+                            :active="request()->routeIs('mod.guidelines')"
+                        >
+                            <span class="flex items-center gap-2">
+                                <flux:icon.plus class="h-5 w-5" />
+                                {{ __('Create New Mod') }}
+                            </span>
+                        </x-responsive-nav-link>
+                    @endcan
                     <x-responsive-nav-link href="{{ auth()->user()->profile_url }}#mods">
                         <span class="flex items-center gap-2">
                             <flux:icon.cube-transparent class="h-5 w-5" />

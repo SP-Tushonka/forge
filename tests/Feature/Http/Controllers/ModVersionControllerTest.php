@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\TrackingEventType;
 use App\Models\Mod;
+use App\Models\ModUserDownload;
 use App\Models\ModVersion;
 use App\Models\TrackingEvent;
 use App\Models\User;
@@ -85,5 +86,68 @@ describe('download', function (): void {
             route('mod.version.download', [$mod->id, $mod->slug, $version->version]),
             ['Sec-Purpose' => 'prefetch'],
         )->assertForbidden();
+    });
+});
+
+describe('last download record', function (): void {
+    it('records the version a signed-in user downloaded', function (): void {
+        $user = User::factory()->create();
+        $version = createDownloadableModVersion();
+
+        $this->actingAs($user)
+            ->get(route('mod.version.download', [$version->mod_id, $version->mod->slug, $version->version]));
+
+        $row = ModUserDownload::query()->sole();
+        expect($row->user_id)->toBe($user->id)
+            ->and($row->mod_version_id)->toBe($version->id)
+            ->and($row->version)->toBe($version->version);
+    });
+
+    it('replaces the record when the user downloads another version of the mod', function (): void {
+        $user = User::factory()->create();
+        $first = createDownloadableModVersion();
+        $second = ModVersion::factory()->create([
+            'mod_id' => $first->mod_id,
+            'version' => '99.0.0',
+            'published_at' => now()->subDay(),
+        ]);
+
+        $this->actingAs($user)->get(route('mod.version.download', [$first->mod_id, $first->mod->slug, $first->version]));
+        $this->actingAs($user)->get(route('mod.version.download', [$second->mod_id, $first->mod->slug, '99.0.0']));
+
+        expect(ModUserDownload::query()->sole()->mod_version_id)->toBe($second->id);
+    });
+
+    it('records nothing for a guest', function (): void {
+        $version = createDownloadableModVersion();
+
+        $this->get(route('mod.version.download', [$version->mod_id, $version->mod->slug, $version->version]));
+
+        expect(ModUserDownload::query()->count())->toBe(0);
+    });
+
+    it('records nothing for a prefetch', function (): void {
+        $version = createDownloadableModVersion();
+
+        $this->actingAs(User::factory()->create())->get(
+            route('mod.version.download', [$version->mod_id, $version->mod->slug, $version->version]),
+            ['Sec-Purpose' => 'prefetch'],
+        );
+
+        expect(ModUserDownload::query()->count())->toBe(0);
+    });
+
+    it('records nothing once the rate limit is hit', function (): void {
+        $user = User::factory()->create();
+        $version = createDownloadableModVersion();
+        foreach (range(1, 5) as $_) {
+            RateLimiter::increment(modDownloadRateKey($user, $version));
+        }
+
+        $this->actingAs($user)
+            ->get(route('mod.version.download', [$version->mod_id, $version->mod->slug, $version->version]))
+            ->assertStatus(429);
+
+        expect(ModUserDownload::query()->count())->toBe(0);
     });
 });
