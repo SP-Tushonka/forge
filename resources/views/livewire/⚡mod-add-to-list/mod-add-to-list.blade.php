@@ -4,15 +4,14 @@
             <flux:modal.trigger name="mod-add-to-list-{{ $sourceType }}-{{ $sourceId }}">
                 <flux:button
                     size="sm"
-                    square="true"
                     variant="outline"
-                    :aria-label="$this->isOnAnyList ? __('Saved to a list') : __('Save to a list')"
                     :title="$this->isOnAnyList ? __('Saved to a list') : __('Save to a list')"
                 >
-                    <flux:icon.heart
+                    <flux:icon.bookmark
                         :variant="$this->isOnAnyList ? 'solid' : 'outline'"
-                        @class(['size-4', 'text-rose-500' => $this->isOnAnyList])
+                        @class(['size-4', 'text-cyan-400' => $this->isOnAnyList])
                     />
+                    {{ __('Add to list') }}
                 </flux:button>
             </flux:modal.trigger>
         @endif

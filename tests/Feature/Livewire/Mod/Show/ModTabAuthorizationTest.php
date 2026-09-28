@@ -39,6 +39,7 @@ $tabs = [
     'mod.show.versions-tab',
     'mod.show.addons-tab',
     'mod.show.comments-tab',
+    'mod.show.dependents-tab',
 ];
 
 describe('lazy tab authorization', function () use ($tabs): void {

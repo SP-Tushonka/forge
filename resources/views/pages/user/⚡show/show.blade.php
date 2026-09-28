@@ -218,7 +218,7 @@
                     {{-- Desktop Tabs --}}
                     <div class="hidden sm:block">
                         <nav
-                            class="isolate flex divide-x divide-gray-800 rounded-xl shadow-md shadow-gray-950 drop-shadow-2xl"
+                            class="flex gap-1 rounded-xl bg-gray-950 p-1 shadow-md shadow-gray-950"
                             aria-label="Tabs"
                         >
                             <x-tab-button
@@ -228,12 +228,12 @@
                             <x-tab-button
                                 name="{{ __('Mods') }}"
                                 value="mods"
-                                :label="$modCount . ' ' . Str::plural('Mod', $modCount)"
+                                :count="$modCount"
                             />
                             <x-tab-button
                                 name="{{ __('Addons') }}"
                                 value="addons"
-                                :label="$addonCount . ' ' . Str::plural('Addon', $addonCount)"
+                                :count="$addonCount"
                             />
                             <x-tab-button
                                 name="{{ __('Lists') }}"

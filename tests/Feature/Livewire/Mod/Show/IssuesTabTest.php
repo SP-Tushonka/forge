@@ -106,7 +106,7 @@ it('shows the Issues tab with the open count only to viewers who may see it', fu
 
     $this->get($this->mod->detail_url)
         ->assertSeeHtml('data-test="issues-tab"')
-        ->assertSee('2 Issues');
+        ->assertSeeInOrder(['data-test="issues-tab"', '>2</span>'], false);
 
     $this->mod->update(['issues_enabled' => false]);
 

@@ -10,6 +10,7 @@ use App\Models\ModListItem;
 use App\Models\ModVersion;
 use App\Models\SptVersion;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
@@ -182,5 +183,35 @@ describe('dependencies on hidden mods', function (): void {
         renderShow($mod)
             ->assertSuccessful()
             ->assertSee('Hidden Dependency Mod');
+    });
+});
+
+describe('dependents tab', function (): void {
+    it('labels the tab with the number of dependent mods', function (): void {
+        $library = createVisibleModForShow();
+        $dependent = createVisibleModForShow();
+        Dependency::factory()
+            ->forModVersion($dependent->versions()->firstOrFail())
+            ->create(['dependent_mod_id' => $library->id]);
+
+        renderShow($library)
+            ->assertSuccessful()
+            ->assertSee("selectedTab = 'dependents'", false)
+            ->assertViewHas('dependentCount', 1);
+    });
+
+    it('accepts the count back as a string, as Redis returns cached numbers', function (): void {
+        $mod = createVisibleModForShow();
+        Cache::put(sprintf('mod:%d:dependent-count', $mod->id), '3');
+
+        renderShow($mod)
+            ->assertSuccessful()
+            ->assertViewHas('dependentCount', 3);
+    });
+
+    it('omits the tab when no mod depends on this one', function (): void {
+        renderShow(createVisibleModForShow())
+            ->assertSuccessful()
+            ->assertDontSee("selectedTab = 'dependents'", false);
     });
 });

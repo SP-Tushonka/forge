@@ -31,7 +31,7 @@
             {{-- Desktop --}}
             <div class="hidden sm:block">
                 <nav
-                    class="isolate flex divide-x divide-gray-800 rounded-xl shadow-md shadow-gray-950 drop-shadow-2xl"
+                    class="flex gap-1 rounded-xl bg-gray-950 p-1 shadow-md shadow-gray-950"
                     aria-label="{{ __('Staff tools') }}"
                 >
                     <x-tab-button

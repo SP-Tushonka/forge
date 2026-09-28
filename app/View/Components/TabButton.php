@@ -26,7 +26,8 @@ final class TabButton extends Component
     public function __construct(
         public string $name,
         ?string $value = null,
-        ?string $label = null
+        ?string $label = null,
+        public ?int $count = null,
     ) {
         $this->tabValue = $value ?? Str::lower($name);
         $this->displayLabel = $label ?? $name;
