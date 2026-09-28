@@ -8,6 +8,7 @@ use App\Models\Comment;
 use App\Models\OAuthConnection;
 use App\Models\TrackingEvent;
 use App\Models\User;
+use App\Models\UserDevice;
 use Illuminate\Support\Facades\DB;
 
 function trackedVisit(User $user, string $ip, TrackingEventType $type = TrackingEventType::LOGIN): void
@@ -31,6 +32,24 @@ it('copies the account and Discord emails and every IP the account used onto a n
 
     expect($ban->subject_emails)->toBe(['banned@example.com', 'discord@example.com'])
         ->and($ban->subject_ips)->toEqualCanonicalizing(['203.0.113.1', '203.0.113.2']);
+});
+
+it('copies the account device hashes onto a new ban', function (): void {
+    $user = User::factory()->create();
+    $devices = UserDevice::factory()->for($user)->count(2)->create();
+
+    expect($user->ban()->fresh()->subject_devices)
+        ->toEqualCanonicalizing($devices->pluck('device_hash')->all());
+});
+
+it('keeps the device hashes on the ban when the banned account is deleted', function (): void {
+    $user = User::factory()->create();
+    $ban = $user->ban();
+    $device = UserDevice::factory()->for($user)->create();
+
+    $user->delete();
+
+    expect(Ban::query()->findOrFail($ban->id)->subject_devices)->toBe([$device->device_hash]);
 });
 
 it('leaves out the moderator IP stamped on ban events', function (): void {

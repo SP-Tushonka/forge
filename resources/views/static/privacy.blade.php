@@ -131,6 +131,13 @@
         <li>Your browser, operating system, device type and preferred languages</li>
     </ul>
 
+    <h4 id="your-devices">Your Devices:</h4>
+    <p>When you sign in, your browser is given a random identifier in a cookie (see section 9). For each browser you
+        sign in from we keep its browser name and full identifying string (user agent), operating system, device type, the last IP address and approximate location it
+        was used from, when it was first and last used, and any name you give it. You can see, rename and sign out
+        these devices on your profile page. We use this to warn you by email when your account is signed in from a
+        browser it has not used before, and to spot accounts created to get around a ban.</p>
+
     <h4 id="technical-information">With Your Comments:</h4>
     <p>When you post a comment we also store your IP address, browser and the page you came from, to help deal with
         spam and abuse.</p>
@@ -153,7 +160,7 @@
             sending account emails such as password resets</li>
         <li><strong>Security and abuse prevention:</strong> detecting spam, attacks and misuse</li>
         <li><strong>Moderation:</strong> handling reports and enforcing our rules. To stop banned members from
-            returning, staff can compare the IP addresses used by different accounts</li>
+            returning, staff can compare the IP addresses and devices used by different accounts</li>
         <li><strong>Understanding how the site is used:</strong> for example which pages are visited and which
             browsers people use, so we can fix problems and improve the site</li>
         <li><strong>Legal requirements:</strong> responding to lawful requests</li>
@@ -174,7 +181,7 @@
     <h4 id="legitimate-interests-art-6-1-f">Legitimate Interests (Art. 6(1)(f)):</h4>
     <ul>
         <li>Keeping the site secure and free of spam and abuse</li>
-        <li>Moderation, including comparing IP addresses to detect ban evasion, and keeping ban records permanently
+        <li>Moderation, including comparing IP addresses and devices to detect ban evasion, and keeping ban records permanently
             so bans stay enforceable</li>
         <li>Activity records, to understand and improve how the site is used</li>
         <li>Announcing newly published mods and addons on our Discord server</li>
@@ -268,6 +275,7 @@
         <li>Reports that did not lead to moderation action</li>
         <li>Ban-evasion investigations</li>
         <li>Daily API usage counts per IP address. Per-minute counts are deleted after 7 days</li>
+        <li>Devices you have not signed in from for 12 months</li>
     </ul>
 
     <h3 id="6-4-kept-permanently">6.4 Kept Permanently</h3>
@@ -277,7 +285,7 @@
             time</li>
         <li>Reports that led to moderation action, and the record of that action</li>
     </ul>
-    <p>While an account ban is in force, we also keep the email addresses and IP addresses linked to the banned
+    <p>While an account ban is in force, we also keep the email addresses, IP addresses and device identifiers linked to the banned
         account, even if the account is deleted, so the ban can be enforced. They are deleted within a day of the ban
         being lifted or expiring.</p>
 
@@ -319,7 +327,7 @@
 
     <p>To use any of these rights, email clodan-spt@hotmail.com. We may ask you to confirm you own the account. We
         will reply within one month. Some requests have legal limits: for example, we will not delete a ban record,
-        or the email and IP addresses kept with a ban that is still in force, because they are needed to keep the ban
+        or the email addresses, IP addresses and device identifiers kept with a ban that is still in force, because they are needed to keep the ban
         enforceable.</p>
 
     <h2 id="cookies-tracking">9. Cookies</h2>
@@ -328,6 +336,9 @@
     <ul>
         <li>Your sign-in session, and a "remember me" cookie if you choose to stay signed in</li>
         <li>A security token that protects forms</li>
+        <li>A random device identifier, set only once you sign in, that lets us recognise your browser for the
+            sign-in alerts and device list described in section 2.2, and spot accounts created to get around a ban. It
+            lasts up to 400 days and stays after you sign out</li>
         <li>Short-lived security cookies set by Cloudflare to tell people apart from bots</li>
     </ul>
     <p>We do not use analytics or advertising cookies, so there is nothing to opt in or out of. The activity records

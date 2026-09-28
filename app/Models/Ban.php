@@ -20,6 +20,7 @@ use Override;
  * @property string|null $ip
  * @property list<string>|null $subject_emails
  * @property list<string>|null $subject_ips
+ * @property list<string>|null $subject_devices
  * @property CarbonImmutable|null $expired_at
  * @property array<string, mixed>|null $metas
  * @property CarbonImmutable|null $deleted_at
@@ -40,6 +41,7 @@ final class Ban extends BaseBan
         return [
             'subject_emails' => 'array',
             'subject_ips' => 'array',
+            'subject_devices' => 'array',
         ];
     }
 }

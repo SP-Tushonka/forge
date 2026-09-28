@@ -17,6 +17,7 @@ final readonly class AltCandidate
      * @param  list<string>  $matchedSignals
      * @param  list<AltSharedIp>  $sharedIps
      * @param  list<string>  $fingerprintOverlap
+     * @param  list<AltSharedDevice>  $sharedDevices
      */
     public function __construct(
         public int $userId,
@@ -33,6 +34,7 @@ final readonly class AltCandidate
         public bool $disposableDomain,
         public ?AltTimeline $timeline,
         public array $fingerprintOverlap,
+        public array $sharedDevices = [],
     ) {}
 
     /**
@@ -60,6 +62,10 @@ final readonly class AltCandidate
             disposableDomain: self::coerceBool($data['disposable_domain'] ?? null),
             timeline: is_array($timeline) ? AltTimeline::fromArray($timeline) : null,
             fingerprintOverlap: self::coerceStringList($data['fingerprint_overlap'] ?? null),
+            sharedDevices: array_map(
+                static fn (mixed $sharedDevice): AltSharedDevice => AltSharedDevice::fromArray(self::coerceArray($sharedDevice)),
+                array_values(self::coerceArray($data['shared_devices'] ?? null)),
+            ),
         );
     }
 
@@ -83,6 +89,7 @@ final readonly class AltCandidate
             'disposable_domain' => $this->disposableDomain,
             'timeline' => $this->timeline?->toArray(),
             'fingerprint_overlap' => $this->fingerprintOverlap,
+            'shared_devices' => array_map(static fn (AltSharedDevice $sharedDevice): array => $sharedDevice->toArray(), $this->sharedDevices),
         ];
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Mod;
 use App\Models\ModVersion;
+use App\Services\DeviceService;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
@@ -26,6 +27,10 @@ pest()->extend(TestCase::class)
         Http::preventStrayRequests();
         Process::preventStrayProcesses();
         Sleep::fake();
+
+        // A browser sends its device cookie back on every request. The test client does not, yet keeps the session
+        // between requests, so a signed-in session bound to one device would be signed out on its next request.
+        $this->withCookie(DeviceService::COOKIE, str_repeat('z', 43));
 
         $this->freezeTime();
     })

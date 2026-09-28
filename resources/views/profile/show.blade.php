@@ -55,13 +55,14 @@
             </div>
             <x-section-border />
 
-            @if (config('session.driver') === 'database')
-                <div class="mt-10 sm:mt-0">
-                    @livewire('profile.logout-other-browser-sessions-form')
-                </div>
+            <div
+                id="devices"
+                class="mt-10 sm:mt-0"
+            >
+                @livewire('profile.devices')
+            </div>
 
-                <x-section-border />
-            @endif
+            <x-section-border />
 
             <div class="mt-10 sm:mt-0">
                 @livewire('profile.delete-user-form')

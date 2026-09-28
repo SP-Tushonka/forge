@@ -15,6 +15,7 @@ use App\Notifications\CommentReplyNotification;
 use App\Notifications\ContentGuidelinesUpdatedNotification;
 use App\Notifications\NewChatMessageNotification;
 use App\Notifications\NewCommentNotification;
+use App\Notifications\NewDeviceLoginNotification;
 use App\Notifications\ReportSubmittedNotification;
 use App\Notifications\ResetPassword;
 use App\Notifications\UserBannedNotification;
@@ -86,6 +87,7 @@ final class SendTestEmails extends Command
             'UserBanned' => $this->buildBanNotification($user),
             'ResetPassword' => new ResetPassword('test-reset-token-'.bin2hex(random_bytes(16))),
             'VerifyEmail' => new VerifyEmail,
+            'NewDeviceLogin' => new NewDeviceLoginNotification('Firefox on Windows', 'Berlin, DE', '203.0.113.42', now()->toImmutable()),
         ];
     }
 

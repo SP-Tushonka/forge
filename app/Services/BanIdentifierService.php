@@ -11,8 +11,9 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Copies a banned account's email and IP addresses onto its ban, so the ban stays enforceable after the 12-month prune
- * or the account's own deletion removes them everywhere else. data:prune-personal clears the copy once the ban ends.
+ * Copies a banned account's email addresses, IP addresses and device hashes onto its ban, so the ban stays
+ * enforceable after the 12-month prune or the account's own deletion removes them everywhere else.
+ * data:prune-personal clears the copy once the ban ends.
  */
 final class BanIdentifierService
 {
@@ -20,10 +21,12 @@ final class BanIdentifierService
     {
         $emails = $this->emails($user);
         $ips = $this->ips($user);
+        $devices = $this->devices($user);
 
         $ban->forceFill([
             'subject_emails' => $emails === [] ? null : $emails,
             'subject_ips' => $ips === [] ? null : $ips,
+            'subject_devices' => $devices === [] ? null : $devices,
         ])->saveQuietly();
     }
 
@@ -68,5 +71,16 @@ final class BanIdentifierService
             ->all();
 
         return array_values(array_filter($ips, is_string(...)));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function devices(User $user): array
+    {
+        return array_values(array_filter(
+            $user->devices()->distinct()->pluck('device_hash')->all(),
+            is_string(...),
+        ));
     }
 }

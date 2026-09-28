@@ -142,6 +142,7 @@ new #[Layout('layouts::base')] #[Title('Alt Detection - The Forge')] class exten
     public function signalLabel(string $signal): string
     {
         return match ($signal) {
+            'shared_device' => 'Same device',
             'shared_ip' => 'Shared IP',
             'disposable_email_domain' => 'Disposable email domain',
             'shared_email_domain' => 'Same email domain',
@@ -160,6 +161,7 @@ new #[Layout('layouts::base')] #[Title('Alt Detection - The Forge')] class exten
     public function signalDescription(string $signal): string
     {
         return match ($signal) {
+            'shared_device' => 'Both accounts were signed in from the same browser: it carried the same device cookie, which the site sets at sign-in and keeps across logouts and IP changes, including VPNs. Only a shared computer or a browser profile deliberately copied between people produces this innocently; devices used by more than five accounts are ignored.',
             'shared_ip' => 'One or more IP addresses used by this account also appear on the suspect, from tracking events or comments. Addresses used by only a couple of accounts weigh heavily; those shared by many people, such as VPNs or mobile carriers, are down-weighted or ignored.',
             'disposable_email_domain' => 'Both accounts registered with the same email domain, and that domain is a known disposable or throwaway provider. Reusing a burner domain across accounts is a strong sign of deliberate alt creation.',
             'shared_email_domain' => 'Both accounts use the same email domain. Large common providers shared by many users, such as gmail.com, are ignored, so this only fires for a smaller domain shared by few accounts.',

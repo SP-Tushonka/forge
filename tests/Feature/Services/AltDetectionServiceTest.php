@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 use App\Models\DisposableEmailBlocklist;
 use App\Models\User;
+use App\Models\UserDevice;
 use App\Services\AltDetectionService;
+use App\Support\DataTransferObjects\AltCandidate;
+use App\Support\DataTransferObjects\AltInvestigation;
 use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Support\Facades\DB;
 
@@ -257,4 +260,84 @@ it('does not surface accounts that only share a common email domain', function (
     $result = resolve(AltDetectionService::class)->investigate($suspect);
 
     expect($result->candidates)->toBeEmpty();
+});
+
+describe('shared devices', function (): void {
+    it('surfaces an account signed in from the suspect\'s browser, even with no shared IP', function (): void {
+        $suspect = User::factory()->create(['email' => 'suspect@alpha.test']);
+        $candidate = User::factory()->create(['email' => 'cand@beta.test']);
+        $hash = hash('sha256', 'shared-browser');
+        UserDevice::factory()->for($suspect)->create(['device_hash' => $hash]);
+        UserDevice::factory()->for($candidate)->create(['device_hash' => $hash]);
+
+        $result = resolve(AltDetectionService::class)->investigate($suspect);
+
+        expect($result->candidates)->toHaveCount(1);
+
+        $found = $result->candidates[0];
+        expect($found->userId)->toBe($candidate->id)
+            ->and($found->matchedSignals)->toContain('shared_device')
+            ->and($found->matchedSignals)->not->toContain('shared_ip')
+            ->and($found->score)->toBeGreaterThanOrEqual(50)
+            ->and($found->sharedDevices[0]->label)->toBe('Chrome on Windows')
+            ->and($found->sharedDevices[0]->otherAccounts)->toBe([]);
+    });
+
+    it('ignores a browser shared by more than five accounts', function (): void {
+        $suspect = User::factory()->create(['email' => 'suspect@alpha.test']);
+        $hash = hash('sha256', 'library-pc');
+        UserDevice::factory()->for($suspect)->create(['device_hash' => $hash]);
+        UserDevice::factory()->count(5)->sequence(fn ($sequence): array => ['user_id' => User::factory()->create(['email' => 'u'.$sequence->index.'@beta.test'])->id])
+            ->create(['device_hash' => $hash]);
+
+        $result = resolve(AltDetectionService::class)->investigate($suspect);
+
+        expect($result->candidates)->toBeEmpty()
+            ->and($result->excludedSharedDevices)->toBe(1);
+    });
+
+    it('finds a deleted banned account through the device hashes kept on its ban', function (): void {
+        $suspect = User::factory()->create(['email' => 'suspect@alpha.test']);
+        $hash = hash('sha256', 'banned-browser');
+        UserDevice::factory()->for($suspect)->create(['device_hash' => $hash]);
+        DB::table('bans')->insert([
+            'bannable_type' => User::class,
+            'bannable_id' => 990002,
+            'subject_devices' => json_encode([$hash]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $result = resolve(AltDetectionService::class)->investigate($suspect);
+
+        expect($result->candidates)->toHaveCount(1);
+
+        $found = $result->candidates[0];
+        expect($found->userId)->toBe(990002)
+            ->and($found->deleted)->toBeTrue()
+            ->and($found->matchedSignals)->toContain('shared_device')
+            ->and($found->sharedDevices[0]->firstSeen)->toBe('');
+    });
+
+    it('reads a handoff on a shared device as a timeline', function (): void {
+        $suspect = User::factory()->create(['email' => 'suspect@alpha.test']);
+        $candidate = User::factory()->create(['email' => 'cand@beta.test']);
+        $hash = hash('sha256', 'handoff-browser');
+        UserDevice::factory()->for($suspect)->create(['device_hash' => $hash, 'first_seen_at' => '2026-06-01 08:00:00', 'last_seen_at' => '2026-06-01 10:00:00']);
+        UserDevice::factory()->for($candidate)->create(['device_hash' => $hash, 'first_seen_at' => '2026-06-01 10:02:00', 'last_seen_at' => '2026-06-02 10:00:00']);
+
+        $found = resolve(AltDetectionService::class)->investigate($suspect)->candidates[0];
+
+        expect($found->timeline?->type)->toBe('handoff')
+            ->and($found->timeline?->ip)->toBe('device Chrome on Windows')
+            ->and($found->matchedSignals)->toContain('timeline_handoff');
+    });
+
+    it('loads runs stored before device tracking', function (): void {
+        $candidate = AltCandidate::fromArray(['user_id' => 1, 'name' => 'Old', 'score' => 40]);
+        $investigation = AltInvestigation::fromArray(['suspect' => ['id' => 2, 'name' => 'S', 'email' => 's@x.test'], 'candidates' => []]);
+
+        expect($candidate->sharedDevices)->toBe([])
+            ->and($investigation->excludedSharedDevices)->toBe(0);
+    });
 });

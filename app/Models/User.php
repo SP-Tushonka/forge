@@ -97,6 +97,7 @@ use Stevebauman\Purify\Facades\Purify;
  * @property-read Collection<int, User> $following
  * @property-read Collection<int, ModList> $modLists
  * @property-read Collection<int, OAuthConnection> $oAuthConnections
+ * @property-read Collection<int, UserDevice> $devices
  *
  * @implements Commentable<self>
  */
@@ -727,6 +728,16 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
     public function oAuthConnections(): HasMany
     {
         return $this->hasMany(OAuthConnection::class);
+    }
+
+    /**
+     * Browsers this account has been signed in from.
+     *
+     * @return HasMany<UserDevice, $this>
+     */
+    public function devices(): HasMany
+    {
+        return $this->hasMany(UserDevice::class);
     }
 
     /**
