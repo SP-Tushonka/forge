@@ -541,7 +541,7 @@ describe('mod addons tab', function (): void {
 
         $this->get(route('mod.show', [$mod->id, $mod->slug]))
             ->assertOk()
-            ->assertSee('3 Addons');
+            ->assertSeeInOrder(["selectedTab = 'addons'", '>3</span>'], false);
     });
 
     it('shows an empty state when the mod has no addons', function (): void {
@@ -549,7 +549,7 @@ describe('mod addons tab', function (): void {
 
         $this->get(route('mod.show', [$mod->id, $mod->slug]))
             ->assertOk()
-            ->assertSee('0 Addons');
+            ->assertSeeInOrder(["selectedTab = 'addons'", '>0</span>'], false);
     });
 
     it('hides the addons tab when addons are disabled for the mod', function (): void {
@@ -567,7 +567,7 @@ describe('mod addons tab', function (): void {
         $this->actingAs($user)
             ->get(route('mod.show', [$mod->id, $mod->slug]))
             ->assertOk()
-            ->assertSee('0 Addons')
+            ->assertSeeInOrder(["selectedTab = 'addons'", '>0</span>'], false)
             ->assertSee('Create Addon');
     });
 });

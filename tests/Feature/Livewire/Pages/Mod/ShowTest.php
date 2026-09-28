@@ -197,7 +197,7 @@ describe('dependents tab', function (): void {
         renderShow($library)
             ->assertSuccessful()
             ->assertSee("selectedTab = 'dependents'", false)
-            ->assertSee('1 Dependent');
+            ->assertViewHas('dependentCount', 1);
     });
 
     it('accepts the count back as a string, as Redis returns cached numbers', function (): void {
@@ -206,7 +206,7 @@ describe('dependents tab', function (): void {
 
         renderShow($mod)
             ->assertSuccessful()
-            ->assertSee('3 Dependents');
+            ->assertViewHas('dependentCount', 3);
     });
 
     it('omits the tab when no mod depends on this one', function (): void {

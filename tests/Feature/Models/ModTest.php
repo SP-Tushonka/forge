@@ -700,7 +700,7 @@ describe('Addon Toggle', function (): void {
                     'slug' => $mod->slug,
                 ])
                 ->assertSee('Addons')
-                ->assertSee('3 Addons');
+                ->assertViewHas('addonCount', 3);
         });
 
         it('hides addon creation when mod has addons disabled', function (): void {

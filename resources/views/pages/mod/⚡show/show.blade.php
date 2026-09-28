@@ -99,7 +99,7 @@
         </div>
     @endif
 
-    <div class="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-3 lg:px-8">
+    <div class="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 sm:pt-0 lg:grid-cols-3 lg:px-8">
         <div class="flex flex-col gap-6 lg:col-span-2">
 
             {{-- Main Mod Details Card --}}
@@ -305,41 +305,41 @@
                     {{-- Desktop Tabs --}}
                     <div class="hidden sm:block">
                         <nav
-                            class="isolate flex divide-x divide-gray-800 rounded-xl shadow-md shadow-gray-950 drop-shadow-2xl"
+                            class="flex gap-1 rounded-xl bg-gray-950 p-1 shadow-md shadow-gray-950"
                             aria-label="Tabs"
                         >
                             <x-tab-button name="Description" />
                             <x-tab-button
                                 name="Versions"
                                 value="versions"
-                                :label="$versionCount . ' ' . Str::plural('Version', $versionCount)"
+                                :count="$versionCount"
                             />
                             @if ($mod->addons_enabled)
                                 <x-tab-button
                                     name="Addons"
                                     value="addons"
-                                    :label="$addonCount . ' ' . Str::plural('Addon', $addonCount)"
+                                    :count="$addonCount"
                                 />
                             @endif
                             @if ($dependentCount > 0)
                                 <x-tab-button
                                     name="Dependents"
                                     value="dependents"
-                                    :label="$dependentCount . ' ' . Str::plural('Dependent', $dependentCount)"
+                                    :count="$dependentCount"
                                 />
                             @endif
                             @if (!$mod->comments_disabled || auth()->user()?->isModOrAdmin() || $mod->isAuthorOrOwner(auth()->user()))
                                 <x-tab-button
                                     name="Comments"
                                     value="comments"
-                                    :label="$commentCount . ' ' . Str::plural('Comment', $commentCount)"
+                                    :count="$commentCount"
                                 />
                             @endif
                             @if ($showIssuesTab)
                                 <x-tab-button
                                     name="Issues"
                                     value="issues"
-                                    :label="$issueCount . ' ' . Str::plural('Issue', $issueCount)"
+                                    :count="$issueCount"
                                     data-test="issues-tab"
                                 />
                             @endif
