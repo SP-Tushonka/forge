@@ -154,6 +154,18 @@ final class ModPolicy
     }
 
     /**
+     * Determine whether the user can subscribe to the mod's new versions. Its owner and authors release them.
+     */
+    public function subscribe(User $user, Mod $mod): Response
+    {
+        if ($mod->isAuthorOrOwner($user)) {
+            return Response::deny(__('You cannot subscribe to your own mod.'));
+        }
+
+        return $this->view($user, $mod) ? Response::allow() : Response::deny();
+    }
+
+    /**
      * Determine whether the user can permanently delete the model.
      */
     public function forceDelete(User $user, Mod $mod): bool

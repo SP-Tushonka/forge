@@ -83,6 +83,7 @@ use Stevebauman\Purify\Facades\Purify;
  * @property bool $email_chat_notifications_enabled
  * @property bool $email_moderation_notifications_enabled
  * @property bool $email_alt_alert_notifications_enabled
+ * @property bool $email_mod_update_notifications_enabled
  * @property IssueNotificationLevel|null $issue_notifications
  * @property-read string|null $cover_photo_url attribute
  * @property-read string $cover_photo_gradient attribute
@@ -98,6 +99,7 @@ use Stevebauman\Purify\Facades\Purify;
  * @property-read Collection<int, User> $following
  * @property-read Collection<int, ModList> $modLists
  * @property-read Collection<int, ModUserDownload> $modDownloads
+ * @property-read Collection<int, ModSubscription> $modSubscriptions
  * @property-read Collection<int, OAuthConnection> $oAuthConnections
  * @property-read Collection<int, UserDevice> $devices
  *
@@ -247,6 +249,16 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
     public function modDownloads(): HasMany
     {
         return $this->hasMany(ModUserDownload::class);
+    }
+
+    /**
+     * The mods this user asked to be told about when a new version is released.
+     *
+     * @return HasMany<ModSubscription, $this>
+     */
+    public function modSubscriptions(): HasMany
+    {
+        return $this->hasMany(ModSubscription::class);
     }
 
     /**
@@ -1119,6 +1131,7 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
             'email_chat_notifications_enabled' => 'boolean',
             'email_moderation_notifications_enabled' => 'boolean',
             'email_alt_alert_notifications_enabled' => 'boolean',
+            'email_mod_update_notifications_enabled' => 'boolean',
             'issue_notifications' => IssueNotificationLevel::class,
             'created_at' => 'datetime',
             'updated_at' => 'datetime',

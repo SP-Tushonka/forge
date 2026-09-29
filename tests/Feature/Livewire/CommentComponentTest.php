@@ -5001,3 +5001,15 @@ describe('blocked user comment visibility', function (): void {
             ->assertSeeHtml('data-test="blocked-comment-'.$reply->id.'"');
     });
 });
+
+describe('comment watching', function (): void {
+    it('labels the subscription toggle as watching comments', function (): void {
+        $mod = createPublishedMod();
+
+        Livewire::actingAs(User::factory()->create())
+            ->test('comment-component', ['commentable' => $mod])
+            ->assertSee('Watch comments')
+            ->call('toggleSubscription')
+            ->assertSee('Watching comments');
+    });
+});

@@ -34,6 +34,12 @@
                     label="{{ __('Chat Notifications') }}"
                     description="{{ __('Receive email notifications when you have unread chat messages.') }}"
                 />
+                <flux:checkbox
+                    wire:model.live="emailModUpdateNotificationsEnabled"
+                    wire:change="updateNotificationPreferences"
+                    label="{{ __('Mod Update Notifications') }}"
+                    description="{{ __('Receive email notifications when a mod you are subscribed to releases a new version.') }}"
+                />
                 @if (auth()->user()?->isModOrAdmin())
                     <flux:checkbox
                         wire:model.live="emailModerationNotificationsEnabled"

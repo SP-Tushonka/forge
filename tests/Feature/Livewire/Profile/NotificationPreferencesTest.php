@@ -36,6 +36,19 @@ describe('notification preferences', function (): void {
             ->and($user->email_reply_notifications_enabled)->toBeTrue()
             ->and($user->email_announcement_notifications_enabled)->toBeTrue();
     });
+
+    it('loads and saves the mod update preference', function (): void {
+        $user = User::factory()->create(['email_mod_update_notifications_enabled' => false]);
+        $this->actingAs($user);
+
+        Livewire::test('profile.notification-preferences')
+            ->assertSet('emailModUpdateNotificationsEnabled', false)
+            ->assertSee('Mod Update Notifications')
+            ->set('emailModUpdateNotificationsEnabled', true)
+            ->call('updateNotificationPreferences');
+
+        expect($user->refresh()->email_mod_update_notifications_enabled)->toBeTrue();
+    });
 });
 
 describe('moderation preference', function (): void {

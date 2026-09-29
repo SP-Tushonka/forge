@@ -11,6 +11,7 @@ use App\Http\Controllers\CommentSubscriptionController;
 use App\Http\Controllers\DefaultAvatarController;
 use App\Http\Controllers\FileRedirectController;
 use App\Http\Controllers\ModRssFeedController;
+use App\Http\Controllers\ModSubscriptionController;
 use App\Http\Controllers\ModVersionController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SocialiteController;
@@ -140,6 +141,12 @@ Route::middleware('auth.banned')->group(function (): void {
     Route::get('/announcement/unsubscribe/{user}', [AnnouncementSubscriptionController::class, 'unsubscribe'])
         ->middleware('signed')
         ->name('announcement.unsubscribe');
+
+    // Mod update unsubscribe route (no auth required for email links)
+    Route::get('/mod/unsubscribe/{user}/{modId}', [ModSubscriptionController::class, 'unsubscribe'])
+        ->whereNumber('modId')
+        ->middleware('signed')
+        ->name('mod.unsubscribe');
 
     Route::livewire('/account/recover', 'pages::account.recover')
         ->middleware('throttle:6,1')
