@@ -7,9 +7,11 @@ use App\Models\DependencyResolved;
 use App\Models\Mod;
 use App\Models\ModList;
 use App\Models\ModListItem;
+use App\Models\ModUserDownload;
 use App\Models\ModVersion;
 use App\Models\SptVersion;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
@@ -182,5 +184,90 @@ describe('dependencies on hidden mods', function (): void {
         renderShow($mod)
             ->assertSuccessful()
             ->assertSee('Hidden Dependency Mod');
+    });
+});
+
+describe('dependents tab', function (): void {
+    it('labels the tab with the number of dependent mods', function (): void {
+        $library = createVisibleModForShow();
+        $dependent = createVisibleModForShow();
+        Dependency::factory()
+            ->forModVersion($dependent->versions()->firstOrFail())
+            ->create(['dependent_mod_id' => $library->id]);
+
+        renderShow($library)
+            ->assertSuccessful()
+            ->assertSee("selectedTab = 'dependents'", false)
+            ->assertViewHas('dependentCount', 1);
+    });
+
+    it('accepts the count back as a string, as Redis returns cached numbers', function (): void {
+        $mod = createVisibleModForShow();
+        Cache::put(sprintf('mod:%d:dependent-count', $mod->id), '3');
+
+        renderShow($mod)
+            ->assertSuccessful()
+            ->assertViewHas('dependentCount', 3);
+    });
+
+    it('omits the tab when no mod depends on this one', function (): void {
+        renderShow(createVisibleModForShow())
+            ->assertSuccessful()
+            ->assertDontSee("selectedTab = 'dependents'", false);
+    });
+});
+
+describe('last download notice', function (): void {
+    it('tells a user who has the latest version that they are up to date', function (): void {
+        $mod = createVisibleModForShow();
+        $version = $mod->versions()->firstOrFail();
+        $user = User::factory()->create();
+        ModUserDownload::factory()->forVersion($version)->for($user)->create();
+
+        $this->actingAs($user);
+
+        renderShow($mod)
+            ->assertSee('You downloaded v'.$version->version)
+            ->assertDontSee('Update available');
+    });
+
+    it('tells a user on an older version that an update is available', function (): void {
+        $mod = createVisibleModForShow();
+        $user = User::factory()->create();
+        // A pre-release of 0.0.0 sorts below any version the factory can generate.
+        ModUserDownload::factory()->for($user)->create(['mod_id' => $mod->id, 'version' => '0.0.0-alpha']);
+
+        $this->actingAs($user);
+
+        renderShow($mod)
+            ->assertSee('Update available')
+            ->assertSee('You have v0.0.0-alpha');
+    });
+
+    it('shows no update notice when the recorded version cannot be compared', function (): void {
+        $mod = createVisibleModForShow();
+        $user = User::factory()->create();
+        ModUserDownload::factory()->for($user)->create(['mod_id' => $mod->id, 'version' => 'not-a-version']);
+
+        $this->actingAs($user);
+
+        renderShow($mod)->assertDontSee('Update available');
+    });
+
+    it('shows nothing to a user who never downloaded the mod', function (): void {
+        $this->actingAs(User::factory()->create());
+
+        renderShow(createVisibleModForShow())
+            ->assertDontSee('You downloaded')
+            ->assertDontSee('Update available');
+    });
+
+    it('shows nothing to guests', function (): void {
+        $mod = createVisibleModForShow();
+        ModUserDownload::factory()->create(['mod_id' => $mod->id, 'version' => '0.0.1']);
+
+        renderShow($mod)
+            ->assertDontSee('You downloaded')
+            ->assertDontSee('Update available');
     });
 });

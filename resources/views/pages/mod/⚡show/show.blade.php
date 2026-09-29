@@ -7,12 +7,18 @@
 </x-slot>
 
 <x-slot:header>
-    <div class="flex w-full items-center justify-between">
-        <h2 class="flex items-center gap-2 text-xl font-semibold leading-tight text-gray-200">
+    <div class="flex w-full items-center justify-between gap-3">
+        <h2 class="flex shrink-0 items-center gap-2 text-xl font-semibold leading-tight text-gray-200">
             <flux:icon.cube-transparent class="h-5 w-5" />
             {{ __('Mod Details') }}
         </h2>
-        <div class="flex items-center gap-2">
+        <div class="flex min-w-0 flex-wrap items-center justify-end gap-2">
+            @unless ($mod->isAuthorOrOwner(auth()->user()))
+                <livewire:mod-subscribe-button
+                    :mod-id="$mod->id"
+                    wire:key="mod-subscribe-{{ $mod->id }}"
+                />
+            @endunless
             <livewire:mod-endorse-button
                 :mod-id="$mod->id"
                 wire:key="mod-endorse-{{ $mod->id }}"
@@ -99,7 +105,7 @@
         </div>
     @endif
 
-    <div class="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-3 lg:px-8">
+    <div class="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 sm:pt-0 lg:grid-cols-3 lg:px-8">
         <div class="flex flex-col gap-6 lg:col-span-2">
 
             {{-- Main Mod Details Card --}}
@@ -220,19 +226,26 @@
 
             {{-- Mobile Download Button --}}
             @if ($displayVersion)
-                <x-mod.download-button
-                    name="download-show-mobile"
-                    :mod-id="$mod->id"
-                    :latest-version-id="$displayVersion->id"
-                    :download-url="$displayVersion->downloadUrl()"
-                    :version-string="$displayVersion->version"
-                    :spt-version-formatted="$displayVersion->latestSptVersion?->version_formatted ?? ($displayVersion->spt_version_constraint === '' ? __('Legacy') : null)"
-                    :spt-version-color-class="$displayVersion->latestSptVersion?->color_class ?? ($displayVersion->spt_version_constraint === '' ? 'gray' : null)"
-                    :version-description-html="$displayVersion->description_html"
-                    :version-updated-at="$displayVersion->updated_at"
-                    :file-size="$displayVersion->formatted_file_size"
-                    :dependencies="$displayVersion->latestDependenciesResolved"
-                />
+                <div class="flex flex-col gap-2 lg:hidden">
+                    <x-mod.download-button
+                        name="download-show-mobile"
+                        :mod-id="$mod->id"
+                        :latest-version-id="$displayVersion->id"
+                        :download-url="$displayVersion->downloadUrl()"
+                        :version-string="$displayVersion->version"
+                        :spt-version-formatted="$displayVersion->latestSptVersion?->version_formatted ?? ($displayVersion->spt_version_constraint === '' ? __('Legacy') : null)"
+                        :spt-version-color-class="$displayVersion->latestSptVersion?->color_class ?? ($displayVersion->spt_version_constraint === '' ? 'gray' : null)"
+                        :version-description-html="$displayVersion->description_html"
+                        :version-updated-at="$displayVersion->updated_at"
+                        :file-size="$displayVersion->formatted_file_size"
+                        :dependencies="$displayVersion->latestDependenciesResolved"
+                    />
+                    <x-mod.last-download
+                        :download="$lastDownload"
+                        :update-available="$updateAvailable"
+                        :latest-version="$displayVersion"
+                    />
+                </div>
             @endif
 
             {{-- Mobile Cheat Notice Warning --}}
@@ -287,6 +300,10 @@
                                 <flux:select.option value="addons">{{ $addonCount }}
                                     {{ __(Str::plural('Addon', $addonCount)) }}</flux:select.option>
                             @endif
+                            @if ($dependentCount > 0)
+                                <flux:select.option value="dependents">{{ $dependentCount }}
+                                    {{ __(Str::plural('Dependent', $dependentCount)) }}</flux:select.option>
+                            @endif
                             @if (!$mod->comments_disabled || auth()->user()?->isModOrAdmin() || $mod->isAuthorOrOwner(auth()->user()))
                                 <flux:select.option value="comments">{{ $commentCount }}
                                     {{ __(Str::plural('Comment', $commentCount)) }}</flux:select.option>
@@ -301,34 +318,41 @@
                     {{-- Desktop Tabs --}}
                     <div class="hidden sm:block">
                         <nav
-                            class="isolate flex divide-x divide-gray-800 rounded-xl shadow-md shadow-gray-950 drop-shadow-2xl"
+                            class="flex gap-1 rounded-xl bg-gray-950 p-1 shadow-md shadow-gray-950"
                             aria-label="Tabs"
                         >
                             <x-tab-button name="Description" />
                             <x-tab-button
                                 name="Versions"
                                 value="versions"
-                                :label="$versionCount . ' ' . Str::plural('Version', $versionCount)"
+                                :count="$versionCount"
                             />
                             @if ($mod->addons_enabled)
                                 <x-tab-button
                                     name="Addons"
                                     value="addons"
-                                    :label="$addonCount . ' ' . Str::plural('Addon', $addonCount)"
+                                    :count="$addonCount"
+                                />
+                            @endif
+                            @if ($dependentCount > 0)
+                                <x-tab-button
+                                    name="Dependents"
+                                    value="dependents"
+                                    :count="$dependentCount"
                                 />
                             @endif
                             @if (!$mod->comments_disabled || auth()->user()?->isModOrAdmin() || $mod->isAuthorOrOwner(auth()->user()))
                                 <x-tab-button
                                     name="Comments"
                                     value="comments"
-                                    :label="$commentCount . ' ' . Str::plural('Comment', $commentCount)"
+                                    :count="$commentCount"
                                 />
                             @endif
                             @if ($showIssuesTab)
                                 <x-tab-button
                                     name="Issues"
                                     value="issues"
-                                    :label="$issueCount . ' ' . Str::plural('Issue', $issueCount)"
+                                    :count="$issueCount"
                                     data-test="issues-tab"
                                 />
                             @endif
@@ -360,6 +384,19 @@
                     >
                         <livewire:mod.show.addons-tab
                             wire:key="addons-tab-{{ $mod->id }}"
+                            :mod-id="$mod->id"
+                        />
+                    </div>
+                @endif
+
+                {{-- Dependents --}}
+                @if ($dependentCount > 0)
+                    <div
+                        x-show="selectedTab === 'dependents'"
+                        x-cloak
+                    >
+                        <livewire:mod.show.dependents-tab
+                            wire:key="dependents-tab-{{ $mod->id }}"
                             :mod-id="$mod->id"
                         />
                     </div>
@@ -398,19 +435,26 @@
 
             {{-- Desktop Download Button --}}
             @if ($displayVersion)
-                <x-mod.download-button
-                    name="download-show-desktop"
-                    :mod-id="$mod->id"
-                    :latest-version-id="$displayVersion->id"
-                    :download-url="$displayVersion->downloadUrl()"
-                    :version-string="$displayVersion->version"
-                    :spt-version-formatted="$displayVersion->latestSptVersion?->version_formatted ?? ($displayVersion->spt_version_constraint === '' ? __('Legacy') : null)"
-                    :spt-version-color-class="$displayVersion->latestSptVersion?->color_class ?? ($displayVersion->spt_version_constraint === '' ? 'gray' : null)"
-                    :version-description-html="$displayVersion->description_html"
-                    :version-updated-at="$displayVersion->updated_at"
-                    :file-size="$displayVersion->formatted_file_size"
-                    :dependencies="$displayVersion->latestDependenciesResolved"
-                />
+                <div class="hidden flex-col gap-2 lg:flex">
+                    <x-mod.download-button
+                        name="download-show-desktop"
+                        :mod-id="$mod->id"
+                        :latest-version-id="$displayVersion->id"
+                        :download-url="$displayVersion->downloadUrl()"
+                        :version-string="$displayVersion->version"
+                        :spt-version-formatted="$displayVersion->latestSptVersion?->version_formatted ?? ($displayVersion->spt_version_constraint === '' ? __('Legacy') : null)"
+                        :spt-version-color-class="$displayVersion->latestSptVersion?->color_class ?? ($displayVersion->spt_version_constraint === '' ? 'gray' : null)"
+                        :version-description-html="$displayVersion->description_html"
+                        :version-updated-at="$displayVersion->updated_at"
+                        :file-size="$displayVersion->formatted_file_size"
+                        :dependencies="$displayVersion->latestDependenciesResolved"
+                    />
+                    <x-mod.last-download
+                        :download="$lastDownload"
+                        :update-available="$updateAvailable"
+                        :latest-version="$displayVersion"
+                    />
+                </div>
             @endif
 
             {{-- Required Dependencies --}}

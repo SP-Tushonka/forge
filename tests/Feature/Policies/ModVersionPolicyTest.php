@@ -287,6 +287,23 @@ describe('download', function (): void {
         expect($this->policy->download(null, $version))->toBeFalse();
     });
 
+    it('returns false for guests when the version itself is unpublished or scheduled', function (?string $publishedAt): void {
+        $mod = Mod::factory()->create();
+        $version = ModVersion::factory()->for($mod)->create(['published_at' => $publishedAt ? now()->modify($publishedAt) : null]);
+        $version->setRelation('mod', $mod);
+
+        expect($this->policy->download(null, $version))->toBeFalse();
+    })->with(['unpublished' => [null], 'scheduled' => ['+1 day']]);
+
+    it('returns true for the mod owner when the version is scheduled', function (): void {
+        $owner = User::factory()->create();
+        $mod = Mod::factory()->create(['owner_id' => $owner->id]);
+        $version = ModVersion::factory()->for($mod)->create(['published_at' => now()->addDay()]);
+        $version->setRelation('mod', $mod);
+
+        expect($this->policy->download($owner, $version))->toBeTrue();
+    });
+
     it('returns true for guests when everything is published and enabled', function (): void {
         $mod = Mod::factory()->create();
         $version = ModVersion::factory()->for($mod)->create();

@@ -61,6 +61,7 @@ use Stevebauman\Purify\Facades\Purify;
  * @property bool $disabled
  * @property FikaCompatibility $fika_compatibility
  * @property CarbonImmutable|null $published_at
+ * @property CarbonImmutable|null $subscribers_notified_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read string $description_html
@@ -489,6 +490,7 @@ final class ModVersion extends Model implements Trackable
             'updated_at' => 'datetime',
             'deleted_at' => 'datetime',
             'published_at' => 'datetime',
+            'subscribers_notified_at' => 'datetime',
         ];
     }
 

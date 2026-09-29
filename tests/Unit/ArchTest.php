@@ -6,6 +6,7 @@ use App\Contracts\Presentable;
 use App\Exceptions\Api\V0\Handler;
 use App\Http\Controllers\Controller;
 use App\Notifications\AccountRecoveryNotification;
+use App\Notifications\ModUpdatesDigestNotification;
 use App\Notifications\NewDeviceLoginNotification;
 use App\Notifications\ResetPassword;
 use App\Notifications\VerifyEmail;
@@ -97,6 +98,7 @@ arch('database notifications implement Presentable')
     ->toImplement(Presentable::class)
     ->ignoring([
         AccountRecoveryNotification::class, // Mail-only; the recipient has no account to read it in yet.
+        ModUpdatesDigestNotification::class, // Mail-only digest; the on-site alert is ModVersionReleasedNotification, one per mod.
         NewDeviceLoginNotification::class, // Mail-only security alert; there is nothing to show in the notification centre.
         ResetPassword::class, // Mail-only; mirrors Laravel parent.
         VerifyEmail::class,   // Mail-only; mirrors Laravel parent.

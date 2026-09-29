@@ -230,20 +230,20 @@
                     {{-- Desktop Tabs --}}
                     <div class="hidden sm:block">
                         <nav
-                            class="isolate flex divide-x divide-gray-800 rounded-xl shadow-md shadow-gray-950 drop-shadow-2xl"
+                            class="flex gap-1 rounded-xl bg-gray-950 p-1 shadow-md shadow-gray-950"
                             aria-label="Tabs"
                         >
                             <x-tab-button name="Description" />
                             <x-tab-button
                                 name="Versions"
                                 value="versions"
-                                :label="$versionCount . ' ' . Str::plural('Version', $versionCount)"
+                                :count="$versionCount"
                             />
                             @if (!$addon->comments_disabled || auth()->user()?->isModOrAdmin() || $addon->isAuthorOrOwner(auth()->user()))
                                 <x-tab-button
                                     name="Comments"
                                     value="comments"
-                                    :label="$commentCount . ' ' . Str::plural('Comment', $commentCount)"
+                                    :count="$commentCount"
                                 />
                             @endif
                         </nav>
