@@ -18,6 +18,8 @@ new class extends Component
 
     public bool $emailChatNotificationsEnabled = true;
 
+    public bool $emailModUpdateNotificationsEnabled = true;
+
     public bool $emailModerationNotificationsEnabled = true;
 
     public bool $emailAltAlertNotificationsEnabled = true;
@@ -31,6 +33,7 @@ new class extends Component
         $this->emailCommentNotificationsEnabled = $user->email_comment_notifications_enabled ?? true;
         $this->emailReplyNotificationsEnabled = $user->email_reply_notifications_enabled ?? true;
         $this->emailChatNotificationsEnabled = $user->email_chat_notifications_enabled ?? true;
+        $this->emailModUpdateNotificationsEnabled = $user->email_mod_update_notifications_enabled ?? true;
         $this->emailModerationNotificationsEnabled = $user->email_moderation_notifications_enabled ?? true;
         $this->emailAltAlertNotificationsEnabled = $user->email_alt_alert_notifications_enabled ?? true;
         $this->issueNotifications = $user?->issueNotificationLevel()->value ?? IssueNotificationLevel::All->value;
@@ -51,6 +54,7 @@ new class extends Component
             'email_comment_notifications_enabled' => $this->emailCommentNotificationsEnabled,
             'email_reply_notifications_enabled' => $this->emailReplyNotificationsEnabled,
             'email_chat_notifications_enabled' => $this->emailChatNotificationsEnabled,
+            'email_mod_update_notifications_enabled' => $this->emailModUpdateNotificationsEnabled,
             'issue_notifications' => IssueNotificationLevel::tryFrom($this->issueNotifications) ?? IssueNotificationLevel::All,
         ];
 

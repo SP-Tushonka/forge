@@ -97,6 +97,7 @@ use Stevebauman\Purify\Facades\Purify;
  * @property-read ModVersion|null $latestVersion
  * @property-read ModVersion|null $latestUpdatedVersion
  * @property-read Collection<int, Reaction> $reactions
+ * @property-read Collection<int, ModSubscription> $subscriptions
  *
  * @implements Commentable<self>
  */
@@ -268,6 +269,16 @@ final class Mod extends Model implements Commentable, Reactable, Reportable, Tra
     public function endorsements(): HasMany
     {
         return $this->hasMany(ModEndorsement::class);
+    }
+
+    /**
+     * Users who asked to be told about this mod's new versions.
+     *
+     * @return HasMany<ModSubscription, $this>
+     */
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(ModSubscription::class);
     }
 
     /**

@@ -278,22 +278,22 @@ describe('Subscription', function (): void {
 
         $page = visit($mod->detail_url.'#comments')
             ->on()->desktop()
-            ->waitForText('Subscribe');
+            ->waitForText('Watch comments');
 
         // Subscribing then unsubscribing flips the label back and forth.
         $page->assertPresent('@subscription-toggle')
-            ->assertSee('Subscribe')
+            ->assertSee('Watch comments')
             ->click('@subscription-toggle')
-            ->assertSee('Subscribed')
+            ->assertSee('Watching comments')
             ->click('@subscription-toggle')
-            ->assertSee('Subscribe');
+            ->assertSee('Watch comments');
 
         // Subscribing then reloading keeps the subscribed state.
         $page->click('@subscription-toggle')
-            ->waitForText('Subscribed')
+            ->waitForText('Watching comments')
             ->navigate($mod->detail_url.'#comments')
-            ->waitForText('Subscribed')
-            ->assertSee('Subscribed')
+            ->waitForText('Watching comments')
+            ->assertSee('Watching comments')
             ->assertNoJavaScriptErrors();
     });
 });

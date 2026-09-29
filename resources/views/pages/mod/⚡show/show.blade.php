@@ -7,12 +7,18 @@
 </x-slot>
 
 <x-slot:header>
-    <div class="flex w-full items-center justify-between">
-        <h2 class="flex items-center gap-2 text-xl font-semibold leading-tight text-gray-200">
+    <div class="flex w-full items-center justify-between gap-3">
+        <h2 class="flex shrink-0 items-center gap-2 text-xl font-semibold leading-tight text-gray-200">
             <flux:icon.cube-transparent class="h-5 w-5" />
             {{ __('Mod Details') }}
         </h2>
-        <div class="flex items-center gap-2">
+        <div class="flex min-w-0 flex-wrap items-center justify-end gap-2">
+            @unless ($mod->isAuthorOrOwner(auth()->user()))
+                <livewire:mod-subscribe-button
+                    :mod-id="$mod->id"
+                    wire:key="mod-subscribe-{{ $mod->id }}"
+                />
+            @endunless
             <livewire:mod-endorse-button
                 :mod-id="$mod->id"
                 wire:key="mod-endorse-{{ $mod->id }}"

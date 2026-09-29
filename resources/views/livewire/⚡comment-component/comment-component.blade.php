@@ -56,10 +56,10 @@
                         wire:click="toggleSubscription"
                         data-test="subscription-toggle"
                         variant="{{ $isSubscribed ? 'primary' : 'outline' }}"
-                        icon="{{ $isSubscribed ? 'bell' : 'bell-alert' }}"
+                        icon="eye"
                         size="sm"
                     >
-                        {{ $isSubscribed ? __('Subscribed') : __('Subscribe') }}
+                        {{ $isSubscribed ? __('Watching comments') : __('Watch comments') }}
                     </flux:button>
                 </div>
                 <div class="flex items-start">

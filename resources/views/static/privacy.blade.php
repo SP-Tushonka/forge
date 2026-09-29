@@ -65,7 +65,7 @@
         />
     </x-slot>
 
-    <p><strong>Effective Date:</strong> September 27, 2026<br><strong>Last Updated:</strong> September 28, 2026</p>
+    <p><strong>Effective Date:</strong> September 27, 2026<br><strong>Last Updated:</strong> September 29, 2026</p>
 
     <h2 id="introduction">1. Introduction</h2>
 
@@ -107,7 +107,7 @@
     <ul>
         <li>Mods, addons, their versions, descriptions, images and download links</li>
         <li>Comments, including earlier versions of comments you edit</li>
-        <li>Reactions, endorsements, mod lists, follows, and issues you open on mods</li>
+        <li>Reactions, endorsements, mod lists, mod subscriptions, follows, and issues you open on mods</li>
         <li>Blocks you place on other members, and the reason you give</li>
         <li>Reports you file about content or members</li>
     </ul>
@@ -162,6 +162,9 @@
         <li><strong>Hosting what you publish:</strong> showing your mods, comments and profile to others</li>
         <li><strong>Your downloads:</strong> remembering which version of a mod you last downloaded, so we can tell you
             when it has an update</li>
+        <li><strong>Mod subscriptions:</strong> telling you, on the site and by email, when a mod you subscribed to
+            releases a new version. You can turn the emails off in your notification preferences, and each email has a
+            link to unsubscribe from that mod</li>
         <li><strong>Messaging and notifications:</strong> delivering private messages and site notifications, and
             sending account emails such as password resets</li>
         <li><strong>Security and abuse prevention:</strong> detecting spam, attacks and misuse</li>
@@ -183,9 +186,8 @@
 
     <h4 id="contract-performance-art-6-1-b">Contract (Art. 6(1)(b)):</h4>
     <ul>
-        <li>Your account, what you publish, your messages and notifications, and your download record: this is the
-            service you signed up for
-        </li>
+        <li>Your account, what you publish, your messages and notifications, your download record and your mod
+            subscriptions: this is the service you signed up for</li>
     </ul>
 
     <h4 id="legitimate-interests-art-6-1-f">Legitimate Interests (Art. 6(1)(f)):</h4>
@@ -262,11 +264,11 @@
     <ul>
         <li><strong>While your account exists:</strong> we keep your account and what you post</li>
         <li><strong>When you delete your account:</strong> it is deleted immediately, along with your comments,
-            reactions, endorsements, issues, mod lists, the record of which mod versions you downloaded,
-            follows, blocks, the reports you filed, your Discord link,
-            and your private conversations. Deleting a conversation this way removes it for the other person too.
-            Activity records and notifications linked to your account are deleted within a day. Ban records and account monitoring are the
-            exceptions; see 6.3 and 6.4</li>
+            reactions, endorsements, issues, mod lists, the record of which mod versions you downloaded, your mod
+            subscriptions, follows, blocks, the reports you filed, your Discord link, and your private conversations.
+            Deleting a conversation this way removes it for the other person too. Activity records and notifications
+            linked to your account are deleted within a day. Ban records and account monitoring are the exceptions; see
+            6.3 and 6.4</li>
         <li><strong>Mods and addons you published</strong> stay on the site without an owner after your account is
             deleted. Ask us if you want them removed</li>
     </ul>

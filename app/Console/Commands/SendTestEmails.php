@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Notifications\AltWatchMatchedNotification;
 use App\Notifications\CommentReplyNotification;
 use App\Notifications\ContentGuidelinesUpdatedNotification;
+use App\Notifications\ModUpdatesDigestNotification;
 use App\Notifications\NewChatMessageNotification;
 use App\Notifications\NewCommentNotification;
 use App\Notifications\NewDeviceLoginNotification;
@@ -90,6 +91,10 @@ final class SendTestEmails extends Command
             'VerifyEmail' => new VerifyEmail,
             'NewDeviceLogin' => new NewDeviceLoginNotification('Firefox on Windows', 'Berlin, DE', '203.0.113.42', now()->toImmutable()),
             'AltWatchMatched' => new AltWatchMatchedNotification(0, 'ExampleUser', 'Test watch for email rendering only; no account is being watched.', [['id' => 0, 'name' => 'ExampleAlt']], ['Device', 'IP range']),
+            'ModUpdatesDigest' => new ModUpdatesDigestNotification([
+                ['mod_id' => 0, 'mod_name' => 'Example Mod', 'mod_url' => route('mods'), 'version' => '1.2.0', 'spt_version' => 'SPT 3.11.4'],
+                ['mod_id' => 0, 'mod_name' => 'Example Mod Two', 'mod_url' => route('mods'), 'version' => '2.0.0', 'spt_version' => null],
+            ]),
         ];
     }
 

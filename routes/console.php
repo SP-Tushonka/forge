@@ -17,6 +17,7 @@ use App\Jobs\CleanupVerificationArtifactsJob;
 use App\Jobs\ExpireStaleModClaimsJob;
 use App\Jobs\FetchCloudflareApiAnalyticsJob;
 use App\Jobs\FetchCloudflareVisitorStatsJob;
+use App\Jobs\NotifyModSubscribers;
 use App\Jobs\NotifyReleasedIssueFixes;
 use App\Jobs\ProcessPinnedModVersionPublishDates;
 use App\Jobs\PruneModStatsJob;
@@ -36,6 +37,7 @@ Schedule::job(new UpdateFavouritesJob)->hourly()->onOneServer()->withoutOverlapp
 Schedule::job(new UpdateEndorsementsJob)->hourly()->onOneServer()->withoutOverlapping();
 Schedule::job(new ExpireStaleModClaimsJob)->hourly()->onOneServer()->withoutOverlapping();
 Schedule::job(new NotifyReleasedIssueFixes)->everyTenMinutes()->onOneServer()->withoutOverlapping();
+Schedule::job(new NotifyModSubscribers)->everyFiveMinutes()->onOneServer()->withoutOverlapping();
 Schedule::job(new SweepAltWatchesJob)->everyFiveMinutes()->onOneServer()->withoutOverlapping();
 Schedule::job(new AuditCustomLicensedModsJob)->daily()->at('01:00')->onOneServer()->withoutOverlapping();
 

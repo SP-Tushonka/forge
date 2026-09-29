@@ -1,0 +1,45 @@
+<x-layouts::base>
+    <x-slot:title>
+        {{ __('Unsubscribed from Mod Updates') }}
+    </x-slot>
+
+    <x-slot:description>
+        {{ __('You have been unsubscribed from updates for this mod.') }}
+    </x-slot>
+
+    <x-slot:header>
+        <h2 class="text-xl font-semibold leading-tight text-gray-100">
+            {{ __('Unsubscribed') }}
+        </h2>
+    </x-slot>
+
+    <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div class="overflow-hidden bg-gray-900 p-6 shadow-xl sm:rounded-lg">
+            <div class="text-center">
+                <div class="mb-6">
+                    <flux:icon.check class="mx-auto h-16 w-16 text-green-500" />
+                </div>
+
+                <h3 class="mb-2 text-xl font-semibold text-white">
+                    {{ __('Successfully Unsubscribed') }}
+                </h3>
+
+                <p class="mb-6 text-gray-400">
+                    {{ __('You will no longer be notified about new versions of this mod. You can subscribe again from its page at any time.') }}
+                </p>
+
+                <div class="flex justify-center gap-3">
+                    <flux:button
+                        variant="primary"
+                        href="{{ route('profile.show') }}"
+                    >
+                        {{ __('Manage Email Preferences') }}
+                    </flux:button>
+                    <flux:button href="{{ route('mods') }}">
+                        {{ __('Browse Mods') }}
+                    </flux:button>
+                </div>
+            </div>
+        </div>
+    </div>
+</x-layouts::base>
