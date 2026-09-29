@@ -6,8 +6,10 @@ namespace App\Http\Controllers;
 
 use App\Enums\TrackingEventType;
 use App\Facades\Track;
+use App\Models\ModUserDownload;
 use App\Models\ModVersion;
 use App\Models\Scopes\PublishedScope;
+use App\Models\User;
 use App\Support\SpeculativeRequest;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\RedirectResponse;
@@ -47,6 +49,11 @@ final class ModVersionController extends Controller
 
         // Increment downloads counts in the background.
         defer(fn () => $modVersion->incrementDownloads());
+
+        $user = $request->user();
+        if ($user instanceof User) {
+            defer(fn () => ModUserDownload::record($user, $modVersion));
+        }
 
         // Increment the rate limiter.
         RateLimiter::increment($rateKey);

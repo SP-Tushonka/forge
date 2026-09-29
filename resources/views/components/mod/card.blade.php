@@ -80,16 +80,54 @@
                     <p class="@lg:mt-0 @lg:mb-2 mt-0.5 text-sm italic text-gray-200 no-underline">
                         {{ __('Created by :owner', ['owner' => $mod->owner?->name ?? '']) }}
                     </p>
-                    @if ($version?->latestSptVersion)
-                        <p
-                            class="badge-version {{ $version->latestSptVersion->color_class }} @lg:mt-0 @lg:mb-2 mt-1.5 inline-flex items-center text-nowrap rounded-md px-2 py-1 text-xs font-medium">
-                            {{ $version->latestSptVersion->version_formatted }}
-                        </p>
-                    @elseif ($version && $version->spt_version_constraint === '')
-                        <p
-                            class="badge-version gray @lg:mt-0 @lg:mb-2 mt-1.5 inline-flex items-center text-nowrap rounded-md px-2 py-1 text-xs font-medium">
-                            {{ __('Legacy SPT Version') }}
-                        </p>
+                    @php($isLegacy = $version && $version->spt_version_constraint === '')
+                    @php($lastDownload = \App\Support\LastDownloads::forMod($mod->id))
+                    @php($updateAvailable = \App\Support\LastDownloads::updateAvailable($lastDownload, $version))
+                    @if ($version?->latestSptVersion || $isLegacy || $lastDownload)
+                        <div class="@lg:mt-0 @lg:mb-2 mt-1.5 flex flex-wrap items-center gap-1.5">
+                            @if ($version?->latestSptVersion)
+                                <p
+                                    class="badge-version {{ $version->latestSptVersion->color_class }} inline-flex items-center text-nowrap rounded-md px-2 py-1 text-xs font-medium">
+                                    {{ $version->latestSptVersion->version_formatted }}
+                                </p>
+                            @elseif ($isLegacy)
+                                <p
+                                    class="badge-version gray inline-flex items-center text-nowrap rounded-md px-2 py-1 text-xs font-medium">
+                                    {{ __('Legacy SPT Version') }}
+                                </p>
+                            @endif
+                            @if ($lastDownload)
+                                <flux:tooltip position="bottom">
+                                    <span
+                                        @class([
+                                            'inline-flex items-center gap-1 text-nowrap rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset',
+                                            'bg-cyan-950/70 text-cyan-200 ring-cyan-800/60' => $updateAvailable,
+                                            'bg-emerald-950/60 text-emerald-300 ring-emerald-800/60' => ! $updateAvailable,
+                                        ])
+                                    >
+                                        @if ($updateAvailable)
+                                            <flux:icon.arrow-path class="size-3.5" />
+                                            {{ __('Update') }}
+                                        @else
+                                            <flux:icon.check class="size-3.5" />
+                                            {{ __('Downloaded') }}
+                                        @endif
+                                    </span>
+
+                                    <flux:tooltip.content class="space-y-0.5 text-left">
+                                        @if ($updateAvailable)
+                                            <p class="font-semibold text-cyan-300">{{ __('Update available') }}</p>
+                                            <p>{{ __('You have v:old, v:new is out', ['old' => $lastDownload->version, 'new' => $version?->version]) }}</p>
+                                        @else
+                                            <p class="font-semibold text-emerald-300">{{ __('You have the latest version') }}</p>
+                                        @endif
+                                        <p class="text-zinc-400">
+                                            {{ __('Downloaded v:version on :date', ['version' => $lastDownload->version, 'date' => $lastDownload->downloaded_at->format('M j, Y')]) }}
+                                        </p>
+                                    </flux:tooltip.content>
+                                </flux:tooltip>
+                            @endif
+                        </div>
                     @endif
                     {{-- Description: hidden at small, shown at @lg --}}
                     <p class="@lg:block hidden text-gray-300">

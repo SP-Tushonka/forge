@@ -7,6 +7,7 @@ use App\Enums\ListPopularityTier;
 use App\Models\Mod;
 use App\Models\ModIssue;
 use App\Models\ModVersion;
+use App\Support\LastDownloads;
 use App\Support\ModStats\DownstreamModsQuery;
 use App\Traits\Livewire\HandlesReactions;
 use App\Traits\Livewire\ModeratesAddon;
@@ -271,6 +272,7 @@ new #[Layout('layouts::base')] class extends Component
         return $this->mod->latestLegacyVersion;
     }
 
+
     /**
      * Get view data.
      *
@@ -279,10 +281,13 @@ new #[Layout('layouts::base')] class extends Component
     public function with(): array
     {
         $displayVersion = $this->getDisplayVersion();
+        $lastDownload = LastDownloads::forMod($this->mod->id);
 
         return [
             'mod' => $this->mod,
             'displayVersion' => $displayVersion,
+            'lastDownload' => $lastDownload,
+            'updateAvailable' => LastDownloads::updateAvailable($lastDownload, $displayVersion),
             'shouldShowWarnings' => $this->shouldShowWarnings(),
             'warningMessages' => $this->getWarningMessages(),
             'requiresProfileBindingNotice' => $this->requiresProfileBindingNotice(),

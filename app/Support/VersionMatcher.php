@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use Composer\Semver\Comparator;
 use Composer\Semver\Intervals;
 use Composer\Semver\Semver;
 use Composer\Semver\VersionParser;
@@ -83,6 +84,21 @@ final class VersionMatcher
     }
 
     /**
+     * Determine whether a version is strictly newer than another, treating unparsable input as not newer.
+     */
+    public static function isNewer(string $version, string $than): bool
+    {
+        try {
+            $parser = new VersionParser;
+
+            // Comparator does not normalise its input, so raw strings would fall through to version_compare().
+            return Comparator::greaterThan($parser->normalize($version), $parser->normalize($than));
+        } catch (Throwable) {
+            return self::isCoreNewer($version, $than);
+        }
+    }
+
+    /**
      * Determine whether a single version string can be parsed by Composer and is therefore usable in matching.
      */
     public static function isValidVersion(string $version): bool
@@ -131,6 +147,21 @@ final class VersionMatcher
         $suggestion = sprintf('%d.%d.%d+%s', $parsed->getMajor(), $parsed->getMinor(), $parsed->getPatch(), Str::slug(Str::kebab($label)));
 
         return sprintf('The "-%s" label in "%s" is valid SemVer but cannot be used for dependency matching. Re-release this version using build metadata after a plus sign instead, for example "%s".', $label, $version, $suggestion);
+    }
+
+    /**
+     * Compare major.minor.patch only, for labels Composer rejects (such as "-FikaEnhanced") on otherwise sound versions.
+     */
+    private static function isCoreNewer(string $version, string $than): bool
+    {
+        try {
+            $a = new Version($version);
+            $b = new Version($than);
+
+            return [$a->getMajor(), $a->getMinor(), $a->getPatch()] > [$b->getMajor(), $b->getMinor(), $b->getPatch()];
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     /**
