@@ -156,7 +156,16 @@
                             </div>
                             <div>
                                 <div class="font-medium">
-                                    <x-user-name :user="$selectedConversation->other_user" />
+                                    <a
+                                        href="{{ $selectedConversation->other_user->profile_url }}"
+                                        class="group"
+                                        data-test="chat-header-profile-link"
+                                    >
+                                        <x-user-name
+                                            :user="$selectedConversation->other_user"
+                                            class="group-hover:underline"
+                                        />
+                                    </a>
                                 </div>
                                 <div class="text-xs">
                                     @if ($this->isUserOnline($selectedConversation->other_user))
@@ -197,7 +206,7 @@
                             <flux:menu>
                                 <flux:menu.item
                                     icon="user"
-                                    href="{{ route('user.show', ['userId' => $selectedConversation->other_user->id, 'slug' => Str::slug($selectedConversation->other_user->name)]) }}"
+                                    href="{{ $selectedConversation->other_user->profile_url }}"
                                 >{{ __('View Profile') }}</flux:menu.item>
                                 <flux:menu.separator />
                                 @if ($this->isNotificationEnabled())
