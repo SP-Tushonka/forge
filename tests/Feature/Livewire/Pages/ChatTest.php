@@ -64,6 +64,23 @@ describe('page render', function (): void {
             ->assertSee('Message to user 2')
             ->assertSee('Message to user 3');
     });
+
+    it('links the conversation header name to the other user profile', function (string $name): void {
+        $viewer = User::factory()->create();
+        $other = User::factory()->create(['name' => $name]);
+        $conversation = Conversation::findOrCreateBetween($viewer, $other, $viewer);
+
+        $html = Livewire::actingAs($viewer)
+            ->test('pages::chat', ['conversationHash' => $conversation->hash_id])
+            ->assertOk()
+            ->html();
+
+        expect(preg_match('/<a\b[^>]*data-test="chat-header-profile-link"[^>]*>/', $html, $link))->toBe(1)
+            ->and($link[0])->toContain('href="'.$other->profile_url.'"');
+    })->with([
+        'sluggable name' => ['Doahnny'],
+        'name with an empty slug' => ['!!!'],
+    ]);
 });
 
 describe('messaging', function (): void {

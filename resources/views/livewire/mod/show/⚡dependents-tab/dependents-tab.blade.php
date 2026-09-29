@@ -1,23 +1,77 @@
 @placeholder
-    <div class="rounded-xl bg-gray-950 p-4 shadow-md shadow-gray-950 drop-shadow-2xl sm:p-6">
-        <flux:skeleton.group
-            animate="shimmer"
-            class="divide-y divide-gray-800"
-        >
-            @for ($i = 0; $i < 5; $i++)
-                <div class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                    <flux:skeleton class="size-12 shrink-0 rounded-lg" />
-                    <div class="flex-1 space-y-2">
-                        <flux:skeleton.line class="w-1/2" />
-                        <flux:skeleton.line class="w-1/4" />
+    <div>
+        <div class="mb-4 flex items-center justify-between gap-4">
+            <flux:skeleton.group animate="shimmer">
+                <flux:skeleton class="h-8 w-56 rounded-md" />
+            </flux:skeleton.group>
+            <flux:skeleton.group animate="shimmer">
+                <flux:skeleton class="h-8 w-56 rounded-md" />
+            </flux:skeleton.group>
+        </div>
+        <div class="rounded-xl bg-gray-950 p-4 shadow-md shadow-gray-950 drop-shadow-2xl sm:p-6">
+            <flux:skeleton.group
+                animate="shimmer"
+                class="divide-y divide-gray-800"
+            >
+                @for ($i = 0; $i < 5; $i++)
+                    <div class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                        <flux:skeleton class="size-12 shrink-0 rounded-lg" />
+                        <div class="flex-1 space-y-2">
+                            <flux:skeleton.line class="w-1/2" />
+                            <flux:skeleton.line class="w-1/4" />
+                        </div>
                     </div>
-                </div>
-            @endfor
-        </flux:skeleton.group>
+                @endfor
+            </flux:skeleton.group>
+        </div>
     </div>
 @endplaceholder
 
 <div id="dependents">
+    @if ($this->sptVersionOptions->isNotEmpty())
+        <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex items-center gap-3">
+                <label
+                    for="dependents-spt-filter"
+                    class="whitespace-nowrap text-sm font-medium text-gray-300"
+                >
+                    {{ __('Filter by SPT version:') }}
+                </label>
+                <flux:select
+                    variant="listbox"
+                    wire:model.live="sptVersion"
+                    id="dependents-spt-filter"
+                    size="sm"
+                    class="min-w-36"
+                >
+                    <flux:select.option value="">{{ __('All versions') }}</flux:select.option>
+                    @foreach ($this->sptVersionOptions as $option)
+                        <flux:select.option value="{{ $option->version }}">{{ $option->version_formatted }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+            </div>
+            <div class="flex items-center gap-3">
+                <label
+                    for="dependents-sort"
+                    class="whitespace-nowrap text-sm font-medium text-gray-300"
+                >
+                    {{ __('Sort by:') }}
+                </label>
+                <flux:select
+                    variant="listbox"
+                    wire:model.live="sort"
+                    id="dependents-sort"
+                    size="sm"
+                    class="min-w-44"
+                >
+                    @foreach ($this->sortOptions as $value => $label)
+                        <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+            </div>
+        </div>
+    @endif
+
     @if ($this->dependents->count())
         <div class="rounded-xl bg-gray-950 p-4 shadow-md shadow-gray-950 drop-shadow-2xl sm:p-6">
             <ul
@@ -25,6 +79,7 @@
                 class="divide-y divide-gray-800"
             >
                 @foreach ($this->dependents as $dependent)
+                    @php($shownVersion = $this->shownVersions->get($dependent->id))
                     <li
                         wire:key="mod-dependent-{{ $dependent->id }}"
                         class="py-3 first:pt-0 last:pb-0"
@@ -57,8 +112,8 @@
                                     {{ $dependent->name }}
                                 </p>
                                 <p class="text-xs text-gray-400">
-                                    @if ($dependent->latestVersion)
-                                        v{{ $dependent->latestVersion->version }}
+                                    @if ($shownVersion)
+                                        v{{ $shownVersion->version }}
                                     @endif
                                     @if ($dependent->owner)
                                         &middot;
@@ -68,11 +123,11 @@
                             </div>
 
                             <div class="hidden shrink-0 items-center gap-3 sm:flex">
-                                @if ($sptVersion = $dependent->latestVersion?->latestSptVersion)
+                                @if ($badge = $this->badgeSptVersions->get($dependent->id))
                                     <span
-                                        class="badge-version {{ $sptVersion->color_class }} inline-flex items-center text-nowrap rounded-md px-2 py-0.5 text-xs font-medium"
+                                        class="badge-version {{ $badge->color_class }} inline-flex items-center text-nowrap rounded-md px-2 py-0.5 text-xs font-medium"
                                     >
-                                        {{ $sptVersion->version_formatted }}
+                                        {{ $badge->version_formatted }}
                                     </span>
                                 @endif
                                 <span
