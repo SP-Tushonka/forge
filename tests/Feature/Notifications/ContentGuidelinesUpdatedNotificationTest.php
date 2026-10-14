@@ -49,7 +49,7 @@ describe('Channel Selection', function (): void {
 });
 
 describe('Mail Message Content', function (): void {
-    it('includes the AI flag requirement in the body', function (): void {
+    it('includes the stability requirement in the body', function (): void {
         $user = User::factory()->create();
 
         $message = (new ContentGuidelinesUpdatedNotification)->toMail($user);
@@ -57,7 +57,8 @@ describe('Mail Message Content', function (): void {
         expect($message->subject)->toBe('Content Guidelines Updated');
 
         $combined = implode(' ', $message->introLines).' '.implode(' ', $message->outroLines);
-        expect($combined)->toContain('Contains AI Content');
+        expect($combined)->toContain('Stability and Reliability Requirements')
+            ->not->toContain('Contains AI Content');
     });
 
     it('includes a signed announcement unsubscribe url and a preferences link', function (): void {

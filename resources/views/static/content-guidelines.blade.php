@@ -76,7 +76,7 @@
         />
     </x-slot>
 
-    <p><strong>Effective Date:</strong> August 26, 2025<br><strong>Last Updated:</strong> September 8, 2026</p>
+    <p><strong>Effective Date:</strong> October 14, 2025<br><strong>Last Updated:</strong> October 14, 2026</p>
 
     <h2 id="overview">1. Overview</h2>
     <p>These Content Guidelines establish the technical and quality standards for all files, mods, and content submitted
@@ -336,23 +336,27 @@ public override SemanticVersioning.Range SptVersion { get; } = new("4.0.0");</co
         collection may be implemented without explicit user consent and clear documentation of the purpose and scope of
         such activities. Modifications to system files outside the SPT directory are prohibited to prevent system
         instability and security risks.</p>
-    <h4 id="ai-generated-content-policy">AI-Generated Content Policy:</h4>
-    <p>The Forge does not accept mods that have been substantially or entirely written by AI coding agents. AI models
-        have not been trained on the specific codebase and security requirements necessary to safely modify SPT client
-        and server code. This limitation creates significant risks for code stability, security vulnerabilities, and
-        compatibility issues that AI-generated code cannot adequately address.</p>
-    <p>Mod authors must fully understand their code's functionality, implementation details, and potential security
-        implications because they are responsible for how their modifications affect other users' systems and gameplay
-        experience. When users download a mod, they trust that the author has thoroughly reviewed, tested, and validated
-        every aspect of the code's behavior.</p>
-    <p>Using AI tools for basic code completion, syntax assistance, or generating small utility functions is acceptable
-        when the author reviews, understands, and takes full responsibility for the generated code. However, using AI to
-        write entire features, complex game modifications, or substantial portions of mod functionality is prohibited.
-        The distinction lies in whether the author maintains complete understanding and control over their code versus
-        relying on AI to generate logic they cannot fully comprehend or validate.</p>
-    <p>Authors must be prepared to explain any part of their submitted code, debug issues that arise, and modify
-        functionality as needed. This level of ownership is impossible when AI generates significant portions of the
-        codebase without the author's deep understanding of the implementation details.</p>
+    <h4 id="stability-requirements">Stability and Reliability Requirements:</h4>
+    <p>Every mod published on The Forge must work as described and must not damage the stability of the game client,
+        the SPT server, or the user's system. Mods that are suspected or reported to have major malfunctions,
+        instability, or other serious problems are not allowed and will be disabled. Authors are responsible for testing
+        their mods on every SPT version they list as compatible before publishing, and for fixing problems once they
+        are reported. When users download a mod, they trust that it has been tested and will not break their game.</p>
+    <p>Examples of problems that will get a mod disabled include, but are not limited to:</p>
+    <ul>
+        <li>Crashing the game or the SPT server, or preventing either from starting</li>
+        <li>Freezes, memory leaks, or performance drops severe enough to make the game unplayable</li>
+        <li>Corrupting or wiping player profiles, save data, or the files and settings of other mods</li>
+        <li>Breaking core gameplay such as raids, quests, traders, the flea market, or character progression</li>
+        <li>Failing to load, or throwing errors, on SPT versions the mod claims to support</li>
+        <li>Advertised features that do not work as described on the mod page</li>
+        <li>Breaking other mods or core game systems in ways the mod page does not disclose</li>
+    </ul>
+    <p>A mod does not need to be proven faulty before action is taken. Credible user reports, or problems found by
+        staff, are enough for a mod to be disabled while the issue is investigated. Disabled mods are hidden from The
+        Forge and can only be re-enabled by staff once the author has published a version that fixes the problem.
+        Minor bugs, cosmetic issues, and documented incompatibilities with specific mods are not grounds for removal on
+        their own, but authors are still expected to address them.</p>
 
     <h2 id="executable-security">5. Executable Files and Security</h2>
 
@@ -669,5 +673,5 @@ public override SemanticVersioning.Range SptVersion { get; } = new("4.0.0");</co
             >Community Standards</a>, and <a href="{{ route('static.dmca') }}">DMCA Copyright Notice</a> to govern
             content on The Forge.</em></p>
 
-    <p><em>Last updated: July 28, 2026</em></p>
+    <p><em>Last updated: October 14, 2026</em></p>
 </x-layouts::static-toc>

@@ -72,7 +72,7 @@ final class ContentGuidelinesUpdatedNotification extends Notification implements
         return (new NotificationMailMessage)
             ->subject('Content Guidelines Updated')
             ->greeting('Content Guidelines Updated')
-            ->line('The "AI-Generated Content Policy" section now requires that any usage of LLM-based assistance, including but not limited to code completion, code generation, text generation, and image generation, be disclosed by enabling the "Contains AI Content" flag in mod properties.')
+            ->line('The "AI-Generated Content Policy" section has been replaced by "Stability and Reliability Requirements". Mods that are suspected or reported to have major malfunctions, instability, or other serious problems are not allowed and will be disabled.')
             ->action('Read the Updated Guidelines', $guidelinesUrl)
             ->line('Please review the full guidelines to make sure your existing and future submissions remain compliant.')
             ->footer(sprintf('You can [unsubscribe](%s) from administrative emails, or [manage all of your email preferences](%s).', $unsubscribeUrl, $preferencesUrl));
@@ -87,7 +87,7 @@ final class ContentGuidelinesUpdatedNotification extends Notification implements
     {
         return [
             'title' => 'Content Guidelines Updated',
-            'body' => 'Our Content Guidelines have been updated. The AI-Generated Content Policy now requires the "Contains AI Content" flag for any LLM-assisted content.',
+            'body' => 'Our Content Guidelines have been updated. Mods with major malfunctions, instability, or other serious problems are not allowed and will be disabled.',
             'url' => route('static.content-guidelines'),
         ];
     }
