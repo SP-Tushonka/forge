@@ -56,7 +56,7 @@
                 :wire:key="'list-fork-trigger-'.$modList->id"
             />
             <livewire:report-component
-                variant="link"
+                variant="button"
                 :reportable-id="$modList->id"
                 :reportable-type="\App\Models\ModList::class"
             />

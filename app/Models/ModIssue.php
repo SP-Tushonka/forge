@@ -18,6 +18,7 @@ use App\Enums\VersionChange;
 use App\Enums\VersionTagColor;
 use App\Models\Scopes\PublishedScope;
 use App\Support\Markdown\EmojiRenderContext;
+use App\Support\WordCensor;
 use App\Traits\HasComments;
 use App\Traits\HasReactions;
 use App\Traits\HasReports;
@@ -387,6 +388,30 @@ final class ModIssue extends Model implements Commentable, Reactable, Reportable
     protected function closed(Builder $query): void
     {
         $query->whereIn('status', array_map(fn (ModIssueStatus $status): string => $status->value, ModIssueStatus::closed()));
+    }
+
+    /**
+     * Censor configured words on write
+     *
+     * @return Attribute<string, string|null>
+     */
+    protected function title(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value): ?string => WordCensor::fromConfig()->censor($value),
+        );
+    }
+
+    /**
+     * Censor configured words on write
+     *
+     * @return Attribute<string, string|null>
+     */
+    protected function body(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value): ?string => WordCensor::fromConfig()->censor($value),
+        );
     }
 
     /**

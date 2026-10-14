@@ -18,6 +18,7 @@ use App\Models\Comment;
 use App\Models\CommentVersion;
 use App\Models\Mod;
 use App\Models\ModIssue;
+use App\Models\ModList;
 use App\Models\User;
 use App\Rules\DoesNotContainLogFile;
 use App\Support\BatchPermissions;
@@ -1455,7 +1456,7 @@ new class extends Component
         /** @var User $user */
         $user = Auth::user();
 
-        if ($user->isModOrAdmin()) {
+        if ($this->isExemptFromRateLimit($user)) {
             return true;
         }
 
@@ -1481,12 +1482,32 @@ new class extends Component
         /** @var User $user */
         $user = Auth::user();
 
-        if (! $user->isModOrAdmin()) {
+        if (! $this->isExemptFromRateLimit($user)) {
             $key = 'comment-creation:'.Auth::id();
             /** @var int $rateLimitDuration */
             $rateLimitDuration = config('comments.rate_limiting.duration_seconds', 30);
             RateLimiter::hit($key, $rateLimitDuration);
         }
+    }
+
+    /**
+     * Staff, and authors/owners commenting on their own content, are not rate limited.
+     */
+    protected function isExemptFromRateLimit(User $user): bool
+    {
+        if ($user->isModOrAdmin()) {
+            return true;
+        }
+
+        $commentable = $this->commentable;
+
+        return match (true) {
+            $commentable instanceof Mod, $commentable instanceof Addon => $commentable->isAuthorOrOwner($user),
+            $commentable instanceof ModIssue => $commentable->mod->isAuthorOrOwner($user),
+            $commentable instanceof ModList => $commentable->owner_id === $user->id,
+            $commentable instanceof User => $commentable->id === $user->id,
+            default => false,
+        };
     }
 
     /**

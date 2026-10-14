@@ -647,7 +647,7 @@ describe('ReportComponent', function (): void {
             expect($component->get('canReportItem'))->toBeFalse();
         });
 
-        it('uses a mod list specific button label', function (): void {
+        it('uses the generic button label for mod lists', function (): void {
             $user = User::factory()->create();
             $modList = ModList::factory()->public()->create();
 
@@ -657,7 +657,7 @@ describe('ReportComponent', function (): void {
                     'reportableType' => $modList::class,
                 ]);
 
-            expect($component->instance()->buttonLabel())->toBe('Report List');
+            expect($component->instance()->buttonLabel())->toBe('Report');
         });
     });
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\CommentVersion;
 use App\Models\Message;
 use App\Models\Mod;
+use App\Models\ModIssue;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function (): void {
@@ -23,10 +24,47 @@ it('censors pre-existing content and leaves clean content alone', function (): v
         ->expectsConfirmation('This permanently rewrites stored content containing censored words. Continue?', 'yes')
         ->assertSuccessful();
 
-    expect($mod->refresh()->getRawOriginal('name'))->toBe('T***** Overhaul')
+    expect($mod->refresh()->getRawOriginal('name'))->toBe('T∗∗∗∗∗ Overhaul')
         ->and($message->refresh()->getRawOriginal('content'))->toBe('a clean message')
-        ->and($version->refresh()->getRawOriginal('body'))->toBe('nice r*** move')
+        ->and($version->refresh()->getRawOriginal('body'))->toBe('nice r∗∗∗ move')
         ->and($version->getRawOriginal('translated_body'))->toBeNull();
+});
+
+it('censors pre-existing mod issues', function (): void {
+    config()->set('censor.words', '');
+    $issue = ModIssue::factory()->create(['title' => 'Tackle crash', 'body' => 'the tackle breaks']);
+
+    config()->set('censor.words', 'tackle');
+
+    $this->artisan('censor:existing', ['--force' => true])->assertSuccessful();
+
+    expect($issue->refresh()->getRawOriginal('title'))->toBe('T∗∗∗∗∗ crash')
+        ->and($issue->getRawOriginal('body'))->toBe('the t∗∗∗∗∗ breaks');
+});
+
+it('censors soft deleted mod issues too', function (): void {
+    config()->set('censor.words', '');
+    $issue = ModIssue::factory()->create(['title' => 'Tackle crash']);
+    $issue->delete();
+
+    config()->set('censor.words', 'tackle');
+
+    $this->artisan('censor:existing', ['--force' => true])->assertSuccessful();
+
+    expect(ModIssue::withTrashed()->findOrFail($issue->id)->getRawOriginal('title'))->toBe('T∗∗∗∗∗ crash');
+});
+
+it('leaves masks stored with the old ASCII asterisks to censor:repair-masks', function (): void {
+    config()->set('censor.words', '');
+    $version = CommentVersion::factory()->create(['body' => 'thanks B**', 'translated_body' => null]);
+
+    config()->set('censor.words', 'bsg');
+
+    $this->artisan('censor:existing', ['--force' => true])
+        ->expectsOutputToContain('CommentVersion: 0 record(s) updated')
+        ->assertSuccessful();
+
+    expect($version->refresh()->getRawOriginal('body'))->toBe('thanks B**');
 });
 
 it('reports without saving when run with --dry-run', function (): void {
@@ -56,7 +94,7 @@ it('runs without a confirmation prompt when forced', function (): void {
 
     $this->artisan('censor:existing', ['--force' => true])->assertSuccessful();
 
-    expect($mod->refresh()->getRawOriginal('name'))->toBe('T***** Overhaul');
+    expect($mod->refresh()->getRawOriginal('name'))->toBe('T∗∗∗∗∗ Overhaul');
 });
 
 it('records the word list hash after a completed run', function (): void {
@@ -90,7 +128,7 @@ it('sweeps when the word list differs from the recorded hash', function (): void
 
     $this->artisan('censor:existing', ['--force' => true, '--if-changed' => true])->assertSuccessful();
 
-    expect($mod->refresh()->getRawOriginal('name'))->toBe('T***** Overhaul')
+    expect($mod->refresh()->getRawOriginal('name'))->toBe('T∗∗∗∗∗ Overhaul')
         ->and(Storage::disk('local')->get('censor-words.hash'))->toBe(hash('sha256', 'tackle'));
 });
 

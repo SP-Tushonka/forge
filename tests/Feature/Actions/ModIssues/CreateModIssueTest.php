@@ -34,6 +34,22 @@ function openIssue(object $test, ?ModIssueType $type = null): App\Models\ModIssu
     );
 }
 
+it('censors the reported title and body', function (): void {
+    config()->set('censor.words', 'tackle');
+
+    $issue = resolve(CreateModIssue::class)->execute(
+        $this->reporter,
+        $this->mod,
+        ModIssueType::Bug,
+        'Tackle crash',
+        'The tackle breaks on load.',
+        $this->versionId,
+    );
+
+    expect($issue->refresh()->title)->toBe('T∗∗∗∗∗ crash')
+        ->and($issue->body)->toBe('The t∗∗∗∗∗ breaks on load.');
+});
+
 it('numbers issues per mod and never reuses a deleted number', function (): void {
     $first = openIssue($this);
     $first->delete();
