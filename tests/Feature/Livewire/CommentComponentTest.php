@@ -6,12 +6,15 @@ use App\Enums\SpamStatus;
 use App\Enums\TrackingEventType;
 use App\Jobs\CheckCommentForSpam;
 use App\Jobs\TranslateComment;
+use App\Models\Addon;
 use App\Models\Comment;
 use App\Models\CommentVersion;
 use App\Models\Emoji;
 use App\Models\License;
 use App\Models\Mod;
 use App\Models\ModCategory;
+use App\Models\ModIssue;
+use App\Models\ModList;
 use App\Models\ModVersion;
 use App\Models\Reaction;
 use App\Models\SptVersion;
@@ -340,6 +343,81 @@ describe('Creation', function (): void {
                 ->count();
 
             expect($comments)->toBe(2);
+        });
+
+        it('should allow authors to bypass rate limiting on their own content', function (array $case): void {
+            [$commentable, $author] = $case;
+
+            $component = Livewire::actingAs($author)
+                ->test('comment-component', ['commentable' => $commentable]);
+
+            $component->set('newCommentBody', 'First author comment')
+                ->call('createComment')
+                ->assertHasNoErrors();
+
+            $component->set('newCommentBody', 'Second author comment')
+                ->call('createComment')
+                ->assertHasNoErrors();
+
+            $comments = Comment::query()->where('user_id', $author->id)
+                ->where('commentable_id', $commentable->getKey())
+                ->where('commentable_type', $commentable::class)
+                ->count();
+
+            expect($comments)->toBe(2);
+        })->with([
+            'mod owner' => function (): array {
+                $mod = Mod::factory()->create();
+
+                return [$mod, $mod->owner];
+            },
+            'mod co-author' => function (): array {
+                $mod = Mod::factory()->create();
+                $coAuthor = User::factory()->create();
+                $mod->additionalAuthors()->attach($coAuthor);
+
+                return [$mod, $coAuthor];
+            },
+            'addon owner' => function (): array {
+                $addon = Addon::factory()->create();
+
+                return [$addon, $addon->owner];
+            },
+            'issue on own mod' => function (): array {
+                $issue = ModIssue::factory()->create();
+
+                return [$issue, $issue->mod->owner];
+            },
+            'mod list owner' => function (): array {
+                $list = ModList::factory()->create();
+
+                return [$list, $list->owner];
+            },
+            'own profile' => function (): array {
+                $user = User::factory()->create();
+
+                return [$user, $user];
+            },
+        ]);
+
+        it('should not count comments on own content towards the rate limit elsewhere', function (): void {
+            $ownMod = Mod::factory()->create();
+            $author = $ownMod->owner;
+            $otherMod = Mod::factory()->create();
+
+            Livewire::actingAs($author)
+                ->test('comment-component', ['commentable' => $ownMod])
+                ->set('newCommentBody', 'Comment on my own mod')
+                ->call('createComment')
+                ->assertHasNoErrors();
+
+            Livewire::actingAs($author)
+                ->test('comment-component', ['commentable' => $otherMod])
+                ->set('newCommentBody', 'Comment on another mod')
+                ->call('createComment')
+                ->assertHasNoErrors();
+
+            expect(Comment::query()->where('user_id', $author->id)->count())->toBe(2);
         });
     });
 

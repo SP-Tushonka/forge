@@ -9,7 +9,6 @@ use App\Facades\Track;
 use App\Models\Comment;
 use App\Models\Mod;
 use App\Models\ModIssue;
-use App\Models\ModList;
 use App\Models\Report;
 use App\Models\User;
 use App\Notifications\ReportSubmittedNotification;
@@ -82,7 +81,6 @@ new class extends Component
     {
         return match ($this->reportableType) {
             Mod::class => __('Report Mod'),
-            ModList::class => __('Report List'),
             ModIssue::class => __('Report Issue'),
             default => __('Report'),
         };

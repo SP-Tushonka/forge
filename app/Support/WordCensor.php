@@ -6,12 +6,17 @@ namespace App\Support;
 
 /**
  * Masks configured words in user generated text/inputs. Applied by write time model mutators on mod names, teasers, and
- * descriptions, comment bodies and chat messages. Matching is case insensitve and detects common character
- * substitutions (4 for A, 5 for S, and so on...). Matches are replaced with their first character followed by asterisks.
- * Words inside URLs and domain names are left untouched so posted links keep working.
+ * descriptions, issue titles and bodies, comment bodies and chat messages. Matching is case insensitve and detects common
+ * character substitutions (4 for A, 5 for S, and so on...). Matches are replaced with their first character followed by
+ * MASK characters. Words inside URLs and domain names are left untouched so posted links keep working.
  */
 final readonly class WordCensor
 {
+    /**
+     * U+2217 rather than an ASCII asterisk, which markdown reads as emphasis and pairs with the author's own markers
+     */
+    public const string MASK = '∗';
+
     /**
      * URL Pattern, we dont wanna touch these!
      */
@@ -52,7 +57,7 @@ final readonly class WordCensor
     }
 
     /**
-     * Replace every configured word in the text with its first character followed by asterisks.
+     * Replace every configured word in the text with its first character followed by MASK characters.
      */
     public function censor(?string $text): ?string
     {
@@ -86,7 +91,7 @@ final readonly class WordCensor
             $this->pattern,
             // if something is all numbers, just dont
             fn (array $match): string => preg_match('/\p{L}/u', $match[0]) === 1
-                ? mb_substr($match[0], 0, 1).str_repeat('*', mb_strlen($match[0]) - 1)
+                ? mb_substr($match[0], 0, 1).str_repeat(self::MASK, mb_strlen($match[0]) - 1)
                 : $match[0],
             $text
         );

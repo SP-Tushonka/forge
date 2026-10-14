@@ -504,4 +504,30 @@ describe('Rendering', function (): void {
             'rgb(255, 255, 255)',
         )->assertNoJavaScriptErrors();
     });
+
+    it('scrolls a long code block inside the preview instead of widening the comment form', function (): void {
+        $mod = Mod::factory()->create();
+        ModVersion::factory()->create(['mod_id' => $mod->id, 'spt_version_constraint' => '1.0.0']);
+        $line = str_repeat('Many security solutions and email filters fail to deeply inspect SVG content. ', 4);
+
+        $this->actingAs(User::factory()->create());
+
+        $page = visit($mod->detail_url.'#comments')
+            ->on()->desktop()
+            ->waitForText('Post Comment')
+            ->type('@new-comment-body', "```md\n{$line}\n```")
+            ->click('form:has([data-test="new-comment-body"]) [role="tab"]:has-text("Preview")');
+
+        $page->assertScript(
+            "(() => {
+                const form = document.querySelector('[data-test=\"new-comment-body\"]').closest('form');
+                const code = form.querySelector('.user-markdown pre > code');
+
+                return code !== null
+                    && code.scrollWidth > code.clientWidth
+                    && form.getBoundingClientRect().right <= form.closest('.bg-gray-950').getBoundingClientRect().right;
+            })()",
+            true,
+        )->assertNoJavaScriptErrors();
+    });
 });

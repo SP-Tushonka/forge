@@ -353,9 +353,6 @@ public override SemanticVersioning.Range SptVersion { get; } = new("4.0.0");</co
     <p>Authors must be prepared to explain any part of their submitted code, debug issues that arise, and modify
         functionality as needed. This level of ownership is impossible when AI generates significant portions of the
         codebase without the author's deep understanding of the implementation details.</p>
-    <p>Any usage of LLM-based assistance, including but not limited to code completion, code generation, text
-        generation, and image generation requires that the "Contains AI Content" flag be enabled in the mod
-        properties.</p>
 
     <h2 id="executable-security">5. Executable Files and Security</h2>
 

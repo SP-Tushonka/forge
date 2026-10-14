@@ -71,7 +71,7 @@
                             circle="circle"
                         />
                     </div>
-                    <div class="flex-1">
+                    <div class="min-w-0 flex-1">
                         <x-comment.form
                             form-key="newCommentBody"
                             data-test="new-comment-body"

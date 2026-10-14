@@ -64,6 +64,20 @@ it('marks an edited issue as edited', function (): void {
         ->and($this->issue->edited_at)->not->toBeNull();
 });
 
+it('censors an edit, but does not mark the issue edited when its censored text is saved unchanged', function (): void {
+    config()->set('censor.words', 'tackle');
+
+    resolve(EditModIssue::class)->execute($this->issue, 'Tackle crash', 'The tackle breaks on load.');
+    $this->issue->edited_at = null;
+    $this->issue->save();
+
+    resolve(EditModIssue::class)->execute($this->issue, $this->issue->title, $this->issue->body);
+
+    expect($this->issue->refresh()->title)->toBe('T∗∗∗∗∗ crash')
+        ->and($this->issue->body)->toBe('The t∗∗∗∗∗ breaks on load.')
+        ->and($this->issue->edited_at)->toBeNull();
+});
+
 it('soft deletes with the deleter recorded, and restores', function (): void {
     resolve(DeleteModIssue::class)->execute($this->issue, $this->owner);
 
