@@ -7,6 +7,7 @@ namespace App\Console\Commands;
 use App\Models\CommentVersion;
 use App\Models\Message;
 use App\Models\Mod;
+use App\Models\ModIssue;
 use App\Support\WordCensor;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
-#[Description('Applies the configured word censor to existing mod names, teasers, descriptions, comments, and chat messages')]
+#[Description('Applies the configured word censor to existing mod names, teasers, descriptions, issues, comments, and chat messages')]
 #[Signature('censor:existing
     {--dry-run : Report how many records would change without saving anything}
     {--force : Run without the confirmation prompt}
@@ -27,6 +28,7 @@ final class CensorExistingContentCommand extends Command
      */
     private const array TARGETS = [
         Mod::class => ['name', 'teaser', 'description'],
+        ModIssue::class => ['title', 'body'],
         CommentVersion::class => ['body', 'translated_body'],
         Message::class => ['content'],
     ];
