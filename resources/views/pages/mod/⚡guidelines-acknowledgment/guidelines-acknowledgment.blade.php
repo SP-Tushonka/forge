@@ -26,21 +26,21 @@
                 </div>
 
                 <div class="mb-8 space-y-6">
-                    <!-- AI-Generated Content Warning -->
-                    <div class="rounded-r-lg border-l-4 border-red-500 bg-red-900/20 p-5">
+                    <!-- Stability Warning -->
+                    <div class="rounded-r-lg border-l-4 border-orange-500 bg-orange-900/20 p-5">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
-                                <flux:icon.exclamation-triangle class="size-6 text-red-400" />
+                                <flux:icon.exclamation-triangle class="size-6 text-orange-400" />
                             </div>
                             <div class="ml-4 flex-1">
-                                <h3 class="text-lg font-semibold text-red-300">No AI-Generated Mods
-                                </h3>
-                                <p class="mt-1 text-sm text-red-400">
-                                    <strong>We do not accept mods that have been substantially or entirely written by
-                                        AI.</strong> This includes mods where you've taken an existing mod, fed it to AI
-                                    to modify, and then uploaded the result. You must fully understand and be able to
-                                    explain every part of your code. Using AI for minor code completion is acceptable,
-                                    but you remain fully responsible for all code.
+                                <h3 class="text-lg font-semibold text-orange-300">Unstable Mods Will Be
+                                    Disabled</h3>
+                                <p class="mt-1 text-sm text-orange-400">
+                                    <strong>Mods that are suspected or reported to have major malfunctions, instability,
+                                        or other serious problems will be disabled.</strong> This includes mods that
+                                    crash the game or server, corrupt profiles, cause severe performance problems, or
+                                    break core gameplay. A disabled mod stays hidden until a fixed version is published
+                                    and staff re-enable it.
                                 </p>
                             </div>
                         </div>

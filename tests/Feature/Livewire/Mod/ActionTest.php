@@ -317,7 +317,7 @@ describe('mod publishing functionality', function (): void {
 });
 
 describe('mod featuring functionality', function (): void {
-    it('allows administrators to feature mods without AI content', function (): void {
+    it('allows administrators to feature mods', function (): void {
         $user = User::factory()->admin()->create();
         $mod = Mod::factory()->create(['featured' => false]);
 
