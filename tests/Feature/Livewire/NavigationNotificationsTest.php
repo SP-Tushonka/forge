@@ -431,7 +431,7 @@ it('renders content guidelines notification with title and body', function (): v
         'type' => ContentGuidelinesUpdatedNotification::class,
         'data' => [
             'title' => 'Content Guidelines Updated',
-            'body' => 'Our Content Guidelines have been updated. The AI-Generated Content Policy now requires the "Contains AI Content" flag for any LLM-assisted content.',
+            'body' => 'Our Content Guidelines have been updated. Mods with major malfunctions, instability, or other serious problems are not allowed and will be disabled.',
             'url' => route('static.content-guidelines'),
         ],
         'read_at' => null,
