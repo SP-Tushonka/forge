@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Models\UserBlock;
 use App\Notifications\CommentReplyNotification;
 use App\Notifications\NewCommentNotification;
+use App\Support\IgnoredContent;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Queue\Queueable;
@@ -44,6 +45,13 @@ final class ProcessCommentNotification implements ShouldQueue
      * @var list<int>
      */
     private array $blockedCounterpartIds = [];
+
+    /**
+     * Users the commented page is hidden from by their ignores.
+     *
+     * @var list<int>
+     */
+    private array $ignoringUserIds = [];
 
     /**
      * Create a new job instance.
@@ -91,6 +99,7 @@ final class ProcessCommentNotification implements ShouldQueue
         $this->notifiedUserIds = $emptyCollection;
 
         $this->blockedCounterpartIds = $this->blockCounterpartIds($freshComment->user_id);
+        $this->ignoringUserIds = $commentable instanceof Model ? IgnoredContent::usersIgnoring($commentable) : [];
 
         // Step 1: Handle direct reply notification (if this is a reply to another comment)
         $this->handleReplyNotification($freshComment);
@@ -134,6 +143,10 @@ final class ProcessCommentNotification implements ShouldQueue
 
         // Don't notify when the parent author has a block relationship with the comment author
         if (in_array($parentAuthor->id, $this->blockedCounterpartIds, true)) {
+            return;
+        }
+
+        if (in_array($parentAuthor->id, $this->ignoringUserIds, true)) {
             return;
         }
 
@@ -230,9 +243,11 @@ final class ProcessCommentNotification implements ShouldQueue
         // 1. The comment author (they shouldn't be notified of their own comment)
         // 2. Users who have already been notified (e.g., via reply notification)
         // 3. Users with a block relationship with the comment author
+        // 4. Users who have the commented page hidden by an ignore
         $subscribers = $subscribers->filter(fn (User $user): bool => $user->id !== $comment->user_id
             && $this->notifiedUserIds->doesntContain($user->id)
-            && ! in_array($user->id, $this->blockedCounterpartIds, true));
+            && ! in_array($user->id, $this->blockedCounterpartIds, true)
+            && ! in_array($user->id, $this->ignoringUserIds, true));
 
         if ($subscribers->isEmpty()) {
             return;

@@ -7,6 +7,7 @@ use App\Models\Mod;
 use App\Models\User;
 use App\Support\Api\V0\PublicViewpoint;
 use App\Support\HomepageSectionCache;
+use App\Support\IgnoredContent;
 use App\Traits\Livewire\ProvidesReactionSummary;
 use App\Traits\Livewire\ModeratesMod;
 use App\Traits\Livewire\RendersModSections;
@@ -31,7 +32,7 @@ new #[Layout('layouts::base')] class extends Component
      */
     public function with(): array
     {
-        $sections = $this->viewDisabled()
+        $sections = $this->viewDisabled() || IgnoredContent::hasAny(auth()->user())
             ? [
                 'featured' => $this->featured(),
                 'newest' => $this->newest(),
@@ -128,7 +129,8 @@ new #[Layout('layouts::base')] class extends Component
      */
     protected function featured(): Collection
     {
-        return $this->featuredQuery(true)
+        return $this->featuredQuery($this->viewDisabled())
+            ->withoutIgnoredBy(auth()->user())
             ->with(['latestVersion', 'latestVersion.latestSptVersion', 'owner:id,name', 'additionalAuthors:id,name', 'license:id,name,link'])
             ->withVisibilityFlags()
             ->inRandomOrder()
@@ -161,7 +163,8 @@ new #[Layout('layouts::base')] class extends Component
      */
     protected function newest(): Collection
     {
-        return $this->newestQuery(true)
+        return $this->newestQuery($this->viewDisabled())
+            ->withoutIgnoredBy(auth()->user())
             ->with(['latestVersion', 'latestVersion.latestSptVersion', 'owner:id,name', 'additionalAuthors:id,name', 'license:id,name,link'])
             ->withVisibilityFlags()
             ->limit(self::SECTION_SIZE)
@@ -193,7 +196,8 @@ new #[Layout('layouts::base')] class extends Component
      */
     protected function updated(): Collection
     {
-        return $this->updatedQuery(true)
+        return $this->updatedQuery($this->viewDisabled())
+            ->withoutIgnoredBy(auth()->user())
             ->with(['latestUpdatedVersion', 'latestUpdatedVersion.latestSptVersion', 'owner:id,name', 'additionalAuthors:id,name', 'license:id,name,link'])
             ->withVisibilityFlags()
             ->limit(self::SECTION_SIZE)
@@ -248,11 +252,12 @@ new #[Layout('layouts::base')] class extends Component
             ->clean()
             ->visibleToUser($user)
             ->whereNull('deleted_at')
-            ->whereHasMorph('commentable', [Mod::class], function (Builder $query): void {
+            ->whereHasMorph('commentable', [Mod::class], function (Builder $query) use ($user): void {
                 $query->withoutGlobalScopes()
                     ->where('disabled', false)
                     ->whereNotNull('published_at')
-                    ->where('published_at', '<=', now());
+                    ->where('published_at', '<=', now())
+                    ->whereNotIn('mods.id', IgnoredContent::hiddenModIds($user));
             })
             ->with([
                 'user:id,name,user_role_id,profile_photo_path',

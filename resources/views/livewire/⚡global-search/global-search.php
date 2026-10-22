@@ -6,6 +6,7 @@ use App\Models\Addon;
 use App\Models\Mod;
 use App\Models\ModList;
 use App\Models\User;
+use App\Support\IgnoredContent;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -199,7 +200,7 @@ new class extends Component
      */
     protected function processModResults(array $hits): Collection
     {
-        return collect($hits)
+        return $this->withoutIgnored(collect($hits), IgnoredContent::hiddenModIds(Auth::user()))
             ->sortBy([['latestVersionMajor', 'desc'], ['latestVersionMinor', 'desc'], ['latestVersionPatch', 'desc'], ['latestVersionLabel', 'asc'], ['_rankingScore', 'desc']])
             ->values();
     }
@@ -212,7 +213,7 @@ new class extends Component
      */
     protected function processAddonResults(array $hits): Collection
     {
-        return collect($hits)->sortByDesc('_rankingScore')->values();
+        return $this->withoutIgnored(collect($hits), IgnoredContent::hiddenAddonIds(Auth::user()))->sortByDesc('_rankingScore')->values();
     }
 
     /**
@@ -223,7 +224,25 @@ new class extends Component
      */
     protected function processListResults(array $hits): Collection
     {
-        return collect($hits)->sortByDesc('_rankingScore')->values();
+        return $this->withoutIgnored(collect($hits), IgnoredContent::hiddenListIds(Auth::user()))->sortByDesc('_rankingScore')->values();
+    }
+
+    /**
+     * Drop hits for content the viewer has ignored. Search indexes are shared, so this runs after the search.
+     *
+     * @param  Collection<int, mixed>  $hits
+     * @param  list<int>  $hiddenIds
+     * @return Collection<int, mixed>
+     */
+    protected function withoutIgnored(Collection $hits, array $hiddenIds): Collection
+    {
+        if ($hiddenIds === []) {
+            return $hits;
+        }
+
+        return $hits
+            ->reject(fn (mixed $hit): bool => is_array($hit) && is_numeric($hit['id'] ?? null) && in_array((int) $hit['id'], $hiddenIds, true))
+            ->values();
     }
 
     /**

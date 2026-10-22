@@ -11,6 +11,7 @@ use App\Enums\IssueNotificationLevel;
 use App\Notifications\ResetPassword;
 use App\Notifications\VerifyEmail;
 use App\Observers\UserObserver;
+use App\Support\IgnoredContent;
 use App\Support\UndeliverableAddress;
 use App\Traits\HasComments;
 use App\Traits\HasCoverPhoto;
@@ -100,6 +101,8 @@ use Stevebauman\Purify\Facades\Purify;
  * @property-read Collection<int, ModList> $modLists
  * @property-read Collection<int, ModUserDownload> $modDownloads
  * @property-read Collection<int, ModSubscription> $modSubscriptions
+ * @property-read Collection<int, IgnoredMod> $ignoredMods
+ * @property-read Collection<int, IgnoredUser> $ignoredUsers
  * @property-read Collection<int, OAuthConnection> $oAuthConnections
  * @property-read Collection<int, UserDevice> $devices
  *
@@ -301,7 +304,7 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
      */
     public function visibleModsFor(?self $viewer): Builder
     {
-        $query = $this->ownedAndAuthoredMods();
+        $query = $this->ownedAndAuthoredMods()->withoutIgnoredBy($viewer);
 
         if (! $viewer?->can('viewDisabledUserMods', $this)) {
             $query->whereDisabled(false)->whereHas('versions', function (Builder $versionQuery): void {
@@ -343,7 +346,7 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
      */
     public function visibleAddonsFor(?self $viewer): Builder
     {
-        $query = $this->ownedAndAuthoredAddons();
+        $query = $this->ownedAndAuthoredAddons()->withoutIgnoredBy($viewer);
 
         if (! $viewer?->can('viewDisabledUserAddons', $this)) {
             $query->where('addons.disabled', false)
@@ -524,6 +527,53 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
         }
 
         return $this->isBlockedBy($user);
+    }
+
+    /**
+     * Mods this user has chosen to hide from everything they browse.
+     *
+     * @return HasMany<IgnoredMod, $this>
+     */
+    public function ignoredMods(): HasMany
+    {
+        return $this->hasMany(IgnoredMod::class);
+    }
+
+    /**
+     * Users whose mods, addons and lists this user has chosen to hide.
+     *
+     * @return HasMany<IgnoredUser, $this>
+     */
+    public function ignoredUsers(): HasMany
+    {
+        return $this->hasMany(IgnoredUser::class);
+    }
+
+    public function ignoreMod(Mod $mod): void
+    {
+        $this->ignoredMods()->firstOrCreate(['mod_id' => $mod->id]);
+        $this->forgetIgnoreDerivedState();
+    }
+
+    public function unignoreMod(Mod|int $mod): void
+    {
+        $this->ignoredMods()->where('mod_id', $mod instanceof Mod ? $mod->id : $mod)->delete();
+        $this->forgetIgnoreDerivedState();
+    }
+
+    public function ignoreUser(self $user, bool $includeCoauthored = false): void
+    {
+        $this->ignoredUsers()->updateOrCreate(
+            ['ignored_user_id' => $user->id],
+            ['include_coauthored' => $includeCoauthored],
+        );
+        $this->forgetIgnoreDerivedState();
+    }
+
+    public function unignoreUser(self|int $user): void
+    {
+        $this->ignoredUsers()->where('ignored_user_id', $user instanceof self ? $user->id : $user)->delete();
+        $this->forgetIgnoreDerivedState();
     }
 
     /**
@@ -1262,6 +1312,16 @@ final class User extends Authenticatable implements Commentable, MustVerifyEmail
         throw_if($decoded === false, RuntimeException::class, 'APP_KEY_TOMBSTONE is not valid base64.');
 
         return $decoded;
+    }
+
+    /**
+     * The per-request hidden sets and the nav "new mods" counts are both derived from the ignore tables.
+     */
+    private function forgetIgnoreDerivedState(): void
+    {
+        IgnoredContent::flush();
+        Cache::forget(sprintf('user:%s:nav-updated-mods-count', $this->id));
+        Cache::forget(sprintf('user:%s:nav-created-mods-count', $this->id));
     }
 
     /**

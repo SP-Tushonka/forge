@@ -21,6 +21,9 @@
 </x-slot>
 
 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    @if ($this->hidesIgnoredContent)
+        <x-ignored-content-notice :reason="$this->ignoreReason" />
+    @else
     <x-mod-issue.beta-notice class="mb-4" />
 
     <a
@@ -256,5 +259,6 @@
             wire:key="issue-ban-modal-{{ $issue->mod_id }}"
             :mod-id="$issue->mod_id"
         />
+    @endif
     @endif
 </div>
