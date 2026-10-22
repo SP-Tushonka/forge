@@ -7,8 +7,10 @@ use App\Enums\ListPopularityTier;
 use App\Models\Mod;
 use App\Models\ModIssue;
 use App\Models\ModVersion;
+use App\Support\IgnoredContent;
 use App\Support\LastDownloads;
 use App\Support\ModStats\DownstreamModsQuery;
+use App\Traits\Livewire\HandlesIgnoredContent;
 use App\Traits\Livewire\HandlesReactions;
 use App\Traits\Livewire\ModeratesAddon;
 use App\Traits\Livewire\ModeratesMod;
@@ -22,9 +24,20 @@ use Livewire\Component;
 
 new #[Layout('layouts::base')] class extends Component
 {
+    use HandlesIgnoredContent;
     use HandlesReactions;
     use ModeratesAddon;
     use ModeratesMod;
+
+    protected function ignorableSubject(): Mod
+    {
+        return $this->mod;
+    }
+
+    protected function ignorableUrl(): string
+    {
+        return $this->mod->detail_url;
+    }
 
     /**
      * Reacting to the mod itself. Distinct from the summarised figure on mod cards, which staff restrict separately.
@@ -201,7 +214,8 @@ new #[Layout('layouts::base')] class extends Component
     }
 
     /**
-     * Get the total addon count visible to the current user.
+     * Get the total addon count visible to the current user. Matches the addons tab: a mod shown anyway keeps all its
+     * addons, since each one would otherwise inherit the mod's hidden state.
      */
     public function getAddonCount(): int
     {
@@ -212,6 +226,7 @@ new #[Layout('layouts::base')] class extends Component
             ->when(! $user?->isModOrAdmin(), function (Builder $query): void {
                 $query->where('disabled', false)->whereNotNull('published_at')->where('published_at', '<=', now());
             })
+            ->unless(IgnoredContent::isHidden($this->mod, $user), fn (Builder $query): Builder => $query->withoutIgnoredBy($user))
             ->whereNull('detached_at')
             ->count();
     }

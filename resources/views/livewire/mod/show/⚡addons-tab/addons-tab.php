@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Addon;
 use App\Models\ModVersion;
+use App\Support\IgnoredContent;
 use App\Traits\Livewire\AuthorizesModTab;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -62,6 +63,7 @@ new #[Lazy] class extends Component
             ->when(! $user?->isModOrAdmin(), function (Builder $query): void {
                 $query->where('disabled', false)->whereNotNull('published_at')->where('published_at', '<=', now());
             })
+            ->unless(IgnoredContent::isHidden($this->mod, $user), fn (Builder $query): Builder => $query->withoutIgnoredBy($user))
             ->whereNull('detached_at')
             ->count();
     }
@@ -121,7 +123,8 @@ new #[Lazy] class extends Component
     }
 
     /**
-     * The mod's addons.
+     * The mod's addons. When the mod itself is hidden the viewer chose to show it anyway, so its addons are not
+     * filtered, since each one would otherwise inherit the mod's hidden state.
      *
      * @return LengthAwarePaginator<int, Addon>
      */
@@ -159,6 +162,7 @@ new #[Lazy] class extends Component
             ->when(! $user?->isModOrAdmin(), function (Builder $query): void {
                 $query->where('disabled', false)->whereNotNull('published_at')->where('published_at', '<=', now());
             })
+            ->unless(IgnoredContent::isHidden($mod, $user), fn (Builder $query): Builder => $query->withoutIgnoredBy($user))
             ->whereNull('detached_at')
             ->orderBy('downloads', 'desc')
             ->paginate(perPage: 10, pageName: 'addonPage')

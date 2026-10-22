@@ -18,6 +18,7 @@
             @endif
         </div>
         <div class="flex items-center gap-2">
+            @unless ($this->hidesIgnoredContent)
             @if ($canManage)
                 @if ($modList->visibility === \App\Enums\ListVisibility::Hidden)
                     <flux:modal.trigger name="list-share-link-{{ $modList->id }}">
@@ -60,11 +61,15 @@
                 :reportable-id="$modList->id"
                 :reportable-type="\App\Models\ModList::class"
             />
+            @endunless
         </div>
     </div>
 </x-slot>
 
 <div class="mx-auto max-w-7xl space-y-6 py-6 sm:px-6 lg:px-8">
+    @if ($this->hidesIgnoredContent)
+        <x-ignored-content-notice :reason="$this->ignoreReason" />
+    @else
     <div
         aria-live="polite"
         class="sr-only"
@@ -293,6 +298,12 @@
                             :display-spt-version="$group['display_spt_version']"
                             :list-mod-ids="$listModIds"
                         >
+                            <x-slot:badge>
+                                <x-ignored-badge
+                                    :show="$group['ignored']"
+                                    :tooltip="__('You are ignoring this mod. It still shows here because this is your list.')"
+                                />
+                            </x-slot:badge>
                             <x-slot:note>
                                 <x-list.item-note
                                     :item-id="$group['mod_item']?->id"
@@ -635,5 +646,6 @@
                 </div>
             </div>
         </flux:modal>
+    @endif
     @endif
 </div>

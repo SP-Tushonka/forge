@@ -16,6 +16,7 @@
             {{ __('Addon Details') }}
         </h2>
         <div class="flex items-center gap-2">
+            @unless ($this->hidesIgnoredContent)
             @auth
                 <flux:modal.trigger name="mod-add-to-list-addon-{{ $addon->id }}">
                     <flux:button
@@ -50,6 +51,7 @@
                     </flux:tooltip>
                 @endif
             @endif
+            @endunless
         </div>
     </div>
 </x-slot>
@@ -59,6 +61,9 @@
 @endif
 
 <div>
+    @if ($this->hidesIgnoredContent)
+        <x-ignored-content-notice :reason="$this->ignoreReason" />
+    @else
 
     @if ($shouldShowWarnings && !empty($warningMessages))
         <div class="mx-auto max-w-7xl gap-6 px-4 pb-6 sm:px-6 lg:px-8">
@@ -450,4 +455,5 @@
             </div>
         </div>
     </div>
+    @endif
 </div>

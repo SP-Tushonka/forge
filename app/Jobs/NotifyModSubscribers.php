@@ -11,6 +11,7 @@ use App\Models\Scopes\PublishedScope;
 use App\Models\User;
 use App\Notifications\ModUpdatesDigestNotification;
 use App\Notifications\ModVersionReleasedNotification;
+use App\Support\IgnoredContent;
 use App\Support\VersionMatcher;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -107,6 +108,7 @@ final class NotifyModSubscribers implements ShouldBeUnique, ShouldQueue
         User::query()
             ->whereIn('id', ModSubscription::query()->where('mod_id', $modId)->select('user_id'))
             ->whereNotIn('id', $releasers)
+            ->whereNotIn('id', IgnoredContent::usersIgnoring($mod))
             ->whereDoesntHave('bans', function (Builder $query): void {
                 $query->whereNull('expired_at')->orWhere('expired_at', '>', now());
             })

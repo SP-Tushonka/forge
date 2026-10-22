@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -53,6 +54,19 @@ new #[Layout('layouts::base')] class extends Component
     public function getAddonCount(): int
     {
         return $this->user->visibleAddonsFor(auth()->user())->count('addons.id');
+    }
+
+    #[Computed]
+    public function isIgnoringContent(): bool
+    {
+        return auth()->user()?->ignoredUsers()->where('ignored_user_id', $this->user->id)->exists() ?? false;
+    }
+
+    public function stopIgnoringContent(): void
+    {
+        auth()->user()?->unignoreUser($this->user);
+
+        $this->redirect(route('user.show', ['userId' => $this->user->id, 'slug' => $this->user->slug]), navigate: true);
     }
 
     /**

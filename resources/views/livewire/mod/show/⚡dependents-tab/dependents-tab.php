@@ -168,6 +168,7 @@ new #[Lazy] class extends Component
     {
         $mods = Mod::query()
             ->whereIn('id', $this->shownVersions->keys())
+            ->withoutIgnoredBy(auth()->user())
             ->get(['id', 'name', 'downloads', 'created_at']);
 
         $byDownloads = [

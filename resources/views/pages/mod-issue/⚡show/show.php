@@ -12,6 +12,7 @@ use App\Models\ModIssue;
 use App\Models\ModIssueEvent;
 use App\Models\Scopes\PublishedScope;
 use App\Models\User;
+use App\Traits\Livewire\HandlesIgnoredContent;
 use App\Traits\Livewire\HandlesReactions;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -24,8 +25,19 @@ use Livewire\Component;
 
 new #[Layout('layouts::base')] class extends Component
 {
+    use HandlesIgnoredContent;
     use HandlesReactions;
     use RendersMarkdownPreview;
+
+    protected function ignorableSubject(): ModIssue
+    {
+        return $this->issue;
+    }
+
+    protected function ignorableUrl(): string
+    {
+        return $this->issue->url();
+    }
 
     #[Locked]
     public ModIssue $issue;

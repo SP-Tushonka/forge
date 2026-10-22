@@ -58,6 +58,7 @@ new class extends Component
                 })
                 ->where('mods.created_at', '>', $lastViewed)
                 ->unless($showDisabled, fn (Builder $query) => $query->where('disabled', false))
+                ->withoutIgnoredBy($user)
                 ->count();
         });
     }

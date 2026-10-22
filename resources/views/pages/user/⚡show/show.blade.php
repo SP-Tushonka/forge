@@ -78,6 +78,11 @@
                                 size="xs"
                             />
 
+                            <livewire:ignore-content-button
+                                :user="$user"
+                                size="xs"
+                            />
+
                             {{-- Ban/Unban Action --}}
                             @can('ban', $user)
                                 <livewire:user.ban-action
@@ -109,6 +114,8 @@
 
                             {{-- Block/Unblock Button --}}
                             <livewire:block-button :user="$user" />
+
+                            <livewire:ignore-content-button :user="$user" />
 
                             {{-- Ban/Unban Action --}}
                             @can('ban', $user)
@@ -194,6 +201,22 @@
                         class="user-markdown rounded-xl bg-gray-950 p-4 text-gray-200 shadow-md shadow-gray-950 drop-shadow-2xl sm:p-6">
                         {!! $user->about_html !!}
                     </div>
+                @endif
+
+                @if ($this->isIgnoringContent)
+                    <flux:callout
+                        icon="eye-slash"
+                        class="mb-6"
+                        data-test="ignored-content-banner"
+                    >
+                        <flux:callout.text>{{ __("You're ignoring content from :name.", ['name' => $user->name]) }}</flux:callout.text>
+                        <x-slot name="actions">
+                            <flux:button
+                                size="sm"
+                                wire:click="stopIgnoringContent"
+                            >{{ __('Stop ignoring') }}</flux:button>
+                        </x-slot>
+                    </flux:callout>
                 @endif
 
                 {{-- Tabs --}}

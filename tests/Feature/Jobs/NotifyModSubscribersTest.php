@@ -191,6 +191,32 @@ it('does not notify an actively banned subscriber', function (): void {
     Notification::assertNothingSent();
 });
 
+it('skips subscribers who ignore the mod or its owner', function (): void {
+    $direct = User::factory()->create();
+    $byOwner = User::factory()->create();
+    ModSubscription::factory()->for($direct)->for($this->mod)->create();
+    ModSubscription::factory()->for($byOwner)->for($this->mod)->create();
+    $direct->ignoreMod($this->mod);
+    $byOwner->ignoreUser($this->mod->owner);
+    releaseVersion($this->mod);
+
+    new NotifyModSubscribers()->handle();
+
+    Notification::assertSentTo($this->subscriber, ModVersionReleasedNotification::class);
+    Notification::assertNotSentTo([$direct, $byOwner], ModVersionReleasedNotification::class);
+    expect(ModSubscription::query()->whereIn('user_id', [$direct->id, $byOwner->id])->count())->toBe(2);
+});
+
+it('resumes notifying a subscriber once they stop ignoring the mod', function (): void {
+    $this->subscriber->ignoreMod($this->mod);
+    $this->subscriber->unignoreMod($this->mod);
+    releaseVersion($this->mod);
+
+    new NotifyModSubscribers()->handle();
+
+    Notification::assertSentTo($this->subscriber, ModVersionReleasedNotification::class);
+});
+
 describe('email digest', function (): void {
     it('sends a subscriber of one mod a single digest with one release', function (): void {
         releaseVersion($this->mod);

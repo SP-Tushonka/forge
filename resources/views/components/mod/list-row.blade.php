@@ -32,6 +32,9 @@
                 >
                     {{ $mod->name }}
                 </a>
+                @if (isset($badge) && $badge->hasActualContent())
+                    <span class="shrink-0">{{ $badge }}</span>
+                @endif
                 @if ($version)
                     <span class="shrink-0 text-xs text-gray-400">
                         {{ $version->version }}

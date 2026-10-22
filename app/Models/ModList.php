@@ -8,11 +8,13 @@ use App\Contracts\Commentable;
 use App\Contracts\Reportable;
 use App\Enums\ListVisibility;
 use App\Observers\ModListObserver;
+use App\Support\IgnoredContent;
 use App\Traits\HasComments;
 use App\Traits\HasReports;
 use Carbon\CarbonImmutable;
 use Database\Factories\ModListFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -436,6 +438,20 @@ final class ModList extends Model implements Commentable, Reportable
         return $query->where('visibility', ListVisibility::Public)
             ->where('is_default', false)
             ->where('disabled', false);
+    }
+
+    /**
+     * Exclude the lists hidden from the viewer by their ignores.
+     *
+     * @param  Builder<ModList>  $query
+     * @return Builder<ModList>
+     */
+    #[Scope]
+    protected function withoutIgnoredBy(Builder $query, ?User $viewer): Builder
+    {
+        $hidden = IgnoredContent::hiddenListIds($viewer);
+
+        return $hidden === [] ? $query : $query->whereNotIn('mod_lists.id', $hidden);
     }
 
     /**

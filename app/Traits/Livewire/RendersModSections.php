@@ -69,6 +69,7 @@ trait RendersModSections
         return Mod::query()
             ->whereIn('mods.id', array_values(array_unique($ids)))
             ->unless($viewDisabled, fn (Builder $query): Builder => $query->where('mods.disabled', false))
+            ->withoutIgnoredBy(auth()->user())
             ->with([
                 'latestVersion',
                 'latestVersion.latestSptVersion',

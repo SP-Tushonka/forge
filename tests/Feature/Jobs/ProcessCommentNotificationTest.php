@@ -86,6 +86,29 @@ describe('reply notifications', function (): void {
 
         Notification::assertNotSentTo($parentAuthor, CommentReplyNotification::class);
     });
+
+    it('does not notify a parent author who has the commented mod hidden', function (): void {
+        $parentAuthor = User::factory()->create();
+        $replier = User::factory()->create();
+        $mod = Mod::factory()->create();
+        $parentComment = Comment::factory()->create([
+            'commentable_id' => $mod->id,
+            'commentable_type' => $mod::class,
+            'user_id' => $parentAuthor->id,
+        ]);
+        $reply = Comment::factory()->create([
+            'commentable_id' => $mod->id,
+            'commentable_type' => $mod::class,
+            'user_id' => $replier->id,
+            'parent_id' => $parentComment->id,
+            'root_id' => $parentComment->id,
+        ]);
+        $parentAuthor->ignoreMod($mod);
+
+        new ProcessCommentNotification($reply)->handle();
+
+        Notification::assertNotSentTo($parentAuthor, CommentReplyNotification::class);
+    });
 });
 
 describe('subscriber notifications', function (): void {
@@ -130,5 +153,26 @@ describe('subscriber notifications', function (): void {
         Notification::assertNotSentTo($blockingSubscriber, NewCommentNotification::class);
         Notification::assertNotSentTo($blockedSubscriber, NewCommentNotification::class);
         Notification::assertSentTo($normalSubscriber, NewCommentNotification::class);
+    });
+
+    it('does not notify subscribers who have the commented mod hidden', function (): void {
+        $subscriber = User::factory()->create();
+        $otherSubscriber = User::factory()->create();
+        $commenter = User::factory()->create();
+        $mod = Mod::factory()->create();
+        $mod->subscribeUser($subscriber);
+        $mod->subscribeUser($otherSubscriber);
+        $subscriber->ignoreMod($mod);
+
+        $comment = Comment::factory()->create([
+            'commentable_id' => $mod->id,
+            'commentable_type' => $mod::class,
+            'user_id' => $commenter->id,
+        ]);
+
+        new ProcessCommentNotification($comment)->handle();
+
+        Notification::assertNotSentTo($subscriber, NewCommentNotification::class);
+        Notification::assertSentTo($otherSubscriber, NewCommentNotification::class);
     });
 });

@@ -250,6 +250,7 @@
                         >
                             {{ $resolvedDependency->mod->name }}&nbsp;({{ $resolvedDependency->version }})
                         </a>
+                        <x-ignored-badge :mod="$resolvedDependency->mod" />
                     </li>
                 @endforeach
             </ul>

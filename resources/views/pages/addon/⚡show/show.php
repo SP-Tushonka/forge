@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Addon;
 use App\Models\AddonVersion;
+use App\Traits\Livewire\HandlesIgnoredContent;
 use App\Traits\Livewire\ModeratesAddon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
@@ -12,7 +13,18 @@ use Livewire\Component;
 
 new #[Layout('layouts::base')] class extends Component
 {
+    use HandlesIgnoredContent;
     use ModeratesAddon;
+
+    protected function ignorableSubject(): Addon
+    {
+        return $this->addon;
+    }
+
+    protected function ignorableUrl(): string
+    {
+        return $this->addon->detail_url;
+    }
 
     /**
      * The addon being shown.
