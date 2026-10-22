@@ -395,6 +395,36 @@
                             </flux:field>
 
                             <flux:field class="col-span-6">
+                                <flux:checkbox.group label="Issues">
+                                    <flux:checkbox
+                                        value="true"
+                                        wire:model.live="issuesEnabled"
+                                        label="Enable Issues"
+                                        description="Adds an Issues tab where users can report bugs and request features. You and your co-authors can triage, close and lock issues."
+                                    />
+                                </flux:checkbox.group>
+
+                                @if ($issuesEnabled)
+                                    {{-- wire:model on the group without .blur: blur never fires on the group element. --}}
+                                    <flux:checkbox.group
+                                        class="mt-4"
+                                        wire:model="allowedIssueTypes"
+                                        label="Issue types you accept"
+                                        description="Untick a type to stop new issues of that kind."
+                                    >
+                                        @foreach (App\Enums\ModIssueType::cases() as $issueType)
+                                            <flux:checkbox
+                                                value="{{ $issueType->value }}"
+                                                label="{{ $issueType->label() }}"
+                                            />
+                                        @endforeach
+                                    </flux:checkbox.group>
+                                @endif
+
+                                <x-mod-issue.beta-notice class="mt-3" />
+                            </flux:field>
+
+                            <flux:field class="col-span-6">
                                 <flux:checkbox.group label="Add-ons">
                                     <flux:checkbox
                                         value="true"

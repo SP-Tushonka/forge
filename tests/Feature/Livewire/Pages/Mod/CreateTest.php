@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\ModIssueType;
 use App\Jobs\GenerateThumbnailVariants;
 use App\Models\CommentSubscription;
 use App\Models\License;
@@ -322,6 +323,69 @@ describe('Mod Create Form', function (): void {
                 ->set('containsAds', false)
                 ->call('save')
                 ->assertHasNoErrors();
+        });
+    });
+
+    describe('Issues', function (): void {
+        beforeEach(function (): void {
+            $this->actingAs(User::factory()->withMfa()->create());
+
+            $this->fields = [
+                'name' => 'Tracked Mod',
+                'teaser' => 'A teaser',
+                'description' => 'A description',
+                'license' => (string) License::factory()->create()->id,
+                'category' => (string) ModCategory::factory()->create()->id,
+                'sourceCodeLinks.0.url' => 'https://github.com/example/repo',
+                'sourceCodeLinks.0.label' => '',
+            ];
+        });
+
+        it('offers the issue tracker switched off, showing the type checkboxes only once it is on', function (): void {
+            Livewire::test('pages::mod.create')
+                ->assertSee('Enable Issues')
+                ->assertSeeHtml('data-test="issue-tracker-beta-notice"')
+                ->assertSet('issuesEnabled', false)
+                ->assertDontSee('Issue types you accept')
+                ->set('issuesEnabled', true)
+                ->assertSee('Issue types you accept');
+        });
+
+        it('leaves the issue tracker off unless it is switched on', function (): void {
+            Livewire::test('pages::mod.create')
+                ->fill($this->fields)
+                ->call('save')
+                ->assertHasNoErrors();
+
+            $mod = Mod::query()->where('name', 'Tracked Mod')->firstOrFail();
+
+            expect($mod->issues_enabled)->toBeFalse()
+                ->and($mod->disabled_issue_types)->toBeNull();
+        });
+
+        it('creates the mod with the issue tracker on, storing only the types left unticked', function (): void {
+            Livewire::test('pages::mod.create')
+                ->fill($this->fields)
+                ->set('issuesEnabled', true)
+                ->set('allowedIssueTypes', [ModIssueType::Bug->value, ModIssueType::Compatibility->value])
+                ->call('save')
+                ->assertHasNoErrors();
+
+            $mod = Mod::query()->where('name', 'Tracked Mod')->firstOrFail();
+
+            expect($mod->issues_enabled)->toBeTrue()
+                ->and($mod->disabled_issue_types)->toBe([ModIssueType::Feature->value, ModIssueType::Question->value]);
+        });
+
+        it('refuses to create the mod with the issue tracker on and no type accepted', function (): void {
+            Livewire::test('pages::mod.create')
+                ->fill($this->fields)
+                ->set('issuesEnabled', true)
+                ->set('allowedIssueTypes', [])
+                ->call('save')
+                ->assertHasErrors('allowedIssueTypes');
+
+            expect(Mod::query()->where('name', 'Tracked Mod')->exists())->toBeFalse();
         });
     });
 
