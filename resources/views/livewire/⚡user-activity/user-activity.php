@@ -3,11 +3,17 @@
 declare(strict_types=1);
 
 use App\Enums\TrackingEventType;
+use App\Models\Addon;
+use App\Models\Comment;
 use App\Models\Mod;
+use App\Models\ModIssue;
+use App\Models\ModList;
 use App\Models\ModVersion;
 use App\Models\TrackingEvent;
 use App\Models\User;
+use App\Support\IgnoredContent;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -56,6 +62,35 @@ new class extends Component
                 ]);
             }
         });
+
+        new Collection($events->pluck('visitable')->whereInstanceOf(Comment::class)->all())->loadMissing('commentable');
+
+        $viewer = auth()->user();
+
+        $subjectOf = fn (TrackingEvent $event): ?Model => match (true) {
+            $event->visitable instanceof ModVersion => $event->visitable->mod,
+            $event->visitable instanceof Comment => $event->visitable->commentable,
+            default => $event->visitable,
+        };
+
+        $issueModIds = $events
+            ->map($subjectOf)
+            ->whereInstanceOf(ModIssue::class)
+            ->pluck('mod_id')
+            ->unique()
+            ->all();
+        $issueMods = Mod::query()->withoutGlobalScopes()->whereKey($issueModIds)->get()->keyBy('id');
+
+        $events = $events->reject(function (TrackingEvent $event) use ($viewer, $subjectOf, $issueMods): bool {
+            $subject = $subjectOf($event);
+
+            if ($subject instanceof ModIssue) {
+                $subject = $issueMods->get($subject->mod_id);
+            }
+
+            return ($subject instanceof Mod || $subject instanceof Addon || $subject instanceof ModList)
+                && IgnoredContent::isHidden($subject, $viewer);
+        })->values();
 
         // If not authenticated or not viewing own profile and not a moderator/admin, filter private events
         $authUser = auth()->user();

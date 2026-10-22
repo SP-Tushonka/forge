@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Policies;
 
 use App\Models\User;
+use Illuminate\Auth\Access\Response;
 use Illuminate\Database\Eloquent\Model;
 
 final class UserPolicy
@@ -190,6 +191,17 @@ final class UserPolicy
 
         // Cannot message users you have blocked (to avoid confusion)
         return ! $user->hasBlocked($target);
+    }
+
+    /**
+     * Determine whether the user can ignore another user's mods, addons and lists. Staff can be ignored too, since
+     * it only changes what the ignoring user sees.
+     */
+    public function ignoreContent(User $user, User $target): Response
+    {
+        return $user->id === $target->id
+            ? Response::deny(__('You cannot ignore yourself.'))
+            : Response::allow();
     }
 
     public function changeEmail(User $user, User $model): bool

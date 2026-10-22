@@ -8,6 +8,7 @@ use App\Models\ModCategory;
 use App\Models\ModVersion;
 use App\Models\SptVersion;
 use App\Support\DataTransferObjects\ActiveFilterChip;
+use App\Support\IgnoredContent;
 use App\Traits\Livewire\ProvidesReactionSummary;
 use App\Traits\Livewire\ModeratesMod;
 use Illuminate\Database\Eloquent\Builder;
@@ -346,7 +347,7 @@ new #[Layout('layouts::base')] class extends Component
             'fikaCompatibility' => $this->fikaCompatibility,
         ]);
 
-        $builder = $filters->apply();
+        $builder = $filters->apply()->withoutIgnoredBy(auth()->user());
         $paginatedMods = $builder->paginate($this->perPage, total: fn (): ?int => $this->cachedModTotal($builder));
 
         // Determine if we should load legacy versions
@@ -507,11 +508,15 @@ new #[Layout('layouts::base')] class extends Component
     }
 
     /**
-     * Build the cache key for the paginator total. Returns null when a search query is set, the category slug is
-     * unknown, or the version selection contains values outside the filter options.
+     * Build the cache key for the paginator total. Returns null when a search query is set, the viewer has ignored content,
+     * the category slug is unknown, or the version selection contains values outside the filter options.
      */
     private function modTotalCacheKey(): ?string
     {
+        if (IgnoredContent::hasAny(auth()->user())) {
+            return null;
+        }
+
         if (is_string($this->query) && $this->query !== '') {
             return null;
         }

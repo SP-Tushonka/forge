@@ -60,6 +60,7 @@ new class extends Component
                     $query->where('created_at', '>', $lastViewed);
                 })
                 ->unless($showDisabled, fn (Builder $query) => $query->where('disabled', false))
+                ->withoutIgnoredBy($user)
                 ->count();
         });
     }

@@ -166,6 +166,18 @@ final class ModPolicy
     }
 
     /**
+     * Determine whether the user can ignore the mod. Its owner and authors cannot hide their own work.
+     */
+    public function ignore(User $user, Mod $mod): Response
+    {
+        if ($mod->isAuthorOrOwner($user)) {
+            return Response::deny(__('You cannot ignore your own mod.'));
+        }
+
+        return $this->view($user, $mod) ? Response::allow() : Response::deny();
+    }
+
+    /**
      * Determine whether the user can permanently delete the model.
      */
     public function forceDelete(User $user, Mod $mod): bool

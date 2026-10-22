@@ -301,3 +301,14 @@ describe('initiateChat Policy Method', function (): void {
         expect($this->policy->initiateChat($this->user, $this->otherUser))->toBeFalse();
     });
 });
+
+describe('ignoreContent', function (): void {
+    it('allows ignoring another user, staff included', function (): void {
+        expect($this->user->can('ignoreContent', $this->otherUser))->toBeTrue()
+            ->and($this->user->can('ignoreContent', $this->admin))->toBeTrue();
+    });
+
+    it('denies ignoring yourself', function (): void {
+        expect($this->user->can('ignoreContent', $this->user))->toBeFalse();
+    });
+});

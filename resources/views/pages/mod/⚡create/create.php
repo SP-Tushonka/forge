@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Enums\ModIssueType;
 use App\Enums\TrackingEventType;
+use App\Enums\VersionChange;
+use App\Enums\VersionTagColor;
 use App\Facades\Track;
 use App\Jobs\GenerateThumbnailVariants;
 use App\Livewire\Concerns\RendersMarkdownPreview;
@@ -16,6 +19,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
@@ -98,6 +102,13 @@ new #[Layout('layouts::base')] class extends Component
     public bool $commentsDisabled = false;
 
     /**
+     * The comment version tag colour for each kind of version change.
+     *
+     * @var array<string, string>
+     */
+    public array $commentVersionColors = [];
+
+    /**
      * Whether to subscribe to comment notifications for the mod.
      */
     public bool $subscribeToComments = true;
@@ -125,11 +136,30 @@ new #[Layout('layouts::base')] class extends Component
     public bool $addonsDisabled = false;
 
     /**
+     * Whether the mod is kept out of user-created mod lists.
+     */
+    public bool $listsDisabled = false;
+
+    /**
+     * Whether the issue tracker is enabled for the mod.
+     */
+    public bool $issuesEnabled = false;
+
+    /**
+     * The issue types the mod accepts, as enum values.
+     *
+     * @var list<string>
+     */
+    public array $allowedIssueTypes = [];
+
+    /**
      * Mount the component.
      */
     public function mount(): void
     {
         $this->honeypotData = new HoneypotData();
+        $this->commentVersionColors = VersionChange::defaultTagColors();
+        $this->allowedIssueTypes = array_map(fn (ModIssueType $type): string => $type->value, ModIssueType::cases());
 
         $this->authorize('create', Mod::class);
     }
@@ -222,6 +252,15 @@ new #[Layout('layouts::base')] class extends Component
             $publishedAt = Date::parse($dateTimeString, $userTimezone)->setTimezone('UTC')->second(0)->toDateTimeString();
         }
 
+        // Only overrides are stored, so a mod left on the defaults follows any later change to them.
+        $colorOverrides = array_diff_assoc($this->commentVersionColors, VersionChange::defaultTagColors());
+
+        // Only the opt-outs are stored, so a type added later is accepted without the owner touching the mod.
+        $optedOutIssueTypes = array_values(array_diff(
+            array_map(fn (ModIssueType $type): string => $type->value, ModIssueType::cases()),
+            $this->allowedIssueTypes,
+        ));
+
         // Create a new mod instance.
         $mod = new Mod([
             'owner_id' => auth()->user()?->id,
@@ -233,7 +272,11 @@ new #[Layout('layouts::base')] class extends Component
             'category_id' => (int) $this->category,
             'contains_ads' => $this->containsAds,
             'comments_disabled' => $this->commentsDisabled,
+            'comment_version_colors' => $colorOverrides === [] ? null : $colorOverrides,
             'addons_disabled' => $this->addonsDisabled,
+            'lists_disabled' => $this->listsDisabled,
+            'issues_enabled' => $this->issuesEnabled,
+            'disabled_issue_types' => $optedOutIssueTypes === [] ? null : $optedOutIssueTypes,
             'profile_binding_notice_disabled' => $this->disableProfileBindingNotice,
             'cheat_notice' => $this->cheatNotice,
             'published_at' => $publishedAt,
@@ -344,7 +387,13 @@ new #[Layout('layouts::base')] class extends Component
             'publishedAtTime' => 'nullable|date_format:H:i',
             'containsAds' => 'boolean',
             'commentsDisabled' => 'boolean',
+            'commentVersionColors' => 'required|array:'.implode(',', array_keys(VersionChange::defaultTagColors())),
+            'commentVersionColors.*' => ['required', Rule::enum(VersionTagColor::class)],
             'addonsDisabled' => 'boolean',
+            'listsDisabled' => 'boolean',
+            'issuesEnabled' => 'boolean',
+            'allowedIssueTypes' => [Rule::requiredIf($this->issuesEnabled), 'array'],
+            'allowedIssueTypes.*' => [Rule::enum(ModIssueType::class)],
             'subscribeToComments' => 'boolean',
             'authorIds' => 'array|max:10',
             'authorIds.*' => ['exists:users,id', 'distinct', new NoBlockRelationship(auth()->user())],
@@ -368,6 +417,7 @@ new #[Layout('layouts::base')] class extends Component
             'sourceCodeLinks.*.url.url' => 'Please enter a valid URL (e.g., https://github.com/username/repo).',
             'sourceCodeLinks.*.url.starts_with' => 'The URL must start with https:// or http://',
             'sourceCodeLinks.*.label.max' => 'The label must not exceed 50 characters.',
+            'allowedIssueTypes.required' => 'Keep at least one issue type enabled, or switch the issue tracker off.',
         ];
     }
 

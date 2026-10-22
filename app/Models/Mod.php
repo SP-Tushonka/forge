@@ -17,6 +17,7 @@ use App\Enums\VersionTagColor;
 use App\Models\Scopes\PublishedScope;
 use App\Observers\ModObserver;
 use App\Support\Api\V0\PublicViewpoint;
+use App\Support\IgnoredContent;
 use App\Support\Markdown\EmojiRenderContext;
 use App\Support\WordCensor;
 use App\Traits\HasComments;
@@ -859,6 +860,20 @@ final class Mod extends Model implements Commentable, Reactable, Reportable, Tra
             'publiclyVisibleVersions as has_publicly_visible_version',
             'legacyPubliclyVisibleVersions as has_legacy_publicly_visible_version',
         ]);
+    }
+
+    /**
+     * Exclude the mods hidden from the viewer by their ignores.
+     *
+     * @param  Builder<Mod>  $query
+     * @return Builder<Mod>
+     */
+    #[Scope]
+    protected function withoutIgnoredBy(Builder $query, ?User $viewer): Builder
+    {
+        $hidden = IgnoredContent::hiddenModIds($viewer);
+
+        return $hidden === [] ? $query : $query->whereNotIn('mods.id', $hidden);
     }
 
     /**

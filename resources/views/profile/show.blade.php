@@ -55,6 +55,16 @@
             </div>
             <x-section-border />
 
+            <div class="mt-10 sm:mt-0">
+                @livewire('ignored-mods')
+            </div>
+            <x-section-border />
+
+            <div class="mt-10 sm:mt-0">
+                @livewire('ignored-users')
+            </div>
+            <x-section-border />
+
             <div
                 id="devices"
                 class="mt-10 sm:mt-0"

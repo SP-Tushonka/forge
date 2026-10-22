@@ -172,8 +172,9 @@
                             @endif
 
                             <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-semibold text-gray-100 group-hover:text-cyan-400">
-                                    {{ $dependency->mod->name }}
+                                <p class="flex min-w-0 items-center gap-2 text-sm font-semibold text-gray-100 group-hover:text-cyan-400">
+                                    <span class="truncate">{{ $dependency->mod->name }}</span>
+                                    <span class="shrink-0"><x-ignored-badge :mod="$dependency->mod" /></span>
                                 </p>
                                 <p class="text-xs text-gray-400">
                                     {{ __('Requires') }} v{{ $dependency->version }}

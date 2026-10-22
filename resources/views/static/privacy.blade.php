@@ -109,6 +109,7 @@
         <li>Comments, including earlier versions of comments you edit</li>
         <li>Reactions, endorsements, mod lists, mod subscriptions, follows, and issues you open on mods</li>
         <li>Blocks you place on other members, and the reason you give</li>
+        <li>Mods and members whose content you choose to ignore</li>
         <li>Reports you file about content or members</li>
     </ul>
 
@@ -265,10 +266,10 @@
         <li><strong>While your account exists:</strong> we keep your account and what you post</li>
         <li><strong>When you delete your account:</strong> it is deleted immediately, along with your comments,
             reactions, endorsements, issues, mod lists, the record of which mod versions you downloaded, your mod
-            subscriptions, follows, blocks, the reports you filed, your Discord link, and your private conversations.
-            Deleting a conversation this way removes it for the other person too. Activity records and notifications
-            linked to your account are deleted within a day. Ban records and account monitoring are the exceptions; see
-            6.3 and 6.4</li>
+            subscriptions, follows, blocks, the mods and members you ignore, the reports you filed, your Discord link,
+            and your private conversations. Deleting a conversation this way removes it for the other person too.
+            Activity records and notifications linked to your account are deleted within a day. Ban records and account
+            monitoring are the exceptions; see 6.3 and 6.4</li>
         <li><strong>Mods and addons you published</strong> stay on the site without an owner after your account is
             deleted. Ask us if you want them removed</li>
     </ul>

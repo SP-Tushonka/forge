@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\Mod;
 use App\Support\Api\V0\PublicViewpoint;
 use App\Support\HomepageSectionCache;
+use App\Support\IgnoredContent;
 use App\Traits\Livewire\ProvidesReactionSummary;
 use App\Traits\Livewire\ModeratesMod;
 use App\Traits\Livewire\RendersModSections;
@@ -75,8 +76,8 @@ new class extends Component
      */
     protected function endorsementCounts(): array
     {
-        if ($this->viewDisabled()) {
-            return $this->countsQuery(true);
+        if ($this->viewDisabled() || IgnoredContent::hasAny(auth()->user())) {
+            return $this->countsQuery($this->viewDisabled());
         }
 
         return HomepageSectionCache::remember(
@@ -174,6 +175,7 @@ new class extends Component
                     $versions->whereNotNull('published_at');
                 }
             })
-            ->unless($viewDisabled, fn (Builder $q): Builder => $q->where('mods.disabled', false));
+            ->unless($viewDisabled, fn (Builder $q): Builder => $q->where('mods.disabled', false))
+            ->withoutIgnoredBy(auth()->user());
     }
 };

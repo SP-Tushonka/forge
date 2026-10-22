@@ -471,3 +471,21 @@ describe('endorse', function (): void {
             ->and($result->message())->toBe('Your account must be at least 7 days old to endorse a mod.');
     });
 });
+
+describe('ignore', function (): void {
+    it('allows a member to ignore a visible mod', function (): void {
+        $mod = Mod::factory()->create();
+        ModVersion::factory()->for($mod)->create(['spt_version_constraint' => '', 'disabled' => false]);
+
+        expect($this->user->can('ignore', $mod))->toBeTrue();
+    });
+
+    it('denies the owner and additional authors', function (): void {
+        $mod = Mod::factory()->create();
+        $author = User::factory()->create();
+        $mod->additionalAuthors()->attach($author);
+
+        expect($mod->owner->can('ignore', $mod))->toBeFalse()
+            ->and($author->can('ignore', $mod))->toBeFalse();
+    });
+});

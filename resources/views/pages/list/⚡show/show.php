@@ -11,7 +11,9 @@ use App\Models\ModVersion;
 use App\Models\SptVersion;
 use App\Models\User;
 use App\Services\ModListService;
+use App\Support\IgnoredContent;
 use App\Support\DataTransferObjects\ResolvedListVersion;
+use App\Traits\Livewire\HandlesIgnoredContent;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +27,20 @@ use Livewire\Component;
 
 new #[Layout('layouts::base')] class extends Component
 {
+    use HandlesIgnoredContent;
+
+    protected function ignorableSubject(): ModList
+    {
+        return $this->modList;
+    }
+
+    protected function ignorableUrl(): string
+    {
+        return $this->shareToken === null
+            ? $this->modList->detailUrl()
+            : route('list.show.shared', ['listId' => $this->modList->id, 'slug' => $this->modList->slug, 'shareToken' => $this->shareToken]);
+    }
+
     public ModList $modList;
 
     public ?string $shareToken = null;
@@ -129,7 +145,7 @@ new #[Layout('layouts::base')] class extends Component
      * in a single pass. This keeps drag-and-drop reorder working across the
      * full list without page boundaries.
      *
-     * @return Collection<int, array{mod: ?Mod, mod_item: ?ModListItem, addons: Collection<int, ModListItem>, group_key: int|string, is_sortable: bool, resolved_version: ?ModVersion, version_incompatible: bool, display_spt_version: ?SptVersion, tombstone_names_visible: bool}>
+     * @return Collection<int, array{mod: ?Mod, mod_item: ?ModListItem, addons: Collection<int, ModListItem>, group_key: int|string, is_sortable: bool, resolved_version: ?ModVersion, version_incompatible: bool, display_spt_version: ?SptVersion, tombstone_names_visible: bool, ignored: bool}>
      */
     #[Computed]
     public function grouped(): Collection
@@ -181,7 +197,7 @@ new #[Layout('layouts::base')] class extends Component
         // version the card should show) so the Blade template stays logic-free.
         $canManage = $this->canManage;
 
-        return $this->modList->groupedItems()
+        $groups = $this->modList->groupedItems()
             ->values()
             ->map(function (array $group) use ($canManage, $resolvedVersions, $viewer, $viewerIsStaff): array {
                 $modItem = $group['mod_item'];
@@ -209,8 +225,25 @@ new #[Layout('layouts::base')] class extends Component
                     // Only the mod's authors/owner and staff/mods may see the captured name on a tombstoned item.
                     // Everyone else gets a generic placeholder so the opt-out does not leak which mods were involved.
                     'tombstone_names_visible' => $this->canViewTombstoneNames($group['mod'], $viewer, $viewerIsStaff),
+                    'ignored' => $group['mod'] instanceof Mod && IgnoredContent::isHidden($group['mod'], $viewer),
                 ];
             });
+
+        if ($canManage) {
+            return $groups;
+        }
+
+        return $groups
+            ->reject(fn (array $group): bool => $group['ignored'])
+            ->map(function (array $group) use ($viewer): array {
+                $group['addons'] = $group['addons']
+                    ->reject(fn (ModListItem $item): bool => $item->listable instanceof Addon && IgnoredContent::isHidden($item->listable, $viewer))
+                    ->values();
+
+                return $group;
+            })
+            ->reject(fn (array $group): bool => $group['mod_item'] === null && $group['addons']->isEmpty())
+            ->values();
     }
 
     /**

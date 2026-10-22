@@ -13,12 +13,19 @@
             {{ __('Mod Details') }}
         </h2>
         <div class="flex min-w-0 flex-wrap items-center justify-end gap-2">
+            @unless ($this->hidesIgnoredContent)
             @unless ($mod->isAuthorOrOwner(auth()->user()))
                 <livewire:mod-subscribe-button
                     :mod-id="$mod->id"
                     wire:key="mod-subscribe-{{ $mod->id }}"
                 />
             @endunless
+            @can('ignore', $mod)
+                <livewire:ignore-mod-button
+                    :mod-id="$mod->id"
+                    wire:key="mod-ignore-{{ $mod->id }}"
+                />
+            @endcan
             <livewire:mod-endorse-button
                 :mod-id="$mod->id"
                 wire:key="mod-endorse-{{ $mod->id }}"
@@ -67,6 +74,7 @@
                     </flux:tooltip>
                 @endif
             @endif
+            @endunless
         </div>
     </div>
 </x-slot>
@@ -76,6 +84,9 @@
 @endif
 
 <div>
+    @if ($this->hidesIgnoredContent)
+        <x-ignored-content-notice :reason="$this->ignoreReason" />
+    @else
 
     @if ($shouldShowWarnings && !empty($warningMessages))
         <div class="mx-auto max-w-7xl gap-6 px-4 pb-6 sm:px-6 lg:px-8">
@@ -503,8 +514,9 @@
                                     {{-- Mod Info --}}
                                     <div class="min-w-0 flex-1">
                                         <p
-                                            class="truncate text-sm font-semibold text-gray-100 group-hover:text-cyan-400">
-                                            {{ $dependency->mod->name }}
+                                            class="flex min-w-0 items-center gap-2 text-sm font-semibold text-gray-100 group-hover:text-cyan-400">
+                                            <span class="truncate">{{ $dependency->mod->name }}</span>
+                                            <span class="shrink-0"><x-ignored-badge :mod="$dependency->mod" /></span>
                                         </p>
                                         <p class="text-xs text-gray-400">
                                             {{ __('Requires') }} v{{ $dependency->version }}
@@ -750,4 +762,5 @@
             />
         </div>
     </div>
+    @endif
 </div>

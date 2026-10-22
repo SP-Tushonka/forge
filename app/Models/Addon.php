@@ -13,6 +13,7 @@ use App\Enums\VersionTagColor;
 use App\Models\Scopes\PublishedScope;
 use App\Observers\AddonObserver;
 use App\Support\Api\V0\PublicViewpoint;
+use App\Support\IgnoredContent;
 use App\Traits\HasComments;
 use App\Traits\HasReports;
 use Carbon\CarbonImmutable;
@@ -538,6 +539,20 @@ final class Addon extends Model implements Commentable, Reportable, Trackable, V
         return $query->where('disabled', false)
             ->whereNotNull('published_at')
             ->where('published_at', '<=', now());
+    }
+
+    /**
+     * Exclude the addons hidden from the viewer by their ignores.
+     *
+     * @param  Builder<Addon>  $query
+     * @return Builder<Addon>
+     */
+    #[Scope]
+    protected function withoutIgnoredBy(Builder $query, ?User $viewer): Builder
+    {
+        $hidden = IgnoredContent::hiddenAddonIds($viewer);
+
+        return $hidden === [] ? $query : $query->whereNotIn('addons.id', $hidden);
     }
 
     /**

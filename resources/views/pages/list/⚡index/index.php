@@ -50,6 +50,7 @@ new #[Layout('layouts::base')] class extends Component
         /** @var LengthAwarePaginator<int, ModList> $paginator */
         $paginator = ModList::query()
             ->discoverable()
+            ->withoutIgnoredBy(auth()->user())
             ->with(['owner:id,name', 'sptVersion'])
             ->withCount('items')
             ->when($this->search !== '', fn (Builder $q): Builder => $q->whereLike('title', '%'.$this->search.'%'))

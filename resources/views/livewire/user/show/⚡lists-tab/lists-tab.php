@@ -38,6 +38,7 @@ new #[Lazy] class extends Component
         $isOwner = $viewer !== null && $viewer->id === $this->userId;
 
         $query = ModList::query()
+            ->withoutIgnoredBy($viewer)
             ->where('owner_id', $this->userId)
             ->with(['sptVersion'])
             ->withCount('items');
@@ -66,6 +67,6 @@ new #[Lazy] class extends Component
     #[Computed]
     public function listCount(): int
     {
-        return (int) ModList::query()->where('owner_id', $this->userId)->count();
+        return (int) ModList::query()->withoutIgnoredBy(Auth::user())->where('owner_id', $this->userId)->count();
     }
 };
