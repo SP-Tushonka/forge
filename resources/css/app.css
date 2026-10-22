@@ -324,6 +324,21 @@ button {
         }
     }
 
+    /* Block so a wide table scrolls inside its column instead of widening the page. No text-align on cells, so the
+       align attribute from `:---:` columns still applies. */
+    table {
+        @apply my-4 block w-max max-w-full overflow-x-auto;
+    }
+
+    th,
+    td {
+        @apply border border-gray-700 px-3 py-1.5 text-gray-300;
+    }
+
+    th {
+        @apply bg-gray-900 font-bold text-white;
+    }
+
     code {
         @apply rounded bg-gray-700 px-1.5 py-0.5 font-mono text-[0.8em] text-gray-300;
     }
