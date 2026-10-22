@@ -424,6 +424,29 @@
                                 <x-mod-issue.beta-notice class="mt-3" />
                             </flux:field>
 
+                            <div class="col-span-6">
+                                <flux:heading>Comment Version Tags</flux:heading>
+                                <flux:text class="mt-1">
+                                    Each comment is tagged with the version that was the latest when it was written.
+                                    Comments on the current version are always green. Choose how strongly to highlight
+                                    comments written for a different version.
+                                </flux:text>
+                                <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                    @foreach (App\Enums\VersionChange::cases() as $change)
+                                        <flux:select
+                                            wire:model.blur="commentVersionColors.{{ $change->value }}"
+                                            :label="$change->label()"
+                                        >
+                                            @foreach (App\Enums\VersionTagColor::cases() as $color)
+                                                <flux:select.option value="{{ $color->value }}">{{ $color->label() }}
+                                                </flux:select.option>
+                                            @endforeach
+                                        </flux:select>
+                                    @endforeach
+                                </div>
+                                <flux:error name="commentVersionColors" />
+                            </div>
+
                             <flux:field class="col-span-6">
                                 <flux:checkbox.group label="Add-ons">
                                     <flux:checkbox
@@ -431,6 +454,17 @@
                                         wire:model.blur="addonsDisabled"
                                         label="Disable Add-ons"
                                         description="When enabled, users will not be able to create or view add-ons for this mod. Use this if your mod does not support or allow add-ons."
+                                    />
+                                </flux:checkbox.group>
+                            </flux:field>
+
+                            <flux:field class="col-span-6">
+                                <flux:checkbox.group label="Mod Lists">
+                                    <flux:checkbox
+                                        value="true"
+                                        wire:model.blur="listsDisabled"
+                                        label="Disable Mod Lists"
+                                        description="When enabled, this mod cannot be added to user-created mod lists. Users may still add it to their personal Favourites."
                                     />
                                 </flux:checkbox.group>
                             </flux:field>

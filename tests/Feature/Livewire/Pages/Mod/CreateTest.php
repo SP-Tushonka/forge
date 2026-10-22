@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Enums\ModIssueType;
+use App\Enums\VersionChange;
+use App\Enums\VersionTagColor;
 use App\Jobs\GenerateThumbnailVariants;
 use App\Models\CommentSubscription;
 use App\Models\License;
@@ -326,7 +328,7 @@ describe('Mod Create Form', function (): void {
         });
     });
 
-    describe('Issues', function (): void {
+    describe('Settings shared with the edit page', function (): void {
         beforeEach(function (): void {
             $this->actingAs(User::factory()->withMfa()->create());
 
@@ -351,7 +353,15 @@ describe('Mod Create Form', function (): void {
                 ->assertSee('Issue types you accept');
         });
 
-        it('leaves the issue tracker off unless it is switched on', function (): void {
+        it('offers the lists toggle and the version tag colours at their defaults', function (): void {
+            Livewire::test('pages::mod.create')
+                ->assertSee('Disable Mod Lists')
+                ->assertSee('Comment Version Tags')
+                ->assertSet('listsDisabled', false)
+                ->assertSet('commentVersionColors', VersionChange::defaultTagColors());
+        });
+
+        it('creates the mod on the default settings when none are changed', function (): void {
             Livewire::test('pages::mod.create')
                 ->fill($this->fields)
                 ->call('save')
@@ -360,7 +370,23 @@ describe('Mod Create Form', function (): void {
             $mod = Mod::query()->where('name', 'Tracked Mod')->firstOrFail();
 
             expect($mod->issues_enabled)->toBeFalse()
-                ->and($mod->disabled_issue_types)->toBeNull();
+                ->and($mod->disabled_issue_types)->toBeNull()
+                ->and($mod->lists_disabled)->toBeFalse()
+                ->and($mod->comment_version_colors)->toBeNull();
+        });
+
+        it('creates the mod with lists disabled, storing only the colour that was changed', function (): void {
+            Livewire::test('pages::mod.create')
+                ->fill($this->fields)
+                ->set('listsDisabled', true)
+                ->set('commentVersionColors.'.VersionChange::Minor->value, VersionTagColor::Green->value)
+                ->call('save')
+                ->assertHasNoErrors();
+
+            $mod = Mod::query()->where('name', 'Tracked Mod')->firstOrFail();
+
+            expect($mod->lists_disabled)->toBeTrue()
+                ->and($mod->comment_version_colors)->toBe([VersionChange::Minor->value => VersionTagColor::Green->value]);
         });
 
         it('creates the mod with the issue tracker on, storing only the types left unticked', function (): void {
