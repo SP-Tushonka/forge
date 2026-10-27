@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Staff\BanUser;
+use App\Actions\Staff\UnbanUser;
 use App\Enums\ReportStatus;
 use App\Enums\TrackingEventType;
 use App\Facades\Track;
@@ -141,13 +143,10 @@ new class extends Component
             }
         }
 
-        // Standard ban without report linking
-        $ban = $this->user->ban($attributes);
+        /** @var User $staff */
+        $staff = auth()->user();
 
-        $this->user->notify(new UserBannedNotification($ban));
-
-        Track::event(TrackingEventType::USER_BAN, $this->user);
-        Track::event(TrackingEventType::USER_BANNED, $this->user);
+        resolve(BanUser::class)->execute($staff, $this->user, $this->duration, $this->reason ?: null);
 
         Flux::toast(heading: 'User Banned', text: 'The user has been successfully banned.', variant: 'success');
 
@@ -164,10 +163,10 @@ new class extends Component
     {
         $this->authorize('unban', $this->user);
 
-        $this->user->unban();
+        /** @var User $staff */
+        $staff = auth()->user();
 
-        Track::event(TrackingEventType::USER_UNBAN, $this->user);
-        Track::event(TrackingEventType::USER_UNBANNED, $this->user);
+        resolve(UnbanUser::class)->execute($staff, $this->user, null);
 
         Flux::toast(heading: 'User Unbanned', text: 'The user has been successfully unbanned.', variant: 'success');
 
