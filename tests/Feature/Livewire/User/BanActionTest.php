@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Enums\TrackingEventType;
+use App\Models\TrackingEvent;
 use App\Models\User;
 use App\Models\UserRole;
 use Livewire\Livewire;
@@ -141,6 +143,29 @@ it('allows admin to unban user', function (): void {
         ->call('unban');
 
     expect($user->fresh()->isBanned())->toBeFalse();
+});
+
+it('records the ban and unban in the moderation log', function (): void {
+    $admin = User::factory()->admin()->create();
+    $user = User::factory()->create();
+
+    Livewire::actingAs($admin)
+        ->test('user.ban-action', ['user' => $user])
+        ->set('duration', '24_hours')
+        ->set('reason', 'Harassing a mod author')
+        ->call('ban');
+
+    Livewire::actingAs($admin)
+        ->test('user.ban-action', ['user' => $user->fresh()])
+        ->call('unban');
+
+    $ban = TrackingEvent::query()->where('event_name', TrackingEventType::USER_BAN->value)->sole();
+    $unban = TrackingEvent::query()->where('event_name', TrackingEventType::USER_UNBAN->value)->sole();
+
+    expect($ban->is_moderation_action)->toBeTrue()
+        ->and($ban->reason)->toBe('Harassing a mod author')
+        ->and($ban->visitor_id)->toBe($admin->id)
+        ->and($unban->is_moderation_action)->toBeTrue();
 });
 
 it('requires duration selection for ban', function (): void {
