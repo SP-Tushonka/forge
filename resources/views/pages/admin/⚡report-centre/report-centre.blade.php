@@ -764,7 +764,7 @@
                         @endforeach
                     </div>
 
-                    @if ($this->reports->count() > 10)
+                    @if ($this->reports->hasPages())
                         <div class="mt-6">
                             {{ $this->reports->links(data: ['scrollTo' => '#reports']) }}
                         </div>
