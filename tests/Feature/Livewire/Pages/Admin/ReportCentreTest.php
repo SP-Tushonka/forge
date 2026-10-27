@@ -332,26 +332,29 @@ it('displays no pending reports message', function (): void {
         ->assertSee('No Pending Reports');
 });
 
-it('paginates reports correctly', function (): void {
+it('paginates reports beyond the first page', function (): void {
     $reporter = User::factory()->create();
 
-    // Create 25 reports with different mods to avoid unique constraint violation
-    $mods = Mod::factory()->count(25)->create();
-
-    foreach ($mods as $mod) {
+    // Distinct mods avoid the reporter/reportable unique constraint
+    foreach (Mod::factory()->count(11)->create() as $mod) {
         Report::factory()->create([
             'reporter_id' => $reporter->id,
             'reportable_type' => Mod::class,
             'reportable_id' => $mod->id,
+            'status' => ReportStatus::PENDING,
         ]);
     }
 
     $this->actingAs($this->adminUser);
 
-    $component = Livewire::test('pages::admin.report-centre');
+    $component = Livewire::test('pages::admin.report-centre')
+        ->assertSeeHtml("nextPage('reports-page')");
 
-    // Should show pagination with 20 reports per page (default behavior will show pagination)
-    expect($component->get('reports')->count())->toBeLessThanOrEqual(20);
+    expect($component->get('reports')->count())->toBe(10);
+
+    $component->call('gotoPage', 2, 'reports-page');
+
+    expect($component->get('reports')->count())->toBe(1);
 });
 
 it('can pick up a report', function (): void {
