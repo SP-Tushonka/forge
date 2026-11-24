@@ -13,12 +13,14 @@ namespace Verifier.Inspection;
 /// A client plugin is a type carrying a BepInPlugin custom attribute, whose guid, name, and version are decoded from
 /// the attribute value blob.
 ///
-/// A server mod is a non-abstract type whose direct base type is named AbstractModMetadata, whose ModGuid, Name, and
-/// Version are recovered by scanning its constructor IL for the literal initializer patterns the C# compiler emits.
+/// A server mod is a non-abstract type whose direct base type is named AbstractModMetadata (SPT 4.0) or which directly
+/// implements an interface named IModMetadata (SPT 4.1 and later), whose ModGuid, Name, and Version are recovered by
+/// scanning its constructor IL for the literal initializer patterns the C# compiler emits.
 /// </summary>
 public static class DllMetadataReader
 {
     private const string ServerMetadataBaseTypeName = "AbstractModMetadata";
+    private const string ServerMetadataInterfaceName = "IModMetadata";
 
     private const short Nop = 0x00;
     private const short Ldarg0 = 0x02;
@@ -114,8 +116,9 @@ public static class DllMetadataReader
     }
 
     /// <summary>
-    /// Reads a server mod finding from a non-abstract type directly extending AbstractModMetadata, recovering its
-    /// literals from the constructor IL. Returns null when the type is not a server metadata carrier.
+    /// Reads a server mod finding from a non-abstract type directly extending AbstractModMetadata (SPT 4.0) or directly
+    /// implementing IModMetadata (SPT 4.1 and later), recovering its literals from the constructor IL. Returns null
+    /// when the type is not a server metadata carrier.
     /// </summary>
     private static DllFinding? TryReadServerMod(PEReader peReader, MetadataReader metadata, TypeDefinition type, string relativePath)
     {
@@ -125,7 +128,8 @@ public static class DllMetadataReader
             return null;
         }
 
-        if (BaseTypeName(metadata, type.BaseType) != ServerMetadataBaseTypeName)
+        if (BaseTypeName(metadata, type.BaseType) != ServerMetadataBaseTypeName &&
+            !ImplementsInterface(metadata, type, ServerMetadataInterfaceName))
         {
             return null;
         }
@@ -634,6 +638,20 @@ public static class DllMetadataReader
             HandleKind.TypeDefinition => metadata.GetString(metadata.GetTypeDefinition((TypeDefinitionHandle)baseType).Name),
             _ => null,
         };
+    }
+
+    /// <summary>Determines whether a type directly implements an interface with the given simple name.</summary>
+    private static bool ImplementsInterface(MetadataReader metadata, TypeDefinition type, string interfaceName)
+    {
+        foreach (InterfaceImplementationHandle handle in type.GetInterfaceImplementations())
+        {
+            if (BaseTypeName(metadata, metadata.GetInterfaceImplementation(handle).Interface) == interfaceName)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>Maps every IL opcode to its operand type.</summary>
